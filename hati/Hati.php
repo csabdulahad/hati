@@ -51,9 +51,9 @@ class Hati {
     // as per configuration and resolve dependencies.
     public static function start(): void {
         self::setLoader();
+        date_default_timezone_set(self::defaultTimezone());
+
         if (CONFIG['session_auto_start']) session_start();
-
-
         if (CONFIG['welcome_hati']) self::printHati();
     }
 

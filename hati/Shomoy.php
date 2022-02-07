@@ -36,6 +36,22 @@ class Shomoy {
     }
 
     /**
+     * This function can create Shomoy object from timestamp.
+     *
+     * @param int $timestamp the timestamp for the datetime.
+     *
+     * @return Shomoy the shomoy object that is representing the timestamp.
+     * */
+    public static function fromTimestamp(int $timestamp): Shomoy {
+        // first, convert the timestamp into textual representation.
+        // then create datetime object from that string.
+        $dateTime = date_create(date(DateTimeInterface::ISO8601, $timestamp));
+
+        // finally wrap that formatted string value of datetime within shomoy and return.
+        return new Shomoy($dateTime -> format(DateTimeInterface::ISO8601));
+    }
+
+    /**
      * When this methods compares itself with other date time object, it is considered
      * that the comparing date time object is in the same timezone as this shomoy date
      * time is. The  Shomoy gets its default timezone from the Hati by calling
@@ -158,13 +174,30 @@ class Shomoy {
     public function getTimezone(): DateTimeZone {
         return $this -> dateTime -> getTimezone();
     }
-
     public function getTimestamp(): int {
         return $this -> dateTime -> getTimestamp();
     }
 
     public function getMilliSeconds(): int {
         return $this -> dateTime -> getTimestamp() * 1000;
+    }
+
+    /**
+     * Using this method, the starting timestamp of the shomoy can be calculated.
+     *
+     * @return int the starting timestamp of the shomoy object.
+     */
+    public function timestampStart(): int {
+        return (date_create($this -> isoDate())) -> getTimestamp();
+    }
+
+    /**
+     * Using this method, the ending timestamp of the shomoy can be calculated.
+     *
+     * @return int the ending timestamp of the shomoy object.
+     */
+    public function timestampEnd(): int {
+        return $this -> timestampStart() - 1 + self::secInDay(1);
     }
 
     public static function secInMin(int $of): int {

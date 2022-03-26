@@ -5,7 +5,9 @@ namespace hati;
 /**
  * Fluent is wrapper class around PDO extension to allow simple, flawless
  * easy access and manipulation of the database query operations. It uses
- * singleton pattern to permits its instance.
+ * singleton pattern to permits its instance. This also supports transaction
+ * operations on database using various methods such as beginTrans, rollback
+ * & commit.
  *
  *
  * Any data returning method assumes that a successful connection has made to
@@ -299,6 +301,47 @@ class Fluent {
         $buffer = $ins -> stmtBuffer;
         if ($ins -> data == null) $ins -> data = $buffer -> fetchAll(PDO::FETCH_OBJ);
         return $ins -> data;
+    }
+
+    /**
+     * This method initiates a transaction for the database query. This prevents
+     * auto commit features of the queries unless it is said by @link commit method.
+     *
+     * @return bool returns true if a transaction tunnel was able to open; false
+     * otherwise.
+     * */
+    public static function beginTrans(): bool {
+        $ins = Fluent::get();
+        try {
+            $ins -> db -> beginTransaction();
+            return true;
+        } catch (Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * Any changes to the database using @link beginTrans method executed beforehand
+     * can be rolled back using this method. This method checks whether the database
+     * is in transaction mode before roll backing. It save code from throwing exception.
+     *
+     * @return bool returns true on success; false otherwise.
+     * */
+    public static function rollback(): bool {
+        $db = Fluent::get() -> db;
+        return $db -> inTransaction() && $db -> rollback();
+    }
+
+    /**
+     * Any changes made during transaction is written off to the database
+     * using commit method. This function save from throwing exception by
+     * first checking whether the database is in any active transaction mode.
+     *
+     * @return true if it can commit changes to the database; false otherwise.
+     * */
+    public static function commit(): bool {
+        $db = Fluent::get() -> db;
+        return $db -> inTransaction() && $db -> commit();
     }
 
 }

@@ -14,15 +14,16 @@ class Util {
      * Using this method, a session message can be set using the key from HatiConfig.php.
      * The key can be configured. The message is set without any escaping so it can be
      * containing manipulating code inside it. Always use @link sessVar method with
-     * escaping turned on.
+     * escaping turned on. Both message and redirect path is optional as it can support
+     * no redirection by setting message or any redirection with no message.
      *
      * By default it redirect one directory up to from the current calling path.
      *
      * @param string $msg the message is to be hold in session variable.
      * @param string $to the location where redirection should go to.
      * */
-    public static function redirect(string $msg, string $to = "../"): void {
-        $_SESSION['msg'] = $msg;
+    public static function redirect(string $msg = '', string $to = "../"): void {
+        if (!empty($msg)) $_SESSION['msg'] = $msg;
         if (!empty($to)) {
             header("Location: $to");
             exit;
@@ -122,13 +123,13 @@ class Util {
      * A random token can be generated using this method. Default length
      * of the token is 11. It uses shuffling of time value after md5
      * encryption. However, it doesn't guarantee the uniqueness of the token.
-     * Use @link uniqueId instead.
-     *
-     * @param int $length The length of the token.
+     * Use @param int $length The length of the token.
      *
      * @return string A randomly generated token.
-     * */
-    public static function randToken($length = 11): string {
+     * *@link uniqueId instead.
+     *
+     */
+    public static function randToken(int $length = 11): string {
         return substr(str_shuffle(md5(time())),0, $length);
     }
 

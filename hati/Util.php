@@ -76,6 +76,24 @@ class Util {
     }
 
     /**
+     * Any cookie variable can be accessed either with escaping/safe manner or without escaping.
+     * This method first checks whether the cookie variable is set; if not then it simply returns
+     * an empty string.
+     *
+     * The escaping can be turned off. By default, escaping is on.
+     *
+     * @param string $key Cookie variable key to get.
+     * @param bool $escape Whether to escape the cookie variable or not.
+     * */
+    public static function cookieVar(string $key, bool $escape = true): string {
+        $set = isset($_COOKIE[$key]);
+        if (!$set) return '';
+
+        $value = $_COOKIE[$key];
+        return  $escape ? htmlentities($value) : $value;
+    }
+
+    /**
      * A session variable is set, can be printed using this method. The printed value is always
      * escaped for safety so that XSS attack can be prevented.
      *
@@ -83,6 +101,17 @@ class Util {
      * */
     public static function printSessVar(string $key){
         echo self::sessVar($key);
+    }
+
+
+    /**
+     * Any cookie variable is set, can be printed using this method. The printed value is always
+     * escaped for safety so that XSS attack can be prevented.
+     *
+     * @param string $key The cookie variable key whose value is to be printed out.
+     * */
+    public static function printCookie(string $key) {
+        echo self::cookieVar($key);
     }
 
     /**

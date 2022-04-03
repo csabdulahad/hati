@@ -165,29 +165,7 @@ class Hati {
     }
 
     private static function printHati(): void {
-        $hati = <<<'EOT'
-                            _
-                          .' `'.__
-                         /      \ `'"-,
-        .-''''--...__..-/ .     |      \
-      .'               ; :'     '.  a   |
-     /                 | :.       \     =\
-    ;                   \':.      /  ,-.__;.-;`
-   /|     .              '--._   /-.7`._..-;`
-  ; |       '                |`-'      \  =|
-  |/\        .   -' /     /  ;         |  =/
-  (( ;.       ,_  .:|     | /     /\   | =|
-   ) / `\     | `""`;     / |    | /   / =/
-     | ::|    |      \    \ \    \ `--' =/
-    /  '/\    /       )    |/     `-...-`
-   /    | |  `\    /-'    /;
-   \  ,,/ |    \   D    .'  \
-    `""`   \  nnh  D_.-'L__nnh
-            `"""`
-||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| 
-EOT;
-        echo "<pre style='font-size: 19px; font-family: Courier New,serif;'><span>$hati</span><br><br><span style='color: dodgerblue;'>Hati - A Speedy PHP Library From RootData21<br>Version: 1.0</span></be></pre>";
+        include('page/welcome.php');
     }
 
     public static function dPrint(string $string, int $numOfBreak = 1): void {

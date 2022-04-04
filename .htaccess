@@ -19,6 +19,9 @@ php_value auto_prepend_file "C:/xampp/htdocs/hati/hati/Hati.php"
 ## DIRECTORY LISTING OPTION; CAN BE DISABLED.
 # Options -Indexes
 
+## CHANGE DEFAULT INDEX PAGE AS DIRECTORY INDEX PAGE
+# DirectoryIndex home.php
+
 ## FORCE SERVER TO USE HTTPS.
 # RewriteEngine On
 # RewriteCond %{HTTPS} off

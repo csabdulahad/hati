@@ -174,4 +174,35 @@ class Util {
         return uniqid($prefix, true);
     }
 
+    /**
+     * Page title for any webpage can be extracted from the file name that the server
+     * is loading. For example, if a filename is employee-profile.php then this method
+     * can extract a title as Employee Profile. The title can be capitalized and the
+     * actual file separator can be specified by argument.
+     *
+     * @param bool $capitalize Whether to capitalize the title or not.
+     * @param string $separator The page name can be separated by any character
+     * specified here.
+     *
+     * @return string The page title as specified by the arguments.
+     * */
+    public static function fileTitle(bool $capitalize = true, string $separator = '-'): string {
+        $page = basename($_SERVER['SCRIPT_FILENAME']);
+        $page = str_replace('.php', '', $page);
+        $page = str_replace($separator, ' ', $page);
+        return $capitalize ? ucwords($page) : $page;
+    }
+
+    /**
+     * Using this method, extra echo/print statement can be avoided to print out the
+     * page title in the page.
+     *
+     * @param bool $capitalize Whether to capitalize the title or not.
+     * @param string $separator The page name can be separated by any character
+     * specified here.
+     * */
+    public static function printFileTitle(bool $capitalize = true, string $separator = '-'): void {
+        echo self::fileTitle($capitalize, $separator);
+    }
+
 }

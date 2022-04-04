@@ -10,7 +10,7 @@ namespace hati;
 
 const CONFIG = [
 
-    'welcome_hati'                      =>          true,
+        'welcome_hati'                      =>          false,
     'app_name'                          =>          'Hati',
     'session_auto_start'                =>          true,
     'session_msg_key'                   =>          'msg',

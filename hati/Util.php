@@ -205,4 +205,56 @@ class Util {
         echo self::fileTitle($capitalize, $separator);
     }
 
+    /**
+     * Tedious title and meta tag can be replaced with this method call. It no title
+     * is provided then it tries to extract the title from the file name where file
+     * name is separated by -. Optional capitalization can be set using the augment.
+     * Internally this method uses @link fileTitle method to obtain the file title
+     * from the file name.
+     *
+     * @param string $title Any specified title to override the file name as title.
+     * @param bool $capitalize Whether to capitalize the file name in title output.
+     * @param string $separatorInFileName It indicates how the file name should be extracted.
+     * By default it is '-' which means that the file name has '-' in file names. For example
+     * 'employee-profile.php' will be extracted as Employee Profile.     *
+     * */
+    public static function titleTag(string $title = '', bool $capitalize = true, string $separatorInFileName = '-') {
+        if (empty($title)) $title = self::fileTitle($capitalize, $separatorInFileName);
+
+        echo '<meta charset="UTF-8">';
+        echo '<title>'. $title .'</title>';
+    }
+
+    /**
+     * All the tedious stylesheet linking in html pages can be replaced with
+     * this method call. By default it looks for css files inside the style
+     * directory in the root folder of the server. This can be changes using
+     * folder argument. Folder name doesn't have any trailing slashes.
+     *
+     * @param string $files comma separated files names without css extension.
+     * @param string $folder any folder structure where the css files are residing.
+     * */
+    public static function css(string $files, string $folder = 'style'): void {
+        $files = explode(',', $files);
+        foreach ($files as $file) {
+            echo sprintf('<link rel="stylesheet" href="%s/%s.css">', $folder, trim($file));
+        }
+    }
+
+    /**
+     * All the tedious js importing in html pages can be replaced with
+     * this method call. By default it looks for js files inside the js
+     * directory in the root folder of the server. This can be changes using
+     * folder argument. Folder name doesn't have any trailing slashes.
+     *
+     * @param string $files comma separated files names without js extension.
+     * @param string $folder any folder structure where the js files are residing.
+     * */
+    public static function js(string $files, string $folder = 'js'): void {
+        $files = explode(',', $files);
+        foreach ($files as $file) {
+            echo sprintf('<script src="%s/%s.js"></script>', $folder, trim($file));
+        }
+    }
+
 }

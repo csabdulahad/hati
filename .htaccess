@@ -9,29 +9,44 @@
 ## ALL THE CONFIGURATION IS GIVEN FOR REFERENCE OR MODIFICATION.
 ## THEY WILL NOT FIT ALL PROJECTS STRUCTURE. CHANGE ACCORDINGLY.
 
+
 ## HATI LOADER ------------------------------------------------------------
 ## PREPEND HATI AS MASTER DEPENDENCY. FOR TESTING ENVIRONMENT SUCH AS
-## XAMPP PATH CAN BE SOMETHING LIKE "C:/xampp/htdocs/hati/hati/Hati.php"
+## XAMPP PATH CAN BE SOMETHING LIKE "C:/xampp/htdocs/project/hati/Hati.php"
 ## HERE THE WHOLE PROJECT IS IN HTDOCS HATI FOLDER, INSIDE THE HATI LIBRARY
 ## FOLDER, THERE IS HATI LOADER CLASS.
-php_value auto_prepend_file "C:/xampp/htdocs/hati/hati/Hati.php"
+#php_value auto_prepend_file "PATH_TO_HATI_LOADER"
+
 
 ## DIRECTORY LISTING OPTION; CAN BE DISABLED.
 # Options -Indexes
 
+
 ## CHANGE DEFAULT INDEX PAGE AS DIRECTORY INDEX PAGE
 # DirectoryIndex home.php
+
 
 ## FORCE SERVER TO USE HTTPS.
 # RewriteEngine On
 # RewriteCond %{HTTPS} off
 # RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI}
 
+
 ## ALLOWING CROSS SITE ORIGIN CONTROL FOR AJAX.
 # Header add Access-Control-Allow-Origin "*"
+
 
 ## CONFIGURE THE PHPSESSID COOKIE NAME IF NEEDED.
 # php_value session.name 'HATI'
 
+
 ## FORCE SESSION COOKIE TO BE HTTP ONLY UNLESS IT IS MENTIONED IN CODE OTHERWISE.
 # php_value session.cookie_httponly 1
+
+
+## DOCUMENT NOT FOUND DIRECTIVE
+#ErrorDocument 404 http://YOUR_SITE.com/404_PAGE.php
+
+
+## FORBIDDEN ACCESS DIRECTIVE
+# ErrorDocument 403 http://YOUR_SITE.com/404_PAGE.php

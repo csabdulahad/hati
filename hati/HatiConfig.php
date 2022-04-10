@@ -10,26 +10,34 @@ namespace hati;
 
 const CONFIG = [
 
-        'welcome_hati'                      =>          false,
-    'app_name'                          =>          'Hati',
-    'session_auto_start'                =>          true,
+    'welcome_hati'                      =>          true,
+    'app_name'                          =>          '',
+    'session_auto_start'                =>          false,
     'session_msg_key'                   =>          'msg',
+
+    // add the full path to favicon including http:// and .ico extension
+    'favicon'                           =>          '',
 
     // response output mode and its configuration
     'as_JSON_output'                    =>          false,
 
     // root folder name without any slashes either at front or at the end
-    'root_folder'                       =>          'hati',
+    'root_folder'                       =>          '',
 
     // database configuration
-    'db_host'                           =>          'localhost',
-    'db_name'                           =>          'hati',
-    'db_username'                       =>          'root',
+    'db_host'                           =>          '',
+    'db_name'                           =>          '',
+    'db_username'                       =>          '',
     'db_password'                       =>          '',
 
     // set default timezone for the entire project
     'time_zone'                         =>          'Europe/London',
 
+    // SMTP protocol settings for mailing to be used by Perok class of dakghor package
+    'mailer_email'                      =>          '',
+    'mailer_pass'                       =>          '',
+    'mailer_port'                       =>          587,
+    'mailer_name'                       =>          '',
 
     // settings for file extension and the Kuli uploader
 

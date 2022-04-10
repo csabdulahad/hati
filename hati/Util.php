@@ -223,6 +223,9 @@ class Util {
 
         echo '<meta charset="UTF-8">';
         echo '<title>'. $title .'</title>';
+
+        // add favicon to the page
+        echo '<link rel="icon" type="image/x-icon" href="'. Hati::favicon() .'">';
     }
 
     /**
@@ -255,6 +258,35 @@ class Util {
         foreach ($files as $file) {
             echo sprintf('<script src="%s/%s.js"></script>', $folder, trim($file));
         }
+    }
+
+    /**
+     * The absolute path to a file can sometime be problematic to extract. Using this
+     * method it can be done easily. This uses @link Hati::docRoot() method internally
+     * to append the server document root to the path to point the file absolutely.
+     *
+     * @param string $filePath The file name with extension and any directory structure
+     * appended in front it.
+     *
+     * @return string The absolute path to the file.
+     * */
+    public static function absolutePath(string $filePath): string {
+        return Hati::neutralizeSeparator(Hati::docRoot() . $filePath);
+    }
+
+    /**
+     * Any random number can be generated using this method. By default, the end range
+     * is inclusive.
+     *
+     * @param int $min The minimum number.
+     * @param int $max The maximum number.
+     * @param bool $inclusive Indicate whether the end range inclusive.
+     *
+     * @return int Randomly generated integer.
+     * */
+    public static function randomNum(int $min, int $max, bool $inclusive = true): int {
+        if (!$inclusive) $max -= 1;
+        return rand($min, $max);
     }
 
 }

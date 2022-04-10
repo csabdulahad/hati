@@ -47,6 +47,9 @@ use Throwable;
 
 class Hati {
 
+    // version
+    private static string $version = '2.0';
+
     // This is the first method call of the server. It initializes the environment
     // as per configuration and resolve dependencies.
     public static function start(): void {
@@ -97,7 +100,7 @@ class Hati {
      * Using this method, code can get the path to the document root.
      * The speciality of this method is that it also considers the
      * root folder name given by configuration beside server's document
-     * root. At the end, you get a un-breaking, right document root.
+     * root. At the end, you get an un-breaking, right document root.
      *
      * @return string it returns calculated document root by configuration.
      * */
@@ -162,6 +165,34 @@ class Hati {
 
     public static function dbPassword(): string {
         return CONFIG['db_password'];
+    }
+
+    public static function mailerPort(): int {
+        return CONFIG['mailer_port'];
+    }
+
+    public static function mailerEmail(): string {
+        return CONFIG['mailer_email'];
+    }
+
+    public static function mailerPass(): string{
+        return CONFIG['mailer_pass'];
+    }
+
+    public static function mailerName(): string {
+        return CONFIG['mailer_name'];
+    }
+
+    public static function favicon(): string {
+        return CONFIG['favicon'];
+    }
+
+    public static function version(): string {
+        return Hati::$version;
+    }
+
+    public static function configObj(): array {
+        return CONFIG;
     }
 
     private static function printHati(): void {

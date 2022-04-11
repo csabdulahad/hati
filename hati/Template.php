@@ -69,9 +69,10 @@ class Template {
      * the parameter value in a safe manner.
      *
      * @param string $key The key for the parameter.
+     * @param mixed $defaultValue The value to be returned in case of undefined key.
      * */
-    public static function w(string $key): void {
-        echo self::g($key);
+    public static function w(string $key, mixed $defaultValue = null): void {
+        echo self::g($key, $defaultValue);
     }
 
     /**

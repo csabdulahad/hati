@@ -179,10 +179,11 @@ class Perok {
      *
      * @return bool Returns true when message was sent to the recipient; false otherwise.
      * */
-    public static function send(string $to, string $subject = '', bool $triggerError = false): bool {
+    public static function send(string $to, string $subject = '', string $replyTo = '', bool $triggerError = false): bool {
         try {
             $perok = self::get();
             $perok -> phpMailer -> addAddress($to);
+            if (!empty($replyTo)) $perok -> phpMailer -> addReplyTo($replyTo);
             return self::phpMailerSend($perok, $subject);
         } catch (Exception $e) {
             if ($triggerError) throw new HatiError('Failed sending email: ' . $e -> getMessage());

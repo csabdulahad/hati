@@ -96,9 +96,10 @@ class Fluent {
      *
      * @param string $query the query to be executed
      * @param array $param array containing binding values to the query
+     * @param string $msg any custom message to replace default system error message
      * @return void
      * */
-    public static function exePrepared(string $query, array $param = []): void {
+    public static function exePrepare(string $query, array $param = [], string $msg = ''): void {
         try {
             $ins = Fluent::get();
 
@@ -111,20 +112,22 @@ class Fluent {
             $ins -> stmtBuffer = $db -> prepare($query);
             $ins -> executed = $ins -> stmtBuffer -> execute($param);
         } catch (Throwable $t) {
-            throw new HatiError($t -> getMessage());
+            $message = empty($msg) ? $t -> getMessage() : $msg;
+            throw new HatiError($message);
         }
     }
 
     /**
-     * This methods works similarly as @link exePrepared works. The only differenc
+     * This methods works similarly as @link exePrepare works. The only differenc
      * between them is that this method doesn't prepare the query. You should use
      * this for static query which doesn't embed any value to the query as this
      * can greatly improve the execution performance.
      *
      * @param string $query the query to be executed
+     * @param string $msg any custom message to replace default system error message
      * @return void
      * */
-    public static function exeStatic(string $query): void {
+    public static function exeStatic(string $query, string $msg = ''): void {
         try {
             $ins = Fluent::get();
 
@@ -136,7 +139,8 @@ class Fluent {
             $ins -> stmtBuffer = $db -> query($query);
             $ins -> executed = $ins -> stmtBuffer != false;
         } catch (Throwable $t) {
-            throw new HatiError($t -> getMessage());
+            $message = empty($msg) ? $t -> getMessage() : $msg;
+            throw new HatiError($message);
         }
     }
 

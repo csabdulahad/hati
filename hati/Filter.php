@@ -71,11 +71,11 @@ class Filter {
      * */
     public static function ISODateFormat(string $input, bool $triggerError = false): ?string {
         // try to remove the YYYY-MM-DD match from the input if there is any
-        $input = self::sanitize($input, '#(\d{4}\-\d{2}\-\d{2})#');
+        $date = self::sanitize($input, '#(\d{4}-\d{2}-\d{2})#');
 
         // it it was a valid ISO formatted date then it should have no character
         // remaining after the filter.
-        $pass = strlen($input) == 0;
+        $pass = strlen($date) == 0;
 
         if (!$pass && $triggerError) throw new HatiError('Invalid date is given. Date must be in YYYY-MM-DD format.');
         return !$pass ? null : $input;
@@ -135,6 +135,10 @@ class Filter {
      * it will return null. on successful pass it returns the sanitized integer.
      * */
     public static function int(string|int $input, bool $triggerError = false): ?int {
+        // capture absolute zero value as an integer
+        $input = (int) $input;
+        if ($input === 0) return true;
+
         $isInt = filter_var($input, FILTER_VALIDATE_INT);
         if (!$isInt && $triggerError) throw new HatiError('The number is not an integer number');
         if (!$isInt) return null;

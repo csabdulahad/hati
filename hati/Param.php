@@ -7,12 +7,12 @@ namespace hati;
  * this class you can simply leave all the parameter checking to this. It has
  * normal boolean returning methods which can throw error based on the argument
  * settings as it has to flexible for the client code.
-*/
+ */
 
 class Param {
 
     /**
-    * It beautifies any string into spaced separated words, as they were previously
+     * It beautifies any string into spaced separated words, as they were previously
      * seperated by '_'. For example, a string 'subject_title' will be returned as
      * 'Subject title'.
      *
@@ -58,7 +58,8 @@ class Param {
             $verify = self::verifyParam($paramArray, trim($param));
 
             if ($triggerError && $verify < 1) {
-                $message = $verify == 0 ? "$param is missing." : "$param has empty value.";
+                $beautified = self::beautifyString($param);
+                $message = "$beautified is required.";
                 throw new HatiError($message);
             }
 

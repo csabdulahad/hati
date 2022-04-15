@@ -137,7 +137,7 @@ class Filter {
     public static function int(string|int $input, bool $triggerError = false): ?int {
         // capture absolute zero value as an integer
         $input = (int) $input;
-        if ($input === 0) return true;
+        if ($input === 0) return $input;
 
         $isInt = filter_var($input, FILTER_VALIDATE_INT);
         if (!$isInt && $triggerError) throw new HatiError('The number is not an integer number');
@@ -162,6 +162,10 @@ class Filter {
      * it will return null. on successful pass it returns the number.
      * */
     public static function float(string|float $input, bool $triggerError = false): ?float {
+        // capture absolute zero value as an integer
+        $input = (float) $input;
+        if ($input == 0) return $input;
+
         $isFloat = filter_var($input, FILTER_VALIDATE_FLOAT);
         if (!$isFloat && $triggerError) throw new HatiError('The number is not a floating number');
         if (!$isFloat) return null;
@@ -200,7 +204,7 @@ class Filter {
      * @param bool $triggerError whether to throw error upon failure of validation.
      *
      * @return ?string returns null on failure otherwise it returns the sanitized url string.
-    */
+     */
     public static function url(string $input, bool $triggerError = false): ?string {
         $isUrl = filter_var($input, FILTER_VALIDATE_URL);
         if (!$isUrl && $triggerError)
@@ -245,7 +249,7 @@ class Filter {
      * @param bool $triggerError whether to throw exception on range failure.
      *
      * @return ?string returns the input if it is within the range, otherwise null.
-    */
+     */
     public static function strLength(string $input, ?int $min = null, ?int $max = null, bool $triggerError = false): ?string {
         $minPass = false;
         $maxPass = false;

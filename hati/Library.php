@@ -34,7 +34,7 @@ class Library {
     }
 
     public static function SimPro_1_8() {
-        echo '<script src="https://raw.githubusercontent.com/csabdulahad/simpro/main/simpro.js"></script>';
+        echo '<script src="https://cdn.jsdelivr.net/gh/csabdulahad/simpro/simpro.js"></script>';
     }
 
     /**

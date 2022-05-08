@@ -135,6 +135,12 @@ class Filter {
      * it will return null. on successful pass it returns the sanitized integer.
      * */
     public static function int(string|int $input, bool $triggerError = false): ?int {
+        // let's see if we have got any illegal character in the input
+        if (preg_match_all(self::SAN_N. 'mi', $input) > 0) {
+            if ($triggerError) throw new HatiError('Number has illegal characters.');
+            return null;
+        }
+
         // capture absolute zero value as an integer
         $input = (int) $input;
         if ($input === 0) return $input;
@@ -162,9 +168,11 @@ class Filter {
      * it will return null. on successful pass it returns the number.
      * */
     public static function float(string|float $input, bool $triggerError = false): ?float {
-        // capture absolute zero value as an integer
-        $input = (float) $input;
-        if ($input == 0) return $input;
+        // let's see if we have got any illegal character in the input
+        if (!preg_match('#^(-?\d+\.\d+)#', $input)) {
+            if ($triggerError) throw new HatiError('Float number has illegal characters.');
+            return null;
+        }
 
         $isFloat = filter_var($input, FILTER_VALIDATE_FLOAT);
         if (!$isFloat && $triggerError) throw new HatiError('The number is not a floating number');

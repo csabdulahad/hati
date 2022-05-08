@@ -556,11 +556,11 @@ class SMTP
                 if (
                     //Format from https://tools.ietf.org/html/rfc4616#section-2
                     //We skip the first field (it's forgery), so the string starts with a null byte
-                    !$this->sendCommand(
-                        'User & Password',
-                        base64_encode("\0" . $username . "\0" . $password),
-                        235
-                    )
+                !$this->sendCommand(
+                    'User & Password',
+                    base64_encode("\0" . $username . "\0" . $password),
+                    235
+                )
                 ) {
                     return false;
                 }

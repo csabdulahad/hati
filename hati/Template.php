@@ -2,6 +2,8 @@
 
 namespace hati;
 
+use hati\trunk\TrunkErr;
+
 /**
  * Templating in project sometimes are necessary to have. Hati provides a wonderful
  * support for templating with Template library class. It is simple in nature yet very
@@ -41,7 +43,7 @@ class Template {
     public static function render(string $tlpFilePath, array $params = [], bool $print = false, bool $triggerError = false): ?string {
         $path = Util::absolutePath($tlpFilePath) . '.tlp.php';
         if (!file_exists($path)) {
-            if ($triggerError) throw new HatiError("Couldn't locate the template file.");
+            if ($triggerError) throw new TrunkErr("Couldn't locate the template file.");
             return null;
         }
 

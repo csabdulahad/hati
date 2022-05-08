@@ -2,6 +2,8 @@
 
 namespace hati;
 
+use hati\trunk\TrunkErr;
+
 /**
  * Filter class is very helpful and handy in situations where user inputs need to be
  * filtered and sanitized. It has many methods which are a different capabilities.
@@ -77,7 +79,7 @@ class Filter {
         // remaining after the filter.
         $pass = strlen($date) == 0;
 
-        if (!$pass && $triggerError) throw new HatiError('Invalid date is given. Date must be in YYYY-MM-DD format.');
+        if (!$pass && $triggerError) throw new TrunkErr('Invalid date is given. Date must be in YYYY-MM-DD format.');
         return !$pass ? null : $input;
     }
 
@@ -113,7 +115,7 @@ class Filter {
      * */
     public static function email(string $input, bool $triggerError = false): ?string {
         $isEmail = filter_var($input, FILTER_VALIDATE_EMAIL);
-        if ($triggerError && !$isEmail) throw new HatiError('The email is not valid');
+        if ($triggerError && !$isEmail) throw new TrunkErr('The email is not valid');
         if (!$isEmail) return null;
 
         return  filter_var($input, FILTER_SANITIZE_EMAIL);
@@ -137,7 +139,7 @@ class Filter {
     public static function int(string|int $input, bool $triggerError = false): ?int {
         // let's see if we have got any illegal character in the input
         if (preg_match_all(self::SAN_N. 'mi', $input) > 0) {
-            if ($triggerError) throw new HatiError('Number has illegal characters.');
+            if ($triggerError) throw new TrunkErr('Number has illegal characters.');
             return null;
         }
 
@@ -146,7 +148,7 @@ class Filter {
         if ($input === 0) return $input;
 
         $isInt = filter_var($input, FILTER_VALIDATE_INT);
-        if (!$isInt && $triggerError) throw new HatiError('The number is not an integer number');
+        if (!$isInt && $triggerError) throw new TrunkErr('The number is not an integer number');
         if (!$isInt) return null;
 
         return filter_var($input, FILTER_SANITIZE_NUMBER_INT);
@@ -170,12 +172,12 @@ class Filter {
     public static function float(string|float $input, bool $triggerError = false): ?float {
         // let's see if we have got any illegal character in the input
         if (!preg_match('#^(-?\d+\.\d+)#', $input)) {
-            if ($triggerError) throw new HatiError('Float number has illegal characters.');
+            if ($triggerError) throw new TrunkErr('Float number has illegal characters.');
             return null;
         }
 
         $isFloat = filter_var($input, FILTER_VALIDATE_FLOAT);
-        if (!$isFloat && $triggerError) throw new HatiError('The number is not a floating number');
+        if (!$isFloat && $triggerError) throw new TrunkErr('The number is not a floating number');
         if (!$isFloat) return null;
 
         return $input;
@@ -198,7 +200,7 @@ class Filter {
      * */
     public static function string(string $input, bool $triggerError = false): ?string {
         $empty = empty($input);
-        if ($empty && $triggerError) throw new HatiError('The string is empty');
+        if ($empty && $triggerError) throw new TrunkErr('The string is empty');
         if ($empty) return null;
         return filter_var($input, FILTER_SANITIZE_SPECIAL_CHARS);
     }
@@ -216,7 +218,7 @@ class Filter {
     public static function url(string $input, bool $triggerError = false): ?string {
         $isUrl = filter_var($input, FILTER_VALIDATE_URL);
         if (!$isUrl && $triggerError)
-            throw new HatiError('The input has to be a valid url string');
+            throw new TrunkErr('The input has to be a valid url string');
         if (!$isUrl) return null;
 
         return filter_var($input, FILTER_SANITIZE_URL);
@@ -239,7 +241,7 @@ class Filter {
      * */
     public static function bool(mixed $input, bool $triggerError = false): ?bool {
         $isBool = filter_var($input, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-        if ($isBool === null && $triggerError) throw new HatiError('The input has to be a valid boolean value.');
+        if ($isBool === null && $triggerError) throw new TrunkErr('The input has to be a valid boolean value.');
         return $isBool;
     }
 
@@ -266,19 +268,19 @@ class Filter {
 
         if ($min != null && $max != null && (!$minPass || !$maxPass)) {
             if ($triggerError)
-                throw new HatiError("The string has to be between $min and $max in length inclusive.");
+                throw new TrunkErr("The string has to be between $min and $max in length inclusive.");
             return null;
         }
 
         if ($min != null && !$minPass) {
             if ($triggerError)
-                throw new HatiError("The string has to be equal to or greater than $min in length.");
+                throw new TrunkErr("The string has to be equal to or greater than $min in length.");
             return null;
         }
 
         if ($max != null && !$maxPass) {
             if ($triggerError)
-                throw new HatiError("The string has to be equal to or less than $max in length.");
+                throw new TrunkErr("The string has to be equal to or less than $max in length.");
             return null;
         }
 
@@ -310,19 +312,19 @@ class Filter {
 
         if ($haveBothRange && (!$minPass || !$maxPass)) {
             if ($triggerError)
-                throw new HatiError("The integer has to be between $min and $max inclusive.");
+                throw new TrunkErr("The integer has to be between $min and $max inclusive.");
             return null;
         }
 
         if ($min != null && !$minPass) {
             if ($triggerError)
-                throw new HatiError("The integer has to be equal to or greater than $min.");
+                throw new TrunkErr("The integer has to be equal to or greater than $min.");
             return null;
         }
 
         if ($max != null && !$maxPass) {
             if ($triggerError)
-                throw new HatiError("The integer has to be equal to or less than $max.");
+                throw new TrunkErr("The integer has to be equal to or less than $max.");
             return null;
         }
 

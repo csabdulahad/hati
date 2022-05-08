@@ -3,7 +3,6 @@
 namespace hati;
 
 use InvalidArgumentException;
-use JetBrains\PhpStorm\NoReturn;
 
 /**
  * Response - A JSON response writer class
@@ -55,8 +54,8 @@ use JetBrains\PhpStorm\NoReturn;
 class Response {
 
     // constants that describe reporting level
-    const LEVEL_SYSTEM = 0;
-    const LEVEL_USER = 1;
+    const LVL_SYSTEM = 0;
+    const LVL_USER = 1;
 
     // constants that represent response status of the API execution
     const ERROR = -1;
@@ -202,7 +201,7 @@ class Response {
         return json_encode($this -> output);
     }
 
-    #[NoReturn] public function reply($msg = '', $level = Response::LEVEL_SYSTEM, $status = Response::SUCCESS) {
+    public function reply($msg = '', $level = Response::LVL_SYSTEM, $status = Response::SUCCESS) {
         $resObj = self::addResponseObject($status, $level, $msg);
         $this -> add(self::$KEY_RESPONSE, $resObj);
 
@@ -212,7 +211,8 @@ class Response {
         exit($this -> getJSON());
     }
 
-    #[NoReturn] public static function report($msg = '', $level = Response::LEVEL_SYSTEM, $status = Response::ERROR) {
+    // TODO - change the parameter order
+    public static function report($msg = '', $level = Response::LVL_SYSTEM, $status = Response::ERROR) {
         if (Hati::asJSONOutput()) header('Content-Type: application/json');
         exit(self::reportJSON($msg, $level, $status));
     }
@@ -227,7 +227,7 @@ class Response {
      *
      * @return string JSON output object consisting of response object.
     */
-    public static function reportJSON(string $msg = '', int $level = Response::LEVEL_SYSTEM, int $status = Response::ERROR): string {
+    public static function reportJSON(string $msg = '', int $level = Response::LVL_SYSTEM, int $status = Response::ERROR): string {
         $output[self::$KEY_RESPONSE] = self::addResponseObject($status, $level, $msg);
         if (Hati::asJSONOutput()) header('Content-Type: application/json');
         return json_encode($output);

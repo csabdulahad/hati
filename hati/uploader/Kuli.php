@@ -15,7 +15,7 @@ namespace hati\uploader;
  * */
 
 use hati\Hati;
-use hati\HatiError;
+use hati\trunk\TrunkErr;
 use hati\Util;
 use Throwable;
 
@@ -338,7 +338,7 @@ class Kuli {
 
     // this throws error if the trigger is turned on.
     private function throwError(string $throwMsg): void {
-        if ($this -> triggerError) throw new HatiError($throwMsg);
+        if ($this -> triggerError) throw new TrunkErr($throwMsg);
     }
 
 }

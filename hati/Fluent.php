@@ -23,6 +23,7 @@ namespace hati;
  *
  * */
 
+use hati\trunk\TrunkErr;
 use PDO;
 use PDOStatement;
 use stdClass;
@@ -64,7 +65,7 @@ class Fluent {
             $this -> db = new PDO($arg, $user, $pass);
             $this -> db -> setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         } catch (Throwable) {
-            throw new HatiError('Connection to database was failed.');
+            throw new TrunkErr('Connection to database was failed.');
         }
     }
 
@@ -81,7 +82,7 @@ class Fluent {
      */
     public static function datum(string $key): mixed {
         $datum = Fluent::datumArr();
-        if(!isset($datum[$key])) throw new HatiError('Invalid key given for the datum.');
+        if(!isset($datum[$key])) throw new TrunkErr('Invalid key given for the datum.');
         return $datum[$key];
     }
 
@@ -113,7 +114,7 @@ class Fluent {
             $ins -> executed = $ins -> stmtBuffer -> execute($param);
         } catch (Throwable $t) {
             $message = empty($msg) ? $t -> getMessage() : $msg;
-            throw new HatiError($message);
+            throw new TrunkErr($message);
         }
     }
 
@@ -140,7 +141,7 @@ class Fluent {
             $ins -> executed = $ins -> stmtBuffer != false;
         } catch (Throwable $t) {
             $message = empty($msg) ? $t -> getMessage() : $msg;
-            throw new HatiError($message);
+            throw new TrunkErr($message);
         }
     }
 
@@ -154,8 +155,8 @@ class Fluent {
      */
     public static function stmtBuffer(): PDOStatement {
         $ins = Fluent::get();
-        if ($ins == null || !$ins -> stmtBuffer)
-            throw new HatiError('PDOStatement was failed to be obtained as encountered error in query preparation.');
+        if (!$ins -> stmtBuffer)
+            throw new TrunkErr('PDOStatement was failed to be obtained as encountered error in query preparation.');
         return $ins -> stmtBuffer;
     }
 
@@ -179,7 +180,7 @@ class Fluent {
      */
     public static function rowCount(): int {
         $ins = Fluent::get();
-        if (!$ins -> executed) throw new HatiError('Failed to count as no query has been executed.');
+        if (!$ins -> executed) throw new TrunkErr('Failed to count as no query has been executed.');
         return $ins -> stmtBuffer -> rowCount();
     }
 
@@ -248,11 +249,11 @@ class Fluent {
      */
     public static function datumArr(): array {
         if (!is_array(Fluent::get() -> dataArr()) || count(Fluent::get() -> dataArr()) == 0)
-            throw new HatiError("Data don't have any datum array.");
+            throw new TrunkErr("Data don't have any datum array.");
 
         $datumArr = Fluent::get() -> dataArr()[0];
         if ($datumArr == null || count($datumArr) == 0)
-            throw new HatiError('Datum array is empty or null.');
+            throw new TrunkErr('Datum array is empty or null.');
         return $datumArr;
     }
 
@@ -266,11 +267,11 @@ class Fluent {
      */
     public static function datumObj(): stdClass {
         if (!is_array(Fluent::get() -> dataObj()) || count(Fluent::get() -> dataObj()) == 0)
-            throw new HatiError('Data don\'t have any datum array.');
+            throw new TrunkErr('Data don\'t have any datum array.');
 
         $datumObj = Fluent::get() -> dataObj()[0];
         if ($datumObj == null)
-            throw new HatiError('Datum object is empty or null.');
+            throw new TrunkErr('Datum object is empty or null.');
         return $datumObj;
     }
 
@@ -284,7 +285,7 @@ class Fluent {
      */
     public static function dataArr(): array {
         $ins = Fluent::get();
-        if (!$ins -> executed) throw new HatiError('No query has been executed.');
+        if (!$ins -> executed) throw new TrunkErr('No query has been executed.');
         $buffer = $ins -> stmtBuffer;
         if ($ins -> data == null) $ins -> data = $buffer -> fetchAll(PDO::FETCH_ASSOC);
         return $ins -> data;
@@ -301,7 +302,7 @@ class Fluent {
      */
     public static function dataObj(): array {
         $ins = Fluent::get();
-        if (!$ins -> executed) throw new HatiError('No query has been executed.');
+        if (!$ins -> executed) throw new TrunkErr('No query has been executed.');
         $buffer = $ins -> stmtBuffer;
         if ($ins -> data == null) $ins -> data = $buffer -> fetchAll(PDO::FETCH_OBJ);
         return $ins -> data;

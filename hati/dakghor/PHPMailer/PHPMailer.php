@@ -928,7 +928,7 @@ class PHPMailer
                 "\t",
                     //Trim trailing space
                 trim(
-                    //Indent for readability, except for trailing break
+                //Indent for readability, except for trailing break
                     str_replace(
                         "\n",
                         "\n                   \t                  ",
@@ -1287,7 +1287,7 @@ class PHPMailer
         if (
             (false === $pos)
             || ((!$this->has8bitChars(substr($address, ++$pos)) || !static::idnSupported())
-            && !static::validateAddress($address))
+                && !static::validateAddress($address))
         ) {
             $error_message = sprintf(
                 '%s (From): %s',
@@ -1455,7 +1455,7 @@ class PHPMailer
                     $punycode = idn_to_ascii(
                         $domain,
                         \IDNA_DEFAULT | \IDNA_USE_STD3_RULES | \IDNA_CHECK_BIDI |
-                            \IDNA_CHECK_CONTEXTJ | \IDNA_NONTRANSITIONAL_TO_ASCII,
+                        \IDNA_CHECK_CONTEXTJ | \IDNA_NONTRANSITIONAL_TO_ASCII,
                         \INTL_IDNA_VARIANT_UTS46
                     );
                 } elseif (defined('INTL_IDNA_VARIANT_2003')) {

@@ -1,18 +1,17 @@
 <?php
 
-namespace hati;
+namespace hati\trunk;
 
+use hati\Response;
 use RuntimeException;
 
-class HatiError extends RuntimeException {
-
-    private const DEFAULT_MSG = 'An unknown error occurred.';
+abstract class Trunk extends RuntimeException {
 
     private string $msg;
     private int $status;
     private int $level;
 
-    public function __construct(string $msg = self::DEFAULT_MSG , int $status = Response::ERROR, int $level = Response::LEVEL_SYSTEM) {
+    public function __construct(string $msg, int $status, int $level) {
         parent::__construct($msg);
         $this -> msg = $msg;
         $this -> status = $status;

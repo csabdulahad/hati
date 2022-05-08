@@ -17,7 +17,7 @@ namespace hati\dakghor;
 use hati\dakghor\PHPMailer\Exception;
 use hati\dakghor\PHPMailer\PHPMailer;
 use hati\Hati;
-use hati\HatiError;
+use hati\trunk\TrunkErr;
 
 class Perok {
 
@@ -50,7 +50,7 @@ class Perok {
         try {
             $this -> phpMailer -> setFrom(Hati::mailerEmail(), Hati::mailerName());
         } catch (Exception $e) {
-            throw new HatiError('Perok encountered error during initialization: ' . $e -> getMessage());
+            throw new TrunkErr('Perok encountered error during initialization: ' . $e -> getMessage());
         }
     }
 
@@ -111,7 +111,7 @@ class Perok {
             $ins -> phpMailer -> msgHTML(file_get_contents($path));
             return true;
         } catch (Exception $e) {
-            if ($triggerError) throw new HatiError('Failed composing HTML page as body: ' . $e -> getMessage());
+            if ($triggerError) throw new TrunkErr('Failed composing HTML page as body: ' . $e -> getMessage());
             return false;
         }
     }
@@ -143,7 +143,7 @@ class Perok {
         try {
             $ins -> phpMailer -> addAttachment($path, $fileName);
         } catch (Exception $e) {
-            if ($triggerError) throw new HatiError('Failed attaching file: ' . $e -> getMessage());
+            if ($triggerError) throw new TrunkErr('Failed attaching file: ' . $e -> getMessage());
         }
     }
 
@@ -162,7 +162,7 @@ class Perok {
             $path = Hati::neutralizeSeparator(Hati::docRoot() . $filePath);
             $ins -> phpMailer -> addEmbeddedImage($path, $fileName);
         } catch (Exception $e) {
-            if ($triggerError) throw new HatiError('Failed embedding image: ' . $e -> getMessage());
+            if ($triggerError) throw new TrunkErr('Failed embedding image: ' . $e -> getMessage());
         }
     }
 
@@ -182,11 +182,15 @@ class Perok {
     public static function send(string $to, string $subject = '', string $replyTo = '', bool $triggerError = false): bool {
         try {
             $perok = self::get();
-            $perok -> phpMailer -> addAddress($to);
+
+            // get the reply to address either from the argument or the configuration file
+            $replyTo = empty($replyTo) ? Hati::mailerReplyTo() : $replyTo;
             if (!empty($replyTo)) $perok -> phpMailer -> addReplyTo($replyTo);
+
+            $perok -> phpMailer -> addAddress($to);
             return self::phpMailerSend($perok, $subject);
         } catch (Exception $e) {
-            if ($triggerError) throw new HatiError('Failed sending email: ' . $e -> getMessage());
+            if ($triggerError) throw new TrunkErr('Failed sending email: ' . $e -> getMessage());
             return false;
         }
     }
@@ -212,7 +216,7 @@ class Perok {
             foreach ($emails as $email) $perok -> phpMailer -> addBCC($email);
             return self::phpMailerSend($perok, $subject);
         } catch (Exception $e) {
-            if ($triggerError) throw new HatiError('Failed sending bulk emails: ' . $e -> getMessage());
+            if ($triggerError) throw new TrunkErr('Failed sending bulk emails: ' . $e -> getMessage());
             return false;
         }
     }
@@ -223,7 +227,6 @@ class Perok {
      * meaning that it sends emails as HTML.
      *
      * @param string $to The address of the recipient.
-     * @param string $headers Email header.
      * @param string $subject Email subject.
      * @param string $message The actual email optionally including any HTML markup.
      *

@@ -5,6 +5,7 @@ namespace hati;
 use DateTime;
 use DateTimeInterface;
 use DateTimeZone;
+use hati\trunk\TrunkErr;
 use Throwable;
 
 /**
@@ -31,7 +32,7 @@ class Shomoy {
            $timezone = $timezone ?? Hati::defaultTimezone();
            $this -> dateTime = new DateTime($time, new DateTimeZone($timezone));
        } catch (Throwable $t) {
-           throw new HatiError('Hati encountered error while creating current date & time: ' . $t -> getMessage());
+           throw new TrunkErr('Hati encountered error while creating current date & time: ' . $t -> getMessage());
        }
     }
 

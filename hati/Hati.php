@@ -20,7 +20,6 @@
             `"""`
 
     Hati - A Speedy PHP Library
-    Version - 1.0
     RootData21 Inc.
 */
 
@@ -48,7 +47,7 @@ use Throwable;
 class Hati {
 
     // version
-    private static string $version = '2.0';
+    private static string $version = '2.1';
 
     // This is the first method call of the server. It initializes the environment
     // as per configuration and resolve dependencies.
@@ -56,7 +55,13 @@ class Hati {
         self::setLoader();
         date_default_timezone_set(self::defaultTimezone());
 
-        if (CONFIG['session_auto_start']) session_start();
+        if (CONFIG['session_auto_start']) {
+            // Cookies will only be sent in a first-party context and not be sent along with
+            // requests initiated by third party websites.
+            session_set_cookie_params(['SameSite' => 'Strict', 'Secure' => true]);
+            session_start();
+        }
+
         if (CONFIG['welcome_hati']) self::printHati();
     }
 
@@ -183,6 +188,10 @@ class Hati {
         return CONFIG['mailer_name'];
     }
 
+    public static function mailerReplyTo() {
+        return CONFIG['mailer_reply_to'];
+    }
+
     public static function favicon(): string {
         return CONFIG['favicon'];
     }
@@ -197,11 +206,6 @@ class Hati {
 
     private static function printHati(): void {
         include('page/welcome.php');
-    }
-
-    public static function dPrint(string $string, int $numOfBreak = 1): void {
-        echo $string;
-        for ($i = 0; $i < $numOfBreak; $i++) echo '<br>';
     }
 
 }

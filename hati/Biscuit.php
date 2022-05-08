@@ -18,6 +18,24 @@ class Biscuit {
      * By default, it stores the cookie on http only. The cookie is transmitted over SSL layer by default.
      * For expiry, it remembers the cookie as long as the browser remain opened.
      *
+     * The samesite values are:
+     *
+     *      Strict : Cookies will only be sent in a first-party context and not be sent along with requests
+     *               initiated by third party websites.
+     *
+     *
+     *      None: Cookies will be sent in all contexts, i.e. in responses to both first-party and cross-origin
+     *            requests. If SameSite=None is set, the cookie Secure attribute must also be set
+     *            (or the cookie will be blocked).
+     *
+     *
+     *      Lax: Cookies are not sent on normal cross-site subrequests (for example to load images or frames
+     *           into a third party site), but are sent when a user is navigating to the origin site
+     *           (i.e., when following a link).
+     *
+     *           This is the default cookie value if SameSite has not been explicitly specified in recent
+     *           browser versions (see the "SameSite: Defaults to Lax" feature in the Browser Compatibility).
+     *
      * @param string $name Name of the cookie.
      * @param string $value Value for the cookie.
      * @param int $expire Number of seconds to expire the cookie.
@@ -28,8 +46,15 @@ class Biscuit {
      * fail and return false. If setcookie successfully runs, it will return true.
      * This does not indicate whether the user accepted the cookie.
      */
-    public static function giveAway(string $name, string $value, int $expire = 0, bool $secure = true, bool $httpOnly = true): bool {
-        return setcookie($name, $value, $expire, '/', self::getDomain(), $secure, $httpOnly);
+    public static function giveAway(string $name, string $value, int $expire = 0, bool $secure = true, bool $httpOnly = true, string $sameSite = 'Strict'): bool {
+        return setcookie($name, $value, [
+            'expires' => $expire,
+            'path' => '/',
+            'domain' => self::getDomain(),
+            'secure' => $secure,
+            'httponly' => $httpOnly,
+            'samesite' => $sameSite
+        ]);
     }
 
     /**

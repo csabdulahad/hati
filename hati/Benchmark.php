@@ -34,7 +34,7 @@ class Benchmark {
      * */
     public static function from(): void {
         $ins = self::get();
-        array_push($ins -> markA, microtime(true));
+        $ins -> markA[] = microtime(true);
     }
 
     /**
@@ -44,7 +44,7 @@ class Benchmark {
      * */
     public static function to(): void {
         $ins = self::get();
-        array_push($ins -> markB, microtime(true));
+        $ins -> markB[] = microtime(true);
     }
 
     /**

@@ -38,6 +38,7 @@ const CONFIG = [
     'mailer_pass'                       =>          '',
     'mailer_port'                       =>          587,
     'mailer_name'                       =>          '',
+    'mailer_reply_to'                   =>          '',
 
     // settings for file extension and the Kuli uploader
 

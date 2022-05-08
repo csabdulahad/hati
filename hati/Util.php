@@ -2,6 +2,11 @@
 
 namespace hati;
 
+use hati\trunk\TrunkErr;
+use hati\trunk\TrunkInfo;
+use hati\trunk\TrunkOK;
+use hati\trunk\TrunkWarn;
+
 /**
  * Util class is a helper class which has many helpful methods that can easily deal with
  * session, cookie and other aspect of a project. This class is under continuous improvement
@@ -132,11 +137,11 @@ class Util {
      *
      * @return int Seconds added to the current time as defined by the arguments.
      *
-     * @throws HatiError If all the arguments are not of type integer
+     * @throws TrunkErr If all the arguments are not of type integer
      * */
     public static function secFromNowTo(int $sec = 0, int $min = 0, int $hour = 0, int $day = 0): int {
         if (!is_int($day) || !is_int($hour) || !is_int($min) || !is_int($sec))
-            throw new HatiError('Make sure day, hour and minute are of type int.');
+            throw new TrunkErr('Make sure day, hour and minute are of type int.');
 
         $now = time();
 
@@ -287,6 +292,92 @@ class Util {
     public static function randomNum(int $min, int $max, bool $inclusive = true): int {
         if (!$inclusive) $max -= 1;
         return rand($min, $max);
+    }
+
+    /**
+     * Any message can be thrown as Trunk success using this function.
+     *
+     * @param String $msg The message
+     * @param int $lvl The intended audience of the message
+     *
+     * @throws TrunkOK
+     * */
+    public static function trunkOK(String $msg, int $lvl = Response::LVL_USER) {
+        throw new TrunkOK($msg, $lvl);
+    }
+
+    /**
+     * Any message can be thrown as Trunk info using this function.
+     *
+     * @param String $msg The message
+     * @param int $lvl The intended audience of the message
+     *
+     * @throws TrunkInfo
+     * */
+    public static function trunkInfo(String $msg, int $lvl = Response::LVL_USER) {
+        throw new TrunkInfo($msg, $lvl);
+    }
+
+    /**
+     * Any message can be thrown as Trunk warning using this function.
+     *
+     * @param String $msg The message
+     * @param int $lvl The intended audience of the message
+     *
+     * @throws TrunkWarn
+     * */
+    public static function trunkWarn(String $msg, int $lvl = Response::LVL_USER) {
+        throw new TrunkWarn($msg, $lvl);
+    }
+
+    /**
+     * Any message can be thrown as Trunk error using this function.
+     *
+     * @param String $msg The message
+     * @param int $lvl The intended audience of the message
+     *
+     * @throws TrunkErr
+     * */
+    public static function trunkErr(String $msg, int $lvl = Response::LVL_USER) {
+        throw new TrunkErr($msg, $lvl);
+    }
+
+    /**
+     * This function can return the server root address. If the hati is inside
+     * any folder then it also includes that as part of the host address.
+     *
+     * @return String the server address including folder if Hati has one defined
+     * in HatiConfig file.
+     * */
+    public static function host(): string {
+        $host = $_SERVER['HTTP_HOST'];
+        if ($host == 'localhost') $host = 'localhost/' . Hati::rootFolder();
+        return sprintf('http://%s/', $host);
+    }
+
+    /**
+     * this function print out the host address
+     * */
+    public static function printHost() {
+        echo self::host();
+    }
+
+    /**
+     * JavaScript library Toast can use this cookie values to show any message after
+     * loading the page. The JS Toast library unset/deletes these cookies after showing
+     * the toast.
+     * By default, it  shows message as info and hiders the toast after the 2sec delay.
+     *
+     * @param string $msg the message.
+     * @param int $type toast type for success, info, warning and error.
+     * @param string $autoHide whether to auto hide the toast.
+     * @param int $delay the number seconds the toast will be displayed for.
+     * */
+    public static function toast(string $msg, int $type = 2, string $autoHide = 'true', int $delay = 2) {
+        Biscuit::giveAway('toast_msg', $msg, httpOnly: false);
+        Biscuit::giveAway('toast_type', $type, httpOnly: false);
+        Biscuit::giveAway('toast_auto_hide', $autoHide, httpOnly: false);
+        Biscuit::giveAway('toast_delay', $delay, httpOnly: false);
     }
 
 }

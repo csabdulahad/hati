@@ -29,8 +29,8 @@ class Library {
         echo '<script src="https://code.jquery.com/ui/1.13.0/jquery-ui.js"></script>';
     }
 
-    public static function Angular_1_6_9() {
-        echo '<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>';
+    public static function Angular_1_8_2() {
+        echo '<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>';
     }
 
     public static function SimPro_1_8() {
@@ -46,7 +46,7 @@ class Library {
         if ($bootstrap) self::Bootstrap_5_1_3();
         if ($materialIcon) self::MaterialIcons();
         if ($jquery) self::JQuery_3_6_0();
-        if ($angular) self::Angular_1_6_9();
+        if ($angular) self::Angular_1_8_2();
         if ($jqueryUI) self::JQuery_UI_1_13_0();
         if ($simpro) self::SimPro_1_8();
     }

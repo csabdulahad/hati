@@ -2,6 +2,8 @@
 
 namespace hati;
 
+use hati\trunk\TrunkErr;
+
 /**
  * A powerful helper class for validating query parameters by request. Using
  * this class you can simply leave all the parameter checking to this. It has
@@ -52,7 +54,7 @@ class Param {
      */
     private static function scanInvalid(string $params, array $paramArray, bool $triggerError): string|bool {
         $list = explode(',', $params);
-        if ($list < 1) throw new HatiError('No param to scan');
+        if ($list < 1) throw new TrunkErr('No param to scan');
 
         foreach ($list as $param) {
             $verify = self::verifyParam($paramArray, trim($param));
@@ -60,7 +62,7 @@ class Param {
             if ($triggerError && $verify < 1) {
                 $beautified = self::beautifyString($param);
                 $message = "$beautified is required.";
-                throw new HatiError($message);
+                throw new TrunkErr($message);
             }
 
             if ($verify < 1) return $param;

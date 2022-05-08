@@ -112,7 +112,8 @@
                     'db_password' => '',
                     'mailer_email' => '',
                     'mailer_pass' => '',
-                    'mailer_name' => ''
+                    'mailer_name' => '',
+                    'mailer_reply_to' => ''
                 ];
 
                 $currentConfig = Hati::configObj();

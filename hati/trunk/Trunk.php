@@ -19,7 +19,7 @@ abstract class Trunk extends RuntimeException {
     }
 
     public function __toString() {
-        return Response::reportJSON($this -> msg, $this -> level, $this -> status);
+        return Response::reportJSON($this -> msg, $this -> status, $this -> level);
     }
 
     public function report() {

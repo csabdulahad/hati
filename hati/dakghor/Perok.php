@@ -175,11 +175,12 @@ class Perok {
      *
      * @param string $to The email address of the recipient.
      * @param string $subject The subject for the email.
+     * @param string $replyTo The email for reply-to value.
      * @param bool $triggerError Indicate whether to throw exception upon encountering error.
      *
      * @return bool Returns true when message was sent to the recipient; false otherwise.
      * */
-    public static function send(string $to, string $subject = '', string $replyTo = '', bool $triggerError = false): bool {
+    public static function send(string $to, string $subject, string $replyTo = '', bool $triggerError = false): bool {
         try {
             $perok = self::get();
 

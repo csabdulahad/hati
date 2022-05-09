@@ -201,7 +201,7 @@ class Response {
         return json_encode($this -> output);
     }
 
-    public function reply($msg = '', $level = Response::LVL_SYSTEM, $status = Response::SUCCESS) {
+    public function reply($msg = '', $status = Response::SUCCESS, $level = Response::LVL_USER) {
         $resObj = self::addResponseObject($status, $level, $msg);
         $this -> add(self::$KEY_RESPONSE, $resObj);
 
@@ -211,10 +211,25 @@ class Response {
         exit($this -> getJSON());
     }
 
-    // TODO - change the parameter order
-    public static function report($msg = '', $level = Response::LVL_SYSTEM, $status = Response::ERROR) {
+    public static function report($msg,  $status, $level) {
         if (Hati::asJSONOutput()) header('Content-Type: application/json');
-        exit(self::reportJSON($msg, $level, $status));
+        exit(self::reportJSON($msg, $status, $level));
+    }
+
+    public static function reportOk(string $msg = '', int $lvl = self::LVL_USER) {
+        self::report($msg, Response::SUCCESS, $lvl);
+    }
+
+    public static function reportInfo(string $msg = '', int $lvl = self::LVL_USER) {
+        self::report($msg, Response::INFO, $lvl);
+    }
+
+    public static function reportWarn(string $msg = '', int $lvl = self::LVL_USER) {
+        self::report($msg, Response::WARNING, $lvl);
+    }
+
+    public static function reportErr(string $msg = '', int $lvl = self::LVL_USER) {
+        self::report($msg, Response::ERROR, $lvl);
     }
 
     /**
@@ -227,7 +242,7 @@ class Response {
      *
      * @return string JSON output object consisting of response object.
     */
-    public static function reportJSON(string $msg = '', int $level = Response::LVL_SYSTEM, int $status = Response::ERROR): string {
+    public static function reportJSON(string $msg, int $status, int $level): string {
         $output[self::$KEY_RESPONSE] = self::addResponseObject($status, $level, $msg);
         if (Hati::asJSONOutput()) header('Content-Type: application/json');
         return json_encode($output);

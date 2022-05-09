@@ -98,9 +98,10 @@ class Fluent {
      * @param string $query the query to be executed
      * @param array $param array containing binding values to the query
      * @param string $msg any custom message to replace default system error message
-     * @return void
+     *
+     * @return int indicates how many rows were affected by the query execution.
      * */
-    public static function exePrepare(string $query, array $param = [], string $msg = ''): void {
+    public static function exePrepare(string $query, array $param = [], string $msg = ''): int {
         try {
             $ins = Fluent::get();
 
@@ -112,6 +113,7 @@ class Fluent {
             $db = $ins -> getDB();
             $ins -> stmtBuffer = $db -> prepare($query);
             $ins -> executed = $ins -> stmtBuffer -> execute($param);
+            return $ins -> stmtBuffer -> rowCount();
         } catch (Throwable $t) {
             $message = empty($msg) ? $t -> getMessage() : $msg;
             throw new TrunkErr($message);
@@ -126,9 +128,10 @@ class Fluent {
      *
      * @param string $query the query to be executed
      * @param string $msg any custom message to replace default system error message
-     * @return void
+     *
+     * @return int indicates how many rows were affected by the query execution.
      * */
-    public static function exeStatic(string $query, string $msg = ''): void {
+    public static function exeStatic(string $query, string $msg = ''): int {
         try {
             $ins = Fluent::get();
 
@@ -139,6 +142,7 @@ class Fluent {
             $db = $ins -> getDB();
             $ins -> stmtBuffer = $db -> query($query);
             $ins -> executed = $ins -> stmtBuffer != false;
+            return $ins -> stmtBuffer -> rowCount();
         } catch (Throwable $t) {
             $message = empty($msg) ? $t -> getMessage() : $msg;
             throw new TrunkErr($message);

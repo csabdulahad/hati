@@ -24,10 +24,10 @@ class Util {
      *
      * By default it redirect one directory up to from the current calling path.
      *
-     * @param string $msg the message is to be hold in session variable.
      * @param string $to the location where redirection should go to.
+     * @param string $msg the message is to be hold in session variable.
      * */
-    public static function redirect(string $msg = '', string $to = "../"): void {
+    public static function redirect(string $to = '../', string $msg = ''): void {
         if (!empty($msg)) $_SESSION['msg'] = $msg;
         if (!empty($to)) {
             header("Location: $to");
@@ -277,21 +277,6 @@ class Util {
      * */
     public static function absolutePath(string $filePath): string {
         return Hati::neutralizeSeparator(Hati::docRoot() . $filePath);
-    }
-
-    /**
-     * Any random number can be generated using this method. By default, the end range
-     * is inclusive.
-     *
-     * @param int $min The minimum number.
-     * @param int $max The maximum number.
-     * @param bool $inclusive Indicate whether the end range inclusive.
-     *
-     * @return int Randomly generated integer.
-     * */
-    public static function randomNum(int $min, int $max, bool $inclusive = true): int {
-        if (!$inclusive) $max -= 1;
-        return rand($min, $max);
     }
 
     /**

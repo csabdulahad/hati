@@ -162,6 +162,10 @@ class Filter {
      * throws HatiError. If not then it returns null value to indicate that the number
      * was failed to pass the floating check.
      *
+     * On any input given, it checks whether it has any dot in the number or the string.
+     * If not found then it adds one with 0 at the end after the decimal point to make
+     * it a valid decimal point number for the check logic to work.
+     *
      * @param string|float $input string or number to be checked
      * @param bool $triggerError if it is set then it throws HatiError on failure
      * otherwise it will return null value instead.
@@ -170,6 +174,8 @@ class Filter {
      * it will return null. on successful pass it returns the number.
      * */
     public static function float(string|float $input, bool $triggerError = false): ?float {
+        if (!preg_match('#\.#', $input)) $input .= $input .'.0';
+
         // let's see if we have got any illegal character in the input
         if (!preg_match('#^(-?\d+\.\d+)#', $input)) {
             if ($triggerError) throw new TrunkErr('Float number has illegal characters.');

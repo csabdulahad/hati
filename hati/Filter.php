@@ -138,8 +138,8 @@ class Filter {
      * */
     public static function int(string|int $input, bool $triggerError = false): ?int {
         // let's see if we have got any illegal character in the input
-        if (preg_match_all(self::SAN_N. 'mi', $input) > 0) {
-            if ($triggerError) throw new TrunkErr('Number has illegal characters.');
+        if (preg_match_all('#[^0-9|\-?]#'. 'mi', $input) > 0) {
+            if ($triggerError) throw new TrunkErr('Number has illegal characters in ' . $input);
             return null;
         }
 
@@ -148,7 +148,7 @@ class Filter {
         if ($input === 0) return $input;
 
         $isInt = filter_var($input, FILTER_VALIDATE_INT);
-        if (!$isInt && $triggerError) throw new TrunkErr('The number is not an integer number');
+        if (!$isInt && $triggerError) throw new TrunkErr($input . ' is not an integer number.');
         if (!$isInt) return null;
 
         return filter_var($input, FILTER_SANITIZE_NUMBER_INT);
@@ -178,12 +178,12 @@ class Filter {
 
         // let's see if we have got any illegal character in the input
         if (!preg_match('#^(-?\d+\.\d+)#', $input)) {
-            if ($triggerError) throw new TrunkErr('Float number has illegal characters.');
+            if ($triggerError) throw new TrunkErr('Float number has illegal characters in ' . $input);
             return null;
         }
 
         $isFloat = filter_var($input, FILTER_VALIDATE_FLOAT);
-        if (!$isFloat && $triggerError) throw new TrunkErr('The number is not a floating number');
+        if (!$isFloat && $triggerError) throw new TrunkErr($input . ' is not a floating number.');
         if (!$isFloat) return null;
 
         return $input;

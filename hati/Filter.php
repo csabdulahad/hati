@@ -174,7 +174,7 @@ class Filter {
      * it will return null. on successful pass it returns the number.
      * */
     public static function float(string|float $input, bool $triggerError = false): ?float {
-        if (!preg_match('#\.#', $input)) $input .= $input .'.0';
+        if (!preg_match('#\.#', $input)) $input .= '.0';
 
         // let's see if we have got any illegal character in the input
         if (!preg_match('#^(-?\d+\.\d+)#', $input)) {

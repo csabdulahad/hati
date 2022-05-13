@@ -2,9 +2,11 @@
 
 namespace hati;
 
+use DateInterval;
 use DateTime;
 use DateTimeInterface;
 use DateTimeZone;
+use Exception;
 use hati\trunk\TrunkErr;
 use Throwable;
 
@@ -70,7 +72,7 @@ class Shomoy {
      * 1 is returned when this shomoy is ahead of the comparing datetime.
      * 0 is returned when both of the datetime are equal.
      */
-    public function compare(DateTime $dateTime): int {
+    public function compareDateTime(DateTime $dateTime): int {
         // get micro-seconds from both objects
         $thisSec = strtotime($this -> dateTime -> format(DateTimeInterface::ISO8601)) * 1000;
         $thatSec = strtotime($dateTime -> format(DateTimeInterface::ISO8601)) * 1000;
@@ -79,6 +81,112 @@ class Shomoy {
         if ($thisSec == $thatSec) return 0;
         else if ($thisSec < $thatSec) return -1;
         else return 1;
+    }
+
+    /**
+     * A shomoy object can compare itself with other shomoy object. Internally it
+     * uses the @link compareDateTime() function to calculate the difference in
+     * timestamp and returns either 0, 1, or -1 based on the calculation.
+     *
+     * @param Shomoy $shomoy The Shomoy object to calculate against
+     *
+     * @return int the difference between two shomoy objects
+     * */
+    public function compare(Shomoy $shomoy): int {
+        return $this -> compareDateTime($shomoy -> getDateTime());
+    }
+
+    /*
+     * The difference between two shomoy objects can be calculated either in
+     * milliseconds(which is default) or microseconds(timestamp) value. It always
+     * finds the difference from $this object to passed one.
+     *
+     * @param Shomoy $shomoy the Shomoy object to calculate the difference against
+     * @param bool $inMilli indicates whether to calculate in milliseconds or microseconds
+     *
+     * @return int the difference between two Shomoy objects.
+     * */
+    public function diff(Shomoy $shomoy, bool $inMilli = true): int {
+        if ($inMilli) return $this -> getMilliSeconds() - $shomoy -> getMilliSeconds();
+        else return $this -> getTimestamp() - $shomoy -> getTimestamp();
+    }
+
+    /**
+     * Any number of seconds can be added to the Shomoy object using this method.
+     *
+     * @param int $sec number of seconds to be added.
+     * */
+    public function addSec(int $sec) {
+        try {
+            $interval = new DateInterval(sprintf('PT%dS', $sec));
+            $this -> dateTime -> add($interval);
+        } catch (Exception $e) {
+        }
+    }
+
+    /**
+     * Any number of minutes can be added to the Shomoy object using this method.
+     *
+     * @param int $min number of minutes to be added.
+     * */
+    public function addMin(int $min) {
+        try {
+            $interval = new DateInterval(sprintf('PT%dM', $min));
+            $this -> dateTime -> add($interval);
+        } catch (Exception $e) {
+        }
+    }
+
+    /**
+     * Any number of hours can be added to the Shomoy object using this method.
+     *
+     * @param int $hour number of hours to be added.
+     * */
+    public function addHour(int $hour) {
+        try {
+            $interval = new DateInterval(sprintf('PT%dH', $hour));
+            $this -> dateTime -> add($interval);
+        } catch (Exception $e) {
+        }
+    }
+
+    /**
+     * Any number of days can be added to the Shomoy object using this method.
+     *
+     * @param int $day number of days to be added.
+     * */
+    public function addDay(int $day) {
+        try {
+            $interval = new DateInterval(sprintf('P%dD', $day));
+            $this -> dateTime -> add($interval);
+        } catch (Exception $e) {
+        }
+    }
+
+    /**
+     * Any number of months can be added to the Shomoy object using this method.
+     *
+     * @param int $month number of months to be added.
+     * */
+    public function addMonth(int $month) {
+        try {
+            $interval = new DateInterval(sprintf('P%dM', $month));
+            $this -> dateTime -> add($interval);
+        } catch (Exception $e) {
+        }
+    }
+
+    /**
+     * Any number of years can be added to the Shomoy object using this method.
+     *
+     * @param int $year number of years to be added.
+     * */
+    public function addYear(int $year) {
+        try {
+            $interval = new DateInterval(sprintf('P%dY', $year));
+            $this -> dateTime -> add($interval);
+        } catch (Exception $e) {
+        }
     }
 
     /**

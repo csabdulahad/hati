@@ -137,9 +137,13 @@ class Filter {
      * it will return null. on successful pass it returns the sanitized integer.
      * */
     public static function int(string|int $input, bool $triggerError = false): ?int {
-        // let's see if we have got any illegal character in the input
-        if (preg_match_all('#[^0-9|\-?]#'. 'mi', $input) > 0) {
-            if ($triggerError) throw new TrunkErr('Number has illegal characters in ' . $input);
+        // let's see if we have got any illegal character in the input by removing a
+        // valid either signed or unsigned value from the the input then assess the
+        // length of it. For a valid integer of either signed or unsigned it should
+        // have a length of zero after filtering.
+        $filter = strlen(preg_replace('#-?\d+#', '', $input));
+        if ($filter > 0) {
+            if ($triggerError) throw new TrunkErr('Number has illegal characters.');
             return null;
         }
 
@@ -174,11 +178,16 @@ class Filter {
      * it will return null. on successful pass it returns the number.
      * */
     public static function float(string|float $input, bool $triggerError = false): ?float {
+        // add the floating point place if it has not
         if (!preg_match('#\.#', $input)) $input .= '.0';
 
-        // let's see if we have got any illegal character in the input
-        if (!preg_match('#^(-?\d+\.\d+)#', $input)) {
-            if ($triggerError) throw new TrunkErr('Float number has illegal characters in ' . $input);
+        // let's see if we have got any illegal character in the input by removing a
+        // valid either signed or unsigned value from the the input then assess the
+        // length of it. For a valid floating of either signed or unsigned it should
+        // have a length of zero after filtering.
+        $filter = strlen(preg_replace('#-?\d+\.\d+#', '', $input));
+        if ($filter > 0) {
+            if ($triggerError) throw new TrunkErr('Float number has illegal characters.');
             return null;
         }
 

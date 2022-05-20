@@ -239,10 +239,19 @@ class Util {
      * directory in the root folder of the server. This can be changes using
      * folder argument. Folder name doesn't have any trailing slashes.
      *
+     * Any global css styling can be linked within any HTML document using
+     * this method. All the common styling must be placed in style/common.css
+     * file.
+     *
      * @param string $files comma separated files names without css extension.
      * @param string $folder any folder structure where the css files are residing.
      * */
-    public static function css(string $files, string $folder = 'style'): void {
+    public static function css(string $files = '', string $folder = 'style'): void {
+        if(file_exists(self::absolutePath("$folder/common.css"))) {
+            echo sprintf('<link rel="stylesheet" href="%s/%s.css">', $folder, 'common');
+        }
+
+        if (empty($files)) return;
         $files = explode(',', $files);
         foreach ($files as $file) {
             echo sprintf('<link rel="stylesheet" href="%s/%s.css">', $folder, trim($file));
@@ -255,10 +264,18 @@ class Util {
      * directory in the root folder of the server. This can be changes using
      * folder argument. Folder name doesn't have any trailing slashes.
      *
+     * Any global JS code, functions or variables can be placed in the js/global.js
+     * file to be included within any HTML document.
+     *
      * @param string $files comma separated files names without js extension.
      * @param string $folder any folder structure where the js files are residing.
      * */
-    public static function js(string $files, string $folder = 'js'): void {
+    public static function js(string $files = '', string $folder = 'js'): void {
+        if(file_exists(self::absolutePath("$folder/global.js"))) {
+            echo sprintf('<script src="%s/%s.js"></script>', $folder, 'global');
+        }
+
+        if (empty($files)) return;
         $files = explode(',', $files);
         foreach ($files as $file) {
             echo sprintf('<script src="%s/%s.js"></script>', $folder, trim($file));

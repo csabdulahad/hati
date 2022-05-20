@@ -1,0 +1,7 @@
+/**
+* Any global project related common CSS styling can be placed within
+* this file. Hati will automatically link to  this file where it finds
+* the @link Util::css() method in the HTML document. It will be the
+* first css to be linked via Util::css() method.
+* */
+

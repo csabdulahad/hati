@@ -216,6 +216,16 @@ class Response {
         exit(self::reportJSON($msg, $status, $level));
     }
 
+    // when the Hati has dev_API_delay flag turned on, then it adds additional
+    // DE_API_DELAY to the response object to indicate/remind the developer for
+    // future work or production release.
+    private static function addDevProperties(array &$buffer): void {
+        if (Hati::dev_API_benchmark())
+            $buffer['exe_time'] = sprintf('%.4f', microtime(true) - Hati::benchmarkStart());
+
+        if (Hati::dev_api_delay()) $buffer['delay_time'] = Hati::dev_api_delay();
+    }
+
     public static function reportOk(string $msg = '', int $lvl = self::LVL_USER) {
         self::report($msg, Response::SUCCESS, $lvl);
     }
@@ -252,6 +262,12 @@ class Response {
         $output[self::$KEY_STATUS] = $status;
         $output[self::$KEY_LEVEL] = $level;
         $output[self::$KEY_MSG] = $message;
+
+        // check whether we have any API testing properties to perform
+        $delay = Hati::dev_api_delay();
+        if ($delay > 0) sleep($delay);
+        self::addDevProperties($output);
+
         return $output;
     }
 

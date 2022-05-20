@@ -40,6 +40,18 @@ const CONFIG = [
     'mailer_name'                       =>          '',
     'mailer_reply_to'                   =>          '',
 
+    // API benchmarking. When it is turned on the Hati, after loading dependencies
+    // marks the starting point of the benchmark in the Hati constructor. After the
+    // script execution before outputting the JSON buffer, it calculates the benchmark
+    // time and adds to the response object.
+    'dev_API_benchmark'                 =>          false,
+
+    // API testing delay; API output wait specified number of sec before the output.
+    // Hati adds this in response object of the output to indicate the developers
+    // about this delay so that the developers don't accidentally forget or remove
+    // the delay from the production release.
+    'dev_API_delay'                     =>          0, // sec in integer
+
     // settings for file extension and the Kuli uploader
 
     'doc_config'                        => [

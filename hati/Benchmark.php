@@ -74,7 +74,7 @@ class Benchmark {
         $ins = self::get();
         $time = $ins -> getMarking();
         if ($time == null) echo 'Execution time: RST';
-        else echo sprintf('%s %.3f', $msg, $time);
+        else echo sprintf('%s %.4f', $msg, $time);
     }
 
 }

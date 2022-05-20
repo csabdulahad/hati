@@ -47,12 +47,19 @@ use Throwable;
 class Hati {
 
     // version
-    private static string $version = '2.1';
+    private static string $version = '3.0';
+
+    private static float $BENCHMARK_START = 0;
 
     // This is the first method call of the server. It initializes the environment
     // as per configuration and resolve dependencies.
     public static function start(): void {
+
         self::setLoader();
+
+        // start the benchmark if Hati is setup to include dev benchmark
+        if(Hati::dev_API_benchmark()) self::$BENCHMARK_START = microtime(true);
+
         date_default_timezone_set(self::defaultTimezone());
 
         if (CONFIG['session_auto_start']) {
@@ -128,6 +135,14 @@ class Hati {
 
     /* the getters for the configurations */
 
+    public static function dev_API_benchmark(): bool {
+        return CONFIG['dev_API_benchmark'];
+    }
+
+    public static function dev_api_delay(): int {
+        return CONFIG['dev_API_delay'];
+    }
+
     public static function docConfig(): array {
         return CONFIG['doc_config'];
     }
@@ -202,6 +217,10 @@ class Hati {
 
     public static function configObj(): array {
         return CONFIG;
+    }
+
+    public static function benchmarkStart(): float {
+        return self::$BENCHMARK_START;
     }
 
     private static function printHati(): void {

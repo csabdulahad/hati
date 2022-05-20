@@ -283,6 +283,27 @@ class Util {
     }
 
     /**
+     * Any php files inside the inc folder on project root folder can be included
+     * simply passing their names without php extension at the end. Before each
+     * inclusion it checks whether the files exists or not. If triggerError is on,
+     * then it throws exception, otherwise it ignores that inclusion.
+     *
+     * @param string $files comma separated php files names to be included.
+     * @param string $folder any folder structure where the php files are residing.
+     * @param bool $triggerError indicates whether to throw exception on unresolved file.
+     * */
+    public static function inc(string $files, string $folder = 'inc', bool $triggerError = false): void {
+        $files = explode(',', $files);
+        foreach ($files as $file) {
+            if(!file_exists(self::absolutePath('inc/' . $file . '.php'))) {
+                if ($triggerError) throw new TrunkErr('Failed to include '. $file .'.php');
+                continue;
+            }
+            include(sprintf('%s/%s.php', $folder, trim($file)));
+        }
+    }
+
+    /**
      * The absolute path to a file can sometime be problematic to extract. Using this
      * method it can be done easily. This uses @link Hati::docRoot() method internally
      * to append the server document root to the path to point the file absolutely.

@@ -192,11 +192,11 @@ class Util {
     public static function titleTag(string $title = '', bool $capitalize = true, string $separatorInFileName = '-') {
         if (empty($title)) $title = self::fileTitle($capitalize, $separatorInFileName);
 
-        echo '<meta charset="UTF-8">';
-        echo '<title>'. $title .'</title>';
+        echo '    <meta charset="UTF-8">'. PHP_EOL;
+        echo '    <title>'. $title .'</title>'. PHP_EOL;
 
         // add favicon to the page
-        echo '<link rel="icon" type="image/x-icon" href="'. Hati::favicon() .'">';
+        echo '    <link rel="icon" type="image/x-icon" href="'. Hati::favicon() .'">'. PHP_EOL;
     }
 
     /**
@@ -214,13 +214,13 @@ class Util {
      * */
     public static function css(string $files = '', string $folder = 'style'): void {
         if(file_exists(self::absolutePath("$folder/common.css"))) {
-            echo sprintf('<link rel="stylesheet" href="%s/%s.css">' . PHP_EOL, $folder, 'common');
+            echo sprintf('    <link rel="stylesheet" href="%s/%s.css">' . PHP_EOL, $folder, 'common');
         }
 
         if (empty($files)) return;
         $files = explode(',', $files);
         foreach ($files as $file) {
-            echo sprintf('<link rel="stylesheet" href="%s/%s.css">' . PHP_EOL, $folder, trim($file));
+            echo sprintf('    <link rel="stylesheet" href="%s/%s.css">' . PHP_EOL, $folder, trim($file));
         }
     }
 
@@ -238,13 +238,13 @@ class Util {
      * */
     public static function js(string $files = '', string $folder = 'js'): void {
         if(file_exists(self::absolutePath("$folder/global.js"))) {
-            echo sprintf('<script src="%s/%s.js"></script>' . PHP_EOL, $folder, 'global');
+            echo sprintf('    <script src="%s/%s.js"></script>' . PHP_EOL, $folder, 'global');
         }
 
         if (empty($files)) return;
         $files = explode(',', $files);
         foreach ($files as $file) {
-            echo sprintf('<script src="%s/%s.js"></script>' . PHP_EOL, $folder, trim($file));
+            echo sprintf('    <script src="%s/%s.js"></script>' . PHP_EOL, $folder, trim($file));
         }
     }
 

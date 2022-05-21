@@ -120,40 +120,6 @@ class Util {
     }
 
     /**
-     * This method adds given seconds, minutes, hours and day as seconds to current time. When no
-     * argument is set, then it returns current in seconds. All the argument's value will be
-     * converted into seconds before they gets added to the current time in second except the sec
-     * argument.
-     *
-     * All the arguments values have to be of type integer. If not, then an exception is thrown.
-     *
-     * This method can come in handy in situations like setting cookie value with expiration,
-     * calculating future date time etc.
-     *
-     * @param int $sec Number of seconds is to be added to the current time in second.
-     * @param int $min Number of minutes is to be added to the current time in second.
-     * @param int $hour Number of hours is to be added to the current time in second.
-     * @param int $day Number of days is to be added to the current time in second.
-     *
-     * @return int Seconds added to the current time as defined by the arguments.
-     *
-     * @throws TrunkErr If all the arguments are not of type integer
-     * */
-    public static function secFromNowTo(int $sec = 0, int $min = 0, int $hour = 0, int $day = 0): int {
-        if (!is_int($day) || !is_int($hour) || !is_int($min) || !is_int($sec))
-            throw new TrunkErr('Make sure day, hour and minute are of type int.');
-
-        $now = time();
-
-        if ($sec != 0) $now += $sec;
-        if ($min != 0) $now += $min * 60;
-        if ($hour != 0) $now += $hour * 60 * 60;
-        if ($day != 0) $now += $day * 24 * 60 * 60;
-
-        return $now;
-    }
-
-    /**
      * A random token can be generated using this method. Default length
      * of the token is 11. It uses shuffling of time value after md5
      * encryption. However, it doesn't guarantee the uniqueness of the token.
@@ -248,13 +214,13 @@ class Util {
      * */
     public static function css(string $files = '', string $folder = 'style'): void {
         if(file_exists(self::absolutePath("$folder/common.css"))) {
-            echo sprintf('<link rel="stylesheet" href="%s/%s.css">', $folder, 'common');
+            echo sprintf('<link rel="stylesheet" href="%s/%s.css">' . PHP_EOL, $folder, 'common');
         }
 
         if (empty($files)) return;
         $files = explode(',', $files);
         foreach ($files as $file) {
-            echo sprintf('<link rel="stylesheet" href="%s/%s.css">', $folder, trim($file));
+            echo sprintf('<link rel="stylesheet" href="%s/%s.css">' . PHP_EOL, $folder, trim($file));
         }
     }
 
@@ -272,13 +238,13 @@ class Util {
      * */
     public static function js(string $files = '', string $folder = 'js'): void {
         if(file_exists(self::absolutePath("$folder/global.js"))) {
-            echo sprintf('<script src="%s/%s.js"></script>', $folder, 'global');
+            echo sprintf('<script src="%s/%s.js"></script>' . PHP_EOL, $folder, 'global');
         }
 
         if (empty($files)) return;
         $files = explode(',', $files);
         foreach ($files as $file) {
-            echo sprintf('<script src="%s/%s.js"></script>', $folder, trim($file));
+            echo sprintf('<script src="%s/%s.js"></script>' . PHP_EOL, $folder, trim($file));
         }
     }
 

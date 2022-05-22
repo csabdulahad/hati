@@ -192,7 +192,7 @@ class Util {
     public static function titleTag(string $title = '', bool $capitalize = true, string $separatorInFileName = '-') {
         if (empty($title)) $title = self::fileTitle($capitalize, $separatorInFileName);
 
-        echo '    <meta charset="UTF-8">'. PHP_EOL;
+        echo '<meta charset="UTF-8">'. PHP_EOL;
         echo '    <title>'. $title .'</title>'. PHP_EOL;
 
         // add favicon to the page
@@ -358,15 +358,17 @@ class Util {
      * By default, it  shows message as info and hiders the toast after the 2sec delay.
      *
      * @param string $msg the message.
+     * @param string $to optional url for redirection where the toast will be shown.
      * @param int $type toast type for success, info, warning and error.
      * @param string $autoHide whether to auto hide the toast.
      * @param int $delay the number seconds the toast will be displayed for.
      * */
-    public static function toast(string $msg, int $type = 2, string $autoHide = 'true', int $delay = 2) {
+    public static function toast(string $msg, string $to = '', int $type = Response::WARNING, string $autoHide = 'true', int $delay = 2) {
         Biscuit::giveAway('toast_msg', $msg, httpOnly: false);
         Biscuit::giveAway('toast_type', $type, httpOnly: false);
         Biscuit::giveAway('toast_auto_hide', $autoHide, httpOnly: false);
         Biscuit::giveAway('toast_delay', $delay, httpOnly: false);
+        if (!empty($to)) header("Location: $to");
     }
 
 }

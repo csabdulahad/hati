@@ -40,6 +40,7 @@
           <option value="http://primefaces.org/ui" />
           <option value="http://tiles.apache.org/" />
           <option value="http://%s" />
+          <option value="http://" />
         </list>
       </option>
     </inspection_tool>

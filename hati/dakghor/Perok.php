@@ -99,11 +99,11 @@ class Perok {
      * appending by using @link Hati::docRoot() method internally.
      *
      * @param string $filePath The file name with extension and path within the server root folder.
-     * @param bool $triggerError Indicate whether to throw exception upon encountering any error.
+     * @param bool $throwErr Indicate whether to throw exception upon encountering any error.
      *
      * @return bool Returns true if it can successfully compose message body from the HTML file.
      * */
-    public static function composeFromHtml(string $filePath, bool $triggerError = false): bool {
+    public static function composeFromHtml(string $filePath, bool $throwErr = false): bool {
         $ins = self::get();
         $ins -> phpMailer -> isHTML();
         $path = Hati::neutralizeSeparator(Hati::docRoot(). $filePath);
@@ -111,7 +111,7 @@ class Perok {
             $ins -> phpMailer -> msgHTML(file_get_contents($path));
             return true;
         } catch (Exception $e) {
-            if ($triggerError) throw new TrunkErr('Failed composing HTML page as body: ' . $e -> getMessage());
+            if ($throwErr) throw new TrunkErr('Failed composing HTML page as body: ' . $e -> getMessage());
             return false;
         }
     }
@@ -135,15 +135,15 @@ class Perok {
      *
      * @param string $filePath The file name with extension and path within the server root folder.
      * @param string $fileName File name as it will be shown in the email client.
-     * @param bool $triggerError Indicate whether to throw exception upon encountering any error.
+     * @param bool $throwErr Indicate whether to throw exception upon encountering any error.
      * */
-    public static function attachFile(string $filePath, string $fileName = '', bool $triggerError = false) {
+    public static function attachFile(string $filePath, string $fileName = '', bool $throwErr = false) {
         $ins = self::get();
         $path = Hati::neutralizeSeparator(Hati::docRoot() . $filePath);
         try {
             $ins -> phpMailer -> addAttachment($path, $fileName);
         } catch (Exception $e) {
-            if ($triggerError) throw new TrunkErr('Failed attaching file: ' . $e -> getMessage());
+            if ($throwErr) throw new TrunkErr('Failed attaching file: ' . $e -> getMessage());
         }
     }
 
@@ -154,15 +154,15 @@ class Perok {
      *
      * @param string $filePath The file name with extension and path within the server root folder.
      * @param string $fileName Argument for CID image to be used inside the HTML message.
-     * @param bool $triggerError Indicate whether to throw exception upon encountering any error.
+     * @param bool $throwErr Indicate whether to throw exception upon encountering any error.
      * */
-    public static function embedCIDImage(string $filePath, string $fileName, bool $triggerError = false): void {
+    public static function embedCIDImage(string $filePath, string $fileName, bool $throwErr = false): void {
         $ins = self::get();
         try {
             $path = Hati::neutralizeSeparator(Hati::docRoot() . $filePath);
             $ins -> phpMailer -> addEmbeddedImage($path, $fileName);
         } catch (Exception $e) {
-            if ($triggerError) throw new TrunkErr('Failed embedding image: ' . $e -> getMessage());
+            if ($throwErr) throw new TrunkErr('Failed embedding image: ' . $e -> getMessage());
         }
     }
 
@@ -176,11 +176,11 @@ class Perok {
      * @param string $to The email address of the recipient.
      * @param string $subject The subject for the email.
      * @param string $replyTo The email for reply-to value.
-     * @param bool $triggerError Indicate whether to throw exception upon encountering error.
+     * @param bool $throwErr Indicate whether to throw exception upon encountering error.
      *
      * @return bool Returns true when message was sent to the recipient; false otherwise.
      * */
-    public static function send(string $to, string $subject, string $replyTo = '', bool $triggerError = false): bool {
+    public static function send(string $to, string $subject, string $replyTo = '', bool $throwErr = false): bool {
         try {
             $perok = self::get();
 
@@ -191,7 +191,7 @@ class Perok {
             $perok -> phpMailer -> addAddress($to);
             return self::phpMailerSend($perok, $subject);
         } catch (Exception $e) {
-            if ($triggerError) throw new TrunkErr('Failed sending email: ' . $e -> getMessage());
+            if ($throwErr) throw new TrunkErr('Failed sending email: ' . $e -> getMessage());
             return false;
         }
     }
@@ -206,18 +206,18 @@ class Perok {
      *
      * @param string $addresses Comma seperated emails as recipients.
      * @param string $subject The subject which stays same for all the recipients.
-     * @param bool $triggerError Indicate whether to throw exception upon encountering error.
+     * @param bool $throwErr Indicate whether to throw exception upon encountering error.
      *
      * @return bool Returns true when message was sent to all the recipients; false otherwise.
      * */
-    public static function sendBulk(string $addresses, string $subject = '', bool $triggerError = false): bool {
+    public static function sendBulk(string $addresses, string $subject = '', bool $throwErr = false): bool {
         try {
             $perok = self::get();
             $emails = explode(',', $addresses);
             foreach ($emails as $email) $perok -> phpMailer -> addBCC($email);
             return self::phpMailerSend($perok, $subject);
         } catch (Exception $e) {
-            if ($triggerError) throw new TrunkErr('Failed sending bulk emails: ' . $e -> getMessage());
+            if ($throwErr) throw new TrunkErr('Failed sending bulk emails: ' . $e -> getMessage());
             return false;
         }
     }

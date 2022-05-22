@@ -47,7 +47,7 @@ use Throwable;
 class Hati {
 
     // version
-    private static string $version = '3.3';
+    private static string $version = '4.0';
 
     private static float $BENCHMARK_START = 0;
 
@@ -68,6 +68,11 @@ class Hati {
             session_set_cookie_params(['SameSite' => 'Strict', 'Secure' => true]);
             session_start();
         }
+
+        // include global php code file here
+        $globalPHP = self::global_php();
+        $globalPHPPath = Util::absolutePath($globalPHP . '.php');
+        if (!empty($globalPHP) && file_exists($globalPHPPath)) require_once $globalPHPPath;
 
         if (CONFIG['welcome_hati']) self::printHati();
     }
@@ -134,6 +139,10 @@ class Hati {
     }
 
     /* the getters for the configurations */
+
+    public static function global_php(): string {
+        return CONFIG['global_php'];
+    }
 
     public static function dev_API_benchmark(): bool {
         return CONFIG['dev_API_benchmark'];

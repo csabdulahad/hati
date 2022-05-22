@@ -36,14 +36,14 @@ class Template {
      *
      * @param string $tlpFilePath Template file name without extension and directory structure.
      * @param bool $print Specify whether to print out the rendered template or return.
-     * @param bool $triggerError Indicates whether to throw error.
+     * @param bool $throwErr Indicates whether to throw error.
      *
      * @return ?string Either returns or print out the rendered template file based on argument value.
      * */
-    public static function render(string $tlpFilePath, array $params = [], bool $print = false, bool $triggerError = false): ?string {
+    public static function render(string $tlpFilePath, array $params = [], bool $print = false, bool $throwErr = false): ?string {
         $path = Util::absolutePath($tlpFilePath) . '.tlp.php';
         if (!file_exists($path)) {
-            if ($triggerError) throw new TrunkErr("Couldn't locate the template file.");
+            if ($throwErr) throw new TrunkErr("Couldn't locate the template file.");
             return null;
         }
 
@@ -71,10 +71,10 @@ class Template {
      * the parameter value in a safe manner.
      *
      * @param string $key The key for the parameter.
-     * @param mixed $defaultValue The value to be returned in case of undefined key.
+     * @param mixed $defVal The value to be returned in case of undefined key.
      * */
-    public static function w(string $key, mixed $defaultValue = null): void {
-        echo self::g($key, $defaultValue);
+    public static function w(string $key, mixed $defVal = null): void {
+        echo self::g($key, $defVal);
     }
 
     /**
@@ -83,12 +83,12 @@ class Template {
      * argument.
      *
      * @param string $key The key for the parameter.
-     * @param mixed $defaultValue The value to be returned in case of undefined key.
+     * @param mixed $defVal The value to be returned in case of undefined key.
      *
      * @return mixed Returns the data for the key in the parameter buffer.
      * */
-    public static function g(string $key, mixed $defaultValue = null): mixed {
-        return self::$params[$key] ?? $defaultValue;
+    public static function g(string $key, mixed $defVal = null): mixed {
+        return self::$params[$key] ?? $defVal;
     }
 
 }

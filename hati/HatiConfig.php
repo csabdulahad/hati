@@ -24,6 +24,11 @@ const CONFIG = [
     // root folder name without any slashes either at front or at the end
     'root_folder'                       =>          '',
 
+    // php code file which is found every where throughout the project.
+    // add the path to the file with directory structure and file name
+    // without .php extension.
+    'global_php'                        =>          '',
+
     // database configuration
     'db_host'                           =>          '',
     'db_name'                           =>          '',

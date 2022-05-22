@@ -93,24 +93,24 @@ class Response {
      * the array and then add the value to the end of the array.
      *
      * @param string $arrKey <p>the name of the array</p>
-     * @param mixed $value <p>any value you want to add to the array. passed value will be parsed
+     * @param mixed $val <p>any value you want to add to the array. passed value will be parsed
      * to obtain the right type.</p>
      * @return void
      * */
-    public function addToArr(string $arrKey, mixed $value) {
+    public function addToArr(string $arrKey, mixed $val) {
         // first define the array with given key if we don't have already
         $this -> addKey($arrKey);
         if (!is_array($this -> output[$arrKey])) $this -> output[$arrKey] = [];
 
         // check whether the value is an array of map; if yes then add them iteratively
-        if (is_array($value)) foreach ($value as $map) $this -> addToArray($arrKey, $map);
+        if (is_array($val)) foreach ($val as $map) $this -> addToArray($arrKey, $map);
 
         // otherwise add the value normally
-        else $this -> addToArray($arrKey, $value);
+        else $this -> addToArray($arrKey, $val);
     }
 
-    private function addToArray(string $arrKey, $value) {
-        $this -> output[$arrKey][] =  $this -> getTypedValue($value);
+    private function addToArray(string $arrKey, $val) {
+        $this -> output[$arrKey][] =  $this -> getTypedValue($val);
     }
 
     /**
@@ -146,8 +146,8 @@ class Response {
      * @param $value <p>The value which has to be a map</p>
      * @return void
      * */
-    private function checkMap($value) {
-        if (!is_object($value) && !is_array($value))
+    private function checkMap($val) {
+        if (!is_object($val) && !is_array($val))
             throw new InvalidArgumentException('The value has to be a map of either array or object.');
     }
 
@@ -159,13 +159,13 @@ class Response {
      * @param $mapKey <p>The name of the property of the JSON output object which will hold
      * key-value pari property.</p>
      * @param string $key <p>The name of the property.</p>
-     * @param mixed $value <p>The value of the property.</p>
+     * @param mixed $val <p>The value of the property.</p>
      * @return void
      */
-    public function addToMap(string $mapKey, string $key, mixed $value) {
+    public function addToMap(string $mapKey, string $key, mixed $val) {
         $this -> addKey($mapKey);
         if ($this -> output[$mapKey] == null) $this -> output[$mapKey] = [];
-        $this -> output[$mapKey][$key] = $value;
+        $this -> output[$mapKey][$key] = $val;
     }
 
     /**
@@ -201,8 +201,8 @@ class Response {
         return json_encode($this -> output);
     }
 
-    public function reply($msg = '', $status = Response::SUCCESS, $level = Response::LVL_USER) {
-        $resObj = self::addResponseObject($status, $level, $msg);
+    public function reply($msg = '', $stat = Response::SUCCESS, $lvl = Response::LVL_USER) {
+        $resObj = self::addResponseObject($stat, $lvl, $msg);
         $this -> add(self::$KEY_RESPONSE, $resObj);
 
 
@@ -211,9 +211,9 @@ class Response {
         exit($this -> getJSON());
     }
 
-    public static function report($msg,  $status, $level) {
+    public static function report($msg, $stat, $lvl) {
         if (Hati::asJSONOutput()) header('Content-Type: application/json');
-        exit(self::reportJSON($msg, $status, $level));
+        exit(self::reportJSON($msg, $stat, $lvl));
     }
 
     // when the Hati has dev_API_delay flag turned on, then it adds additional
@@ -258,10 +258,10 @@ class Response {
         return json_encode($output);
     }
 
-    private static function addResponseObject($status, $level, $message): array {
-        $output[self::$KEY_STATUS] = $status;
-        $output[self::$KEY_LEVEL] = $level;
-        $output[self::$KEY_MSG] = $message;
+    private static function addResponseObject($stat, $lvl, $msg): array {
+        $output[self::$KEY_STATUS] = $stat;
+        $output[self::$KEY_LEVEL] = $lvl;
+        $output[self::$KEY_MSG] = $msg;
 
         // check whether we have any API testing properties to perform
         $delay = Hati::dev_api_delay();
@@ -271,9 +271,9 @@ class Response {
         return $output;
     }
 
-    private function getTypedValue($value) {
-        if (!is_numeric($value))  return $value;
-        return strpos($value, ".") ? (float) $value : (int) $value;
+    private function getTypedValue($val) {
+        if (!is_numeric($val))  return $val;
+        return strpos($val, ".") ? (float) $val : (int) $val;
     }
 
 }

@@ -25,12 +25,12 @@ class Param {
         return ucfirst(str_replace('_', ' ', $string));
     }
 
-    public static function invalidGet(string $params, bool $triggerError = false): string|bool {
-        return self::scanInvalid($params, $_GET, $triggerError);
+    public static function invalidGet(string $params, bool $throwErr = false): string|bool {
+        return self::scanInvalid($params, $_GET, $throwErr);
     }
 
-    public static function invalidPost(string $params, bool $triggerError = false): string|bool {
-        return self::scanInvalid($params, $_POST, $triggerError);
+    public static function invalidPost(string $params, bool $throwErr = false): string|bool {
+        return self::scanInvalid($params, $_POST, $throwErr);
     }
 
     /**
@@ -47,19 +47,19 @@ class Param {
      *
      * @param string $params parameter list seperated by commas.
      * @param array $paramArray which super-global array to scan.
-     * @param bool $triggerError indicates whether to throw error or not.
+     * @param bool $throwErr indicates whether to throw error or not.
      *
      * @return string|bool returns true of string, the param, otherwise false when the trigger error
      * is not set. It throws error when trigger is set for failed param.
      */
-    private static function scanInvalid(string $params, array $paramArray, bool $triggerError): string|bool {
+    private static function scanInvalid(string $params, array $paramArray, bool $throwErr): string|bool {
         $list = explode(',', $params);
         if ($list < 1) throw new TrunkErr('No param to scan');
 
         foreach ($list as $param) {
             $verify = self::verifyParam($paramArray, trim($param));
 
-            if ($triggerError && $verify < 1) {
+            if ($throwErr && $verify < 1) {
                 $beautified = self::beautifyString($param);
                 $message = "$beautified is required.";
                 throw new TrunkErr($message);

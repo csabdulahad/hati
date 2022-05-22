@@ -69,9 +69,9 @@ class Kuli {
         $this -> maxSize = $mb * 1000000;
     }
 
-    public function __construct(bool $uniqueName = false, bool $triggerError = false) {
+    public function __construct(bool $uniqueName = false, bool $throwErr = false) {
         $this -> uniqueName = $uniqueName;
-        $this -> triggerError = $triggerError;
+        $this -> triggerError = $throwErr;
         $this -> rootFolder = Hati::docRoot();
         $this -> loadConfig();
     }

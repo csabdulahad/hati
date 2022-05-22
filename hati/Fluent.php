@@ -78,14 +78,14 @@ class Fluent {
      * before returning.
      *
      * @param $key string the key for the value
-     * @param $defaultValue mixed the value to be  returned when the key is
+     * @param $defVal mixed the value to be returned when the key is
      * not set in the result set.
      *
      * @return mixed the value defined by the key
      */
-    public static function datum(string $key, mixed $defaultValue = null): mixed {
+    public static function datum(string $key, mixed $defVal = null): mixed {
         $datum = Fluent::datumArr();
-        return $datum[$key] ?? $defaultValue;
+        return $datum[$key] ?? $defVal;
     }
 
     /**
@@ -251,20 +251,20 @@ class Fluent {
      * it only gets/access the first element of the array as this method is
      * used to get one single array result set object of the query.
      *
-     * @param bool $triggerError indicates whether to throw error
+     * @param bool $throwErr indicates whether to throw error
      *
      * @return array it returns the array containing the result set of the query
      */
-    public static function datumArr(bool $triggerError = false): array {
+    public static function datumArr(bool $throwErr = false): array {
         $dataArr = Fluent::get() -> dataArr();
         if (count($dataArr) == 0) {
-            if ($triggerError) throw new TrunkErr("Data don't have any datum array.");
+            if ($throwErr) throw new TrunkErr("Data don't have any datum array.");
             else return [];
         }
 
         $datumArr = $dataArr[0];
         if ($datumArr == null || count($datumArr) == 0) {
-            if ($triggerError) throw new TrunkErr('Datum array is empty or null.');
+            if ($throwErr) throw new TrunkErr('Datum array is empty or null.');
             else return [];
         }
 
@@ -277,20 +277,20 @@ class Fluent {
      * Then it only gets/access the first element of the array as this method is
      * used to get one single result set object of the query.
      *
-     * @param bool $triggerError indicates whether to throw error
+     * @param bool $throwErr indicates whether to throw error
      *
      * @return stdClass it returns the object containing the result set of the query
      */
-    public static function datumObj(bool $triggerError = false): stdClass {
+    public static function datumObj(bool $throwErr = false): stdClass {
         $dataObj = Fluent::get() -> dataObj();
         if (count($dataObj) == 0) {
-            if ($triggerError) throw new TrunkErr('Data don\'t have any datum array.');
+            if ($throwErr) throw new TrunkErr('Data don\'t have any datum array.');
             else return new stdClass();
         }
 
         $datumObj = $dataObj[0];
         if ($datumObj == null) {
-            if ($triggerError) throw new TrunkErr('Datum object is empty or null.');
+            if ($throwErr) throw new TrunkErr('Datum object is empty or null.');
             else return new stdClass();
         }
 

@@ -123,14 +123,13 @@ class Util {
      * A random token can be generated using this method. Default length
      * of the token is 11. It uses shuffling of time value after md5
      * encryption. However, it doesn't guarantee the uniqueness of the token.
-     * Use @param int $length The length of the token.
+     * In order to get a unique id use @link uniqueId instead.
      *
+     * @param int $len The length of the token.
      * @return string A randomly generated token.
-     * *@link uniqueId instead.
-     *
      */
-    public static function randToken(int $length = 11): string {
-        return substr(str_shuffle(md5(time())),0, $length);
+    public static function randToken(int $len = 11): string {
+        return substr(str_shuffle(md5(time())),0, $len);
     }
 
     /**
@@ -256,13 +255,13 @@ class Util {
      *
      * @param string $files comma separated php files names to be included.
      * @param string $folder any folder structure where the php files are residing.
-     * @param bool $triggerError indicates whether to throw exception on unresolved file.
+     * @param bool $throwErr indicates whether to throw exception on unresolved file.
      * */
-    public static function inc(string $files, string $folder = 'inc', bool $triggerError = false): void {
+    public static function inc(string $files, string $folder = 'inc', bool $throwErr = false): void {
         $files = explode(',', $files);
         foreach ($files as $file) {
             if(!file_exists(self::absolutePath('inc/' . $file . '.php'))) {
-                if ($triggerError) throw new TrunkErr('Failed to include '. $file .'.php');
+                if ($throwErr) throw new TrunkErr('Failed to include '. $file .'.php');
                 continue;
             }
             include(sprintf('%s/%s.php', $folder, trim($file)));

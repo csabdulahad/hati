@@ -22,7 +22,10 @@ class NumFormat {
      * or a leading zero, decimal placed number format. The number can be either signed or
      * unsigned. It cleverly, add the currency signs before and in between the negative sign.
      *
-     * It prints out 0-0 on encountering error while formatting the input.
+     * Since it takes mixed as input type, there are many possibilities that it could fail to
+     * to format a number. It tries its best to format a number by forcefully casting the input
+     * into float when both normal integer and float filtering fail. It prints out 0-0 on
+     * encountering error while formatting the input.
      *
      * @param mixed $input The input which is to converted.
      * @param string $sign Any currency sign.
@@ -38,6 +41,10 @@ class NumFormat {
 
         // now see whether it is a floating number
         if ($num === null) $num = Filter::float($input);
+
+        // none of the cases happened. it is neither integer nor floating value
+        // let's see if we can apply manual approach here
+        if($num === null) $num = (float) $num;
 
         // make sure we have a number
         if ($num === null) return '0-0';

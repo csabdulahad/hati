@@ -113,80 +113,81 @@ class Shomoy {
 
     /**
      * Any number of seconds can be added to the Shomoy object using this method.
+     * Negative value can be added too.
      *
      * @param int $sec number of seconds to be added.
      * */
     public function addSec(int $sec) {
         try {
-            $interval = new DateInterval(sprintf('PT%dS', $sec));
-            $this -> dateTime -> add($interval);
+            $interval = sprintf('PT%dS', $sec);
+            $this -> adjustInterval($sec, $interval);
         } catch (Exception $e) {
         }
     }
 
     /**
      * Any number of minutes can be added to the Shomoy object using this method.
+     * Negative value can be added too.
      *
      * @param int $min number of minutes to be added.
      * */
     public function addMin(int $min) {
         try {
-            $interval = new DateInterval(sprintf('PT%dM', $min));
-            $this -> dateTime -> add($interval);
-        } catch (Exception $e) {
-        }
+            $interval = sprintf('PT%dM', $min);
+            $this -> adjustInterval($min, $interval);
+        } catch (Exception) {}
     }
 
     /**
      * Any number of hours can be added to the Shomoy object using this method.
+     * It also takes negative hours which subtracts the hours from the shomoy,
      *
      * @param int $hour number of hours to be added.
      * */
     public function addHour(int $hour) {
         try {
-            $interval = new DateInterval(sprintf('PT%dH', $hour));
-            $this -> dateTime -> add($interval);
-        } catch (Exception $e) {
-        }
+            $interval = sprintf('PT%dH', $hour);
+            $this -> adjustInterval($hour, $interval);
+        } catch (Exception) {}
     }
 
     /**
      * Any number of days can be added to the Shomoy object using this method.
+     * It also takes negative day which subtracts the days from the shomoy,
      *
      * @param int $day number of days to be added.
      * */
     public function addDay(int $day) {
         try {
-            $interval = new DateInterval(sprintf('P%dD', $day));
-            $this -> dateTime -> add($interval);
-        } catch (Exception $e) {
-        }
+            $interval = sprintf('P%dD', $day);
+            $this -> adjustInterval($day, $interval);
+        } catch (Exception) {}
     }
 
     /**
      * Any number of months can be added to the Shomoy object using this method.
+     * Negative value can be added too.
      *
      * @param int $month number of months to be added.
      * */
     public function addMonth(int $month) {
         try {
-            $interval = new DateInterval(sprintf('P%dM', $month));
-            $this -> dateTime -> add($interval);
-        } catch (Exception $e) {
-        }
+            $interval = sprintf('P%dM', $month);
+            $this -> adjustInterval($month, $interval);
+        } catch (Exception) {}
     }
 
     /**
      * Any number of years can be added to the Shomoy object using this method.
+     * Negative value can be added too.
      *
      * @param int $year number of years to be added.
      * */
     public function addYear(int $year) {
         try {
-            $interval = new DateInterval(sprintf('P%dY', $year));
-            $this -> dateTime -> add($interval);
-        } catch (Exception $e) {
-        }
+            $interval = sprintf('P%dY', $year);
+            $this -> adjustInterval($year, $interval);
+        } catch (Exception) {}
     }
 
     /**
@@ -215,19 +216,23 @@ class Shomoy {
         return $this -> dateTime -> format('Y-m-d');
     }
 
+    public function isoTime(): string {
+        return "{$this -> hour()}:{$this -> min()}:{$this -> sec()}";
+    }
+
     public function year() : string {
         return $this -> dateTime -> format('Y');
     }
 
     public function month(bool $leadingZero = true) : string {
         $month = $this -> dateTime -> format('m');
-        if ($leadingZero) return Number::leadingZero((int)$month);
+        if ($leadingZero) return NumFormat::leadingZero((int)$month);
         return $month;
     }
 
     public function date(bool $leadingZero = true) : string {
         $date = $this -> dateTime -> format('d');
-        if ($leadingZero) return Number::leadingZero((int)$date);
+        if ($leadingZero) return NumFormat::leadingZero((int)$date);
         return $date;
     }
 
@@ -264,16 +269,48 @@ class Shomoy {
         return $this -> dateTime -> format($format);
     }
 
-    public function displayDateTime(): string {
-        return "{$this -> hour()}:{$this -> min()}:{$this -> sec()}, {$this -> day()} {$this -> date()} {$this -> monthStr()} {$this -> year()}";
+    public function strDateTime(): string {
+        return "{$this -> date()} {$this -> monthStr()} {$this -> year()}, {$this -> hour()}:{$this -> min()}";
     }
 
-    public function displayTime24(): string {
-        return "{$this -> hour()}:{$this -> min()}:{$this -> sec()}";
+    public function echoDateTime(): void {
+        echo $this -> strDateTime();
     }
 
-    public function displayTime(bool $uppercase = true): string {
-        return "{$this -> hour(false)}:{$this -> min()}:{$this -> sec()} {$this -> ampm($uppercase)}";
+    public function strDate(bool $separated = false): string {
+        if ($separated) return "{$this -> date()}-{$this -> month()}-{$this -> year()}";
+        else return "{$this -> date()} {$this -> monthStr(true)}, {$this -> year()}";
+    }
+
+    public function echoDate(bool $separated = false): void {
+        echo $this -> strDate($separated);
+    }
+
+    public function strTime24(bool $sec = true): string {
+        if ($sec) return "{$this -> hour()}:{$this -> min()}:{$this -> sec()}";
+        else return "{$this -> hour()}:{$this -> min()}";
+    }
+
+    public function echoTime24($sec = true): void {
+        echo $this -> strTime24($sec);
+    }
+
+    public function strTime(bool $sec = true, bool $ampm = true, bool $uppercase = true): string {
+        if ($sec) {
+            if ($ampm)
+                return "{$this -> hour(false)}:{$this -> min()}:{$this -> sec()} {$this -> ampm($uppercase)}";
+            else
+                return "{$this -> hour(false)}:{$this -> min()}:{$this -> sec()}";
+        } else {
+            if ($ampm)
+                return "{$this -> hour(false)}:{$this -> min()} {$this -> ampm($uppercase)}";
+            else
+                return "{$this -> hour(false)}:{$this -> min()}";
+        }
+    }
+
+    public function echoTime(bool $sec = true, bool $ampm = true, bool $uppercase = true) {
+        echo $this -> strTime($sec, $ampm, $uppercase);
     }
 
     public function getDateTime(): DateTime {
@@ -283,6 +320,7 @@ class Shomoy {
     public function getTimezone(): DateTimeZone {
         return $this -> dateTime -> getTimezone();
     }
+
     public function getTimestamp(): int {
         return $this -> dateTime -> getTimestamp();
     }
@@ -353,6 +391,90 @@ class Shomoy {
 
     public static function secInDay(int $of): int {
         return 60 * 60 * 24 * $of;
+    }
+
+    // This method either adds or removes interval to the datetime object
+    // based on the sign of the value is being added or subtracted.
+    private function adjustInterval(int $signed, $interval) {
+        if ($signed < 0)
+            $interval = str_replace('-', '', $interval);
+
+        try {
+            $interval = new DateInterval($interval);
+            if ($signed < 0) $this -> dateTime -> sub($interval);
+            else $this -> dateTime -> add($interval);
+        } catch (Exception) {}
+    }
+
+    /**
+     * This takes an ISO datetime input and prints time in 12hr format with many
+     * configuration as specified by the arguments.
+     *  *
+     * @param string $isoDatetime ISO datetime.
+     * @param bool $sec Indicates whether to print second or not.
+     * @param bool $ampm Whether to add AM/PM.
+     * @param bool $uppercase Whether to uppercase the AM/PM.
+     *
+     * @return void
+     * */
+    public static function printTime(string $isoDatetime, bool $sec = true, bool $ampm = true, bool $uppercase = true): void {
+        try {
+            $shomoy = new Shomoy($isoDatetime);
+            $shomoy -> echoTime($sec, $ampm, $uppercase);
+        } catch (Exception) {}
+    }
+
+    /**
+     * It takes an ISO datetime input and prints out the time portion in with second
+     * or not as specified by the arguments. Prints nothing on encountering parse error.
+     *
+     * @param string $isoDatetime ISO datetime.
+     * @param bool $sec Indicates whether to print second or not.
+     *
+     * @return void
+     * */
+    public static function printTime24(string $isoDatetime, bool $sec = true): void {
+        try {
+            $shomoy = new Shomoy($isoDatetime);
+            $shomoy -> echoTime24($sec);
+        } catch (Exception) {}
+    }
+
+    /**
+     * This takes an ISO Datetime as input and echo out this in two of formats. One when
+     * separated is false then it prints out as 01 Jan 2022. And when it is false then
+     * it prints out as 01-01-2022 format.
+     *
+     * On parse error for the date time, it doesn't print out anything.
+     *
+     * @param string $isoDatetime ISO datetime.
+     * @param bool $separated indicates whether to print date in iso date format in reverse
+     * format or in 01 Jan 2020 format.
+     *
+     * @return void
+     * */
+    public static function printDate(string $isoDatetime, bool $separated = false): void {
+        try {
+            $shomoy = new Shomoy($isoDatetime);
+            $shomoy -> echoDate($separated);
+        } catch (Exception) {}
+    }
+
+    /**
+     * This takes an ISO Datetime as input and echo out this in the following format.
+     * 23 May 2022, 13:01
+     *
+     * On parse error for the date time, it doesn't print out anything.
+     *
+     * @param string $isoDatetime ISO datetime.
+     *
+     * @return void
+     * */
+    public static function printDateTime(string $isoDatetime): void {
+        try {
+            $shomoy = new Shomoy($isoDatetime);
+            $shomoy -> echoDateTime();
+        } catch (Exception) {}
     }
 
 }

@@ -89,6 +89,21 @@ class Fluent {
     }
 
     /**
+     * This method prints the column value defined by the key in the first row
+     * of the query result set. Optional default value is printed when the it
+     * can't find the column name in the result set.
+     *
+     * @param $key string the key for the value
+     * @param $defVal mixed the value to be returned when the key is
+     * not set in the result set.
+     *
+     * @return void
+     * */
+    public static function echo(string $key, mixed $defVal = ''): void {
+        echo $val = self::datum($key, $defVal);
+    }
+
+    /**
      * Fluent's execute method is more powerful at executing any prepared statement.
      * For a given query, it prepares the query then binds it on runtime using PDO
      * execute method. After execution, it remembers the output into a variable called

@@ -65,13 +65,25 @@ class Filter {
      * ISO date then should have no remaining characters. Thus confirming a valid ISO
      * formatted date input.
      *
-     * @param string $input the string to be checked for ISO date format.
+     * @param mixed $input the string to be checked for ISO date format.
      * @param bool $throwErr if it set then it throw HatiError on failure.
      *
      * @return ?string returns the input if the input is a valid ISO formatted date. on failure
      * it returns null if the trigger error is not set.
      * */
-    public static function ISODateFormat(string $input, bool $throwErr = false): ?string {
+    public static function ISODateFormat(mixed $input, bool $throwErr = false): ?string {
+        // check whether the input is null & empty
+        if ($input === null) {
+            if ($throwErr) throw new TrunkErr('Date is null');
+            return null;
+        }
+
+        // check whether we have empty input
+        if (strlen($input) < 1) {
+            if ($throwErr) throw new TrunkErr('Date is empty');
+            return null;
+        }
+
         // try to remove the YYYY-MM-DD match from the input if there is any
         $date = self::sanitize($input, '#(\d{4}-\d{2}-\d{2})#');
 
@@ -106,14 +118,26 @@ class Filter {
      * it throws HatiError. If not then it returns null value to indicate that the email
      * was failed to pass the check.
      *
-     * @param string $input string containing email to be checked
+     * @param mixed $input string containing email to be checked
      * @param bool $throwErr if it is set then it throws HatiError on failure
      * otherwise it will return null value instead.
      *
      * @return ?string it returns null on failure if trigger error is not set otherwise
      * it will return null. on successful pass it returns the sanitized email.
      * */
-    public static function email(string $input, bool $throwErr = false): ?string {
+    public static function email(mixed $input, bool $throwErr = false): ?string {
+        // check whether the input is null & empty
+        if ($input === null) {
+            if ($throwErr) throw new TrunkErr('Email is null');
+            return null;
+        }
+
+        // check whether we have empty input
+        if (strlen($input) < 1) {
+            if ($throwErr) throw new TrunkErr('Email is empty');
+            return null;
+        }
+
         $isEmail = filter_var($input, FILTER_VALIDATE_EMAIL);
         if ($throwErr && !$isEmail) throw new TrunkErr('The email is not valid');
         if (!$isEmail) return null;
@@ -129,14 +153,26 @@ class Filter {
      * throws HatiError. If not then it returns null value to indicate that the number
      * was failed to pass the check.
      *
-     * @param string|int $input string or integer to be checked
+     * @param mixed $input string or integer to be checked
      * @param bool $throwErr if it is set then it throws HatiError on failure
      * otherwise it will return null value instead.
      *
      * @return ?int it returns null on failure if trigger error is not set otherwise
      * it will return null. on successful pass it returns the sanitized integer.
      * */
-    public static function int(string|int $input, bool $throwErr = false): ?int {
+    public static function int(mixed $input, bool $throwErr = false): ?int {
+        // check whether the input is null & empty
+        if ($input === null) {
+            if ($throwErr) throw new TrunkErr('Input number is null');
+            return null;
+        }
+
+        // check whether we have empty input
+        if (strlen($input) < 1) {
+            if ($throwErr) throw new TrunkErr('Input number is empty');
+            return null;
+        }
+
         // let's see if we have got any illegal character in the input by removing a
         // valid either signed or unsigned value from the the input then assess the
         // length of it. For a valid integer of either signed or unsigned it should
@@ -170,14 +206,26 @@ class Filter {
      * If not found then it adds one with 0 at the end after the decimal point to make
      * it a valid decimal point number for the check logic to work.
      *
-     * @param string|float $input string or number to be checked
+     * @param mixed $input string or number to be checked
      * @param bool $throwErr if it is set then it throws HatiError on failure
      * otherwise it will return null value instead.
      *
      * @return ?float it returns null on failure if trigger error is not set otherwise
      * it will return null. on successful pass it returns the number.
      * */
-    public static function float(string|float $input, bool $throwErr = false): ?float {
+    public static function float(mixed $input, bool $throwErr = false): ?float {
+        // check whether the input is null & empty
+        if ($input === null) {
+            if ($throwErr) throw new TrunkErr('Float number input is null');
+            return null;
+        }
+
+        // check whether we have empty input
+        if (strlen($input) < 1) {
+            if ($throwErr) throw new TrunkErr('Float number input is empty');
+            return null;
+        }
+
         // add the floating point place if it has not
         if (!preg_match('#\.#', $input)) $input .= '.0';
 
@@ -206,14 +254,20 @@ class Filter {
      * Additionally it checks for empty string value. If an empty string is passed-in as
      * argument then it throws HatiError based on the setting.
      *
-     * @param string $input string to be escaped
+     * @param mixed $input string to be escaped
      * @param bool $throwErr if it is set then it throws HatiError on empty string
      * value. if it is not set then it returns null on empty string value.
      *
      * @return ?string returns the escaped string. null on failure if the trigger error
      * is set false, otherwise it will trow exception.
      * */
-    public static function string(string $input, bool $throwErr = false): ?string {
+    public static function string(mixed $input, bool $throwErr = false): ?string {
+        // check if we have empty
+        if ($input === null) {
+            if ($throwErr) throw new TrunkErr('String is null');
+            return null;
+        }
+
         $empty = empty($input);
         if ($empty && $throwErr) throw new TrunkErr('The string is empty');
         if ($empty) return null;
@@ -225,12 +279,24 @@ class Filter {
      * sanitized url. If trigger is no and the string is invalid then it throws error. If
      * the trigger is set off then it returns null indicating that it didn't pass the check.
      *
-     * @param string $input the url string for checking.
+     * @param mixed $input the url string for checking.
      * @param bool $throwErr whether to throw error upon failure of validation.
      *
      * @return ?string returns null on failure otherwise it returns the sanitized url string.
      */
-    public static function url(string $input, bool $throwErr = false): ?string {
+    public static function url(mixed $input, bool $throwErr = false): ?string {
+        // check whether the input is null & empty
+        if ($input === null) {
+            if ($throwErr) throw new TrunkErr('Url is null');
+            return null;
+        }
+
+        // check whether we have empty input
+        if (strlen($input) < 1) {
+            if ($throwErr) throw new TrunkErr('Url is empty');
+            return null;
+        }
+
         $isUrl = filter_var($input, FILTER_VALIDATE_URL);
         if (!$isUrl && $throwErr)
             throw new TrunkErr('The input has to be a valid url string');
@@ -255,6 +321,18 @@ class Filter {
      * @return ?bool returns null on invalid boolean value, otherwise returns the original value.
      * */
     public static function bool(mixed $input, bool $throwErr = false): ?bool {
+        // check whether the input is null & empty
+        if ($input === null) {
+            if ($throwErr) throw new TrunkErr('Boolean input is null');
+            return null;
+        }
+
+        // check whether we have empty input
+        if (gettype($input) != 'boolean' && strlen($input) < 1) {
+            if ($throwErr) throw new TrunkErr('Boolean input is empty');
+            return null;
+        }
+
         $isBool = filter_var($input, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
         if ($isBool === null && $throwErr) throw new TrunkErr('The input has to be a valid boolean value.');
         return $isBool;

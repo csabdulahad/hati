@@ -14,19 +14,6 @@ namespace hati;
 class Number {
 
     /**
-     * A leading zero is added when the integer number is less than 10. Otherwise
-     * the input number is returned.
-     *
-     * @param int $int The integer which needs a leading zero.
-     *
-     * @return string A leading zero is added and returned as string, if the number
-     * is less than 10. Otherwise the original input is returned as string.
-     * */
-    public static function leadingZero(int $int): string {
-        return ($int < 10) ? "0$int" : $int;
-    }
-
-    /**
      * The fractional part of any floating number can ba calculated by this method.
      *
      * @param float $number The float value whose fraction is to be returned.
@@ -36,21 +23,6 @@ class Number {
     public static function getDecimal(float $number): float {
         $whole = (int) $number;
         return $number - $whole;
-    }
-
-    /**
-     * Any floating number can be formatted to a fixed size decimal point place for
-     * displaying it more friendly on the UI.
-     *
-     * By default, it fixes the decimal point place to 2.
-     *
-     * @param int|float $number The floating value whose decimal place is to be fixed.
-     * @param int $place The decimal place for the display.
-     *
-     * @return string Formatted floating value to specified decimal point place.
-     * */
-    public static function toFixed(int|float $number, int $place = 2): string {
-        return number_format($number, $place);
     }
 
     /**

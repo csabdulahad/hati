@@ -52,7 +52,22 @@ class Url {
      * @return string The url path without forward slash.
      * */
     public static function path(string $url = ''): string {
+        $url = self::getUrl($url);
         return substr(parse_url($url, PHP_URL_PATH), 1);
+    }
+
+    /**
+     * The last fragment path of the url is extracted by this method.
+     * Internally it uses @link path() method to get the path then it
+     * finds the last fragment of the path and returns.
+     *
+     * @param string $url the url whose path is to be extracted.
+     * @return string The last path fragment of the url.
+     * */
+    public static function lastPath(string $url = ''): string {
+        $url = self::path($url);
+        $lastIndex = strripos($url, '/') + 1;
+        return substr($url, $lastIndex);
     }
 
     /**

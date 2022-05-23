@@ -15,7 +15,7 @@
 ## XAMPP PATH CAN BE SOMETHING LIKE "C:/xampp/htdocs/project/hati/Hati.php"
 ## HERE THE WHOLE PROJECT IS IN HTDOCS HATI FOLDER, INSIDE THE HATI LIBRARY
 ## FOLDER, THERE IS HATI LOADER CLASS.
-php_value auto_prepend_file "C:/xampp/htdocs/hati/hati/Hati.php"
+#php_value auto_prepend_file "PATH_TO_HATI_LOADER"
 
 
 ## DIRECTORY LISTING OPTION; CAN BE DISABLED.

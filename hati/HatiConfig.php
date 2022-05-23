@@ -10,7 +10,7 @@ namespace hati;
 
 const CONFIG = [
 
-    'welcome_hati'                      =>          true,
+    'welcome_hati'                      =>          false,
     'app_name'                          =>          '',
     'session_auto_start'                =>          false,
     'session_msg_key'                   =>          'msg',
@@ -22,7 +22,7 @@ const CONFIG = [
     'as_JSON_output'                    =>          false,
 
     // root folder name without any slashes either at front or at the end
-    'root_folder'                       =>          '',
+    'root_folder'                       =>          'hati',
 
     // php code file which is found every where throughout the project.
     // add the path to the file with directory structure and file name

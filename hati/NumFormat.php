@@ -37,10 +37,10 @@ class NumFormat {
         $num = Filter::int($input);
 
         // now see whether it is a floating number
-        if ($num == null) $num = Filter::float($input);
+        if ($num === null) $num = Filter::float($input);
 
         // make sure we have a number
-        if ($num == null) return '0-0';
+        if ($num === null) return '0-0';
 
         // figure out whether it is a round up integer or floating value
         $integer = is_integer($num);

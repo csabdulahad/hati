@@ -6,6 +6,8 @@
      /                 | :.       \     =\
     ;                   \':.      /  ,-.__;.-;`
 
+[![Latest Stable Version](http://poser.pugx.org/rootdata21/hati/v)](https://packagist.org/packages/rootdata21/hati) [![Total Downloads](http://poser.pugx.org/rootdata21/hati/downloads)](https://packagist.org/packages/rootdata21/hati) [![Latest Unstable Version](http://poser.pugx.org/rootdata21/hati/v/unstable)](https://packagist.org/packages/rootdata21/hati) [![License](http://poser.pugx.org/rootdata21/hati/license)](https://packagist.org/packages/rootdata21/hati) [![PHP Version Require](http://poser.pugx.org/rootdata21/hati/require/php)](https://packagist.org/packages/rootdata21/hati)
+
 Welcome to the Hati wiki! Hati is a simply powerful PHP library written in **PHP 8** which has various library functions and classes to make API or application development in PHP effortless. This library has great support for crafting:-
 * JSON output for APIs
 * Templete engine

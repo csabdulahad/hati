@@ -10,6 +10,12 @@ namespace hati;
 
 const CONFIG = [
 
+    // by default, Hati loads with Composer auto loader. If it is false, then Hati
+    // will use PSR-0 loader scheme to resolve dependencies. Many other dependencies
+    // coming from composer which are currently in use by Hati or in future will
+    // require to be loaded manually.
+    'composer_loader'                   =>          true,
+
     'welcome_hati'                      =>          true,
     'app_name'                          =>          '',
     'session_auto_start'                =>          false,
@@ -38,7 +44,7 @@ const CONFIG = [
     // set default timezone for the entire project
     'time_zone'                         =>          'Europe/London',
 
-    // SMTP protocol settings for mailing to be used by Perok class of dakghor package
+    // SMTP protocol settings for mailing to be used by Perok class
     'mailer_email'                      =>          '',
     'mailer_pass'                       =>          '',
     'mailer_port'                       =>          587,

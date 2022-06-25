@@ -1,6 +1,6 @@
 <?php
 
-namespace hati\dakghor;
+namespace hati;
 
 /**
  * Perok is a wrapper class around PHP Mailer library. The class has singleton pattern
@@ -14,10 +14,9 @@ namespace hati\dakghor;
  * well supported by this class.
  * */
 
-use hati\dakghor\PHPMailer\Exception;
-use hati\dakghor\PHPMailer\PHPMailer;
-use hati\Hati;
 use hati\trunk\TrunkErr;
+use PHPMailer\PHPMailer\Exception;
+use PHPMailer\PHPMailer\PHPMailer;
 
 class Perok {
 

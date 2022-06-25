@@ -47,15 +47,20 @@ use Throwable;
 class Hati {
 
     // version
-    private static string $version = '4.2';
+    private static string $version = '5.0.0';
 
     private static float $BENCHMARK_START = 0;
+
+    private static ?object $loader = null;
 
     // This is the first method call of the server. It initializes the environment
     // as per configuration and resolve dependencies.
     public static function start(): void {
 
-        self::setLoader();
+        // register appropriate auto loader function
+        if (self::composer_loader())
+            Hati::$loader = require Hati::neutralizeSeparator(Hati::docRoot(). 'vendor/autoload.php');
+        else self::setLoader();
 
         // start the benchmark if Hati is setup to include dev benchmark
         if(Hati::dev_API_benchmark()) self::$BENCHMARK_START = microtime(true);
@@ -87,6 +92,16 @@ class Hati {
             if (class_exists($className)) return;
             if (file_exists($file)) include $file;
         });
+    }
+
+    /**
+     * This returns the loader instance of the composer auto loader.
+     * It returns null if Hati is configured to use its own loader.
+     *
+     * @return object The composer auto loader object.
+     */
+    public static function loader(): object {
+        return self::$loader;
     }
 
     /**
@@ -139,6 +154,10 @@ class Hati {
     }
 
     /* the getters for the configurations */
+
+    public static function composer_loader(): bool {
+        return CONFIG['composer_loader'];
+    }
 
     public static function global_php(): string {
         return CONFIG['global_php'];

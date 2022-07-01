@@ -61,11 +61,17 @@ class Fluent {
             $user = Hati::dbUsername();
             $pass = Hati::dbPassword();
 
+            // get the timezone offset
+            $timeZone = date('P');
+
             $arg = "mysql:host=$host;dbname=$db;charset=utf8";
             $this -> db = new PDO($arg, $user, $pass);
             $this -> db -> setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        } catch (Throwable) {
-            throw new TrunkErr('Connection to database was failed.');
+
+            // set the timezone offset
+            $this -> db -> exec("SET GLOBAL time_zone = '$timeZone';");
+        } catch (Throwable $t) {
+            throw new TrunkErr('Connection to database was failed: ' . $t -> getMessage());
         }
     }
 
@@ -100,7 +106,7 @@ class Fluent {
      * @return void
      * */
     public static function echo(string $key, mixed $defVal = ''): void {
-        echo $val = self::datum($key, $defVal);
+        echo self::datum($key, $defVal);
     }
 
     /**

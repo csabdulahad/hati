@@ -205,11 +205,15 @@ class Shomoy {
     }
 
     public function __toString(): string {
-        return $this -> dateTime -> format(DateTimeInterface::ISO8601);
+        return $this -> iso();
     }
 
     public function iso(): string {
-        return $this -> __toString();
+        return sprintf('%s %s', $this -> isoDate(), $this -> isoTime());
+    }
+
+    public function iso8601(): string {
+        return $this -> dateTime -> format(DateTimeInterface::ISO8601);
     }
 
     public function isoDate(): string {

@@ -1,9 +1,10 @@
 {
+
     "name": "rootdata21/hati",
-    "description": "Hati - A simply powerful PHP library written in PHP 8 with various library functions and classes to make API or app development in PHP effortless.",
-    "type": "library",
+    "description": "Hati - A powerful PHP library written in PHP 8 with various library functions and classes to make API or App development effortless.",
+    "type": "hati-installer",
     "license": "MIT",
-    "keywords": ["hati","library", "api", "php"],
+    "keywords": ["hati","library", "api", "php", "php8"],
     "authors": [
         {
             "name": "Abdul Ahad",
@@ -13,10 +14,17 @@
         }
     ],
 
+    "funding": [
+        {
+            "type": "paypal",
+            "url": "https://paypal.me/rootdata21?country.x=GB&locale.x=en_GB"
+        }
+    ],
 
     "require": {
         "php": ">=8.0",
-        "phpmailer/phpmailer": "^6.5"
+        "phpmailer/phpmailer": "^6.5",
+        "rootdata21/hati-installer": "v1.0.0"
     },
 
     "autoload": {

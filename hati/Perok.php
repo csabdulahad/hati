@@ -147,6 +147,22 @@ class Perok {
     }
 
     /**
+     * Any file contents in string format can be attached in email by this method.
+     *
+     * @param string $fileAsStr The file value which is in string format.
+     * @param string $fileName File name, preferably with extension.
+     * @param bool $throwErr Indicate whether to throw exception upon encountering any error.
+     * */
+    public static function attachStr(string $fileAsStr, string $fileName, bool $throwErr = false) {
+        $ins = self::get();
+        try {
+            $ins -> phpMailer -> addStringAttachment($fileAsStr, $fileName);
+        } catch (Exception $e) {
+            if ($throwErr) throw new TrunkErr('Failed to attach string as file: ' . $e -> getMessage());
+        }
+    }
+
+    /**
      * This method can embed any image for including images as CID image in the HTML message.
      * The path to the image file is only with the directory and full name with extension. Perok
      * does the server root directory path appending by using @link Hati::docRoot() method internallly.

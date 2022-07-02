@@ -47,20 +47,27 @@ use Throwable;
 class Hati {
 
     // version
-    private static string $version = '5.0.0';
+    private static string $version = '2.1.0';
 
     private static float $BENCHMARK_START = 0;
 
     private static ?object $loader = null;
 
-    // This is the first method call of the server. It initializes the environment
-    // as per configuration and resolve dependencies.
+    /**
+     * This is the first method call of the server. It initializes the environment
+     * as per configuration and resolve dependencies.
+     *
+     * @throws Throwable
+     */
     public static function start(): void {
 
         // register appropriate auto loader function
         if (self::composer_loader())
             Hati::$loader = require Hati::neutralizeSeparator(Hati::docRoot(). 'vendor/autoload.php');
         else self::setLoader();
+
+        // prepare the database environment
+        if (strlen(Hati::db_prepare_sql()) > 0) Hati::prepareDbSql();
 
         // start the benchmark if Hati is setup to include dev benchmark
         if(Hati::dev_API_benchmark()) self::$BENCHMARK_START = microtime(true);
@@ -102,6 +109,39 @@ class Hati {
      */
     public static function loader(): object {
         return self::$loader;
+    }
+
+    /**
+     * Any predefined sql quires as configured, which need to be executed first
+     * before any other sql quires be able run. Hati first checks whether there is
+     * a table named with '$'. If there is a table already exists then Hati has
+     * already executed the predefined sql quires.
+     * If not, then Hati runs the predefined sql queries in a transactions and afterwards
+     * it marks the execution by creating a dummy table with name '$'.
+     *
+     * @throws Throwable
+     */
+    private static function prepareDbSql(): void {
+        // check whether we have already prepared the db environment already
+        $q = 'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = ? AND table_name = ?';
+        Fluent::exePrepare($q, [Hati::dbName(), '$']);
+        if(Fluent::sqlCount() > 0) return;
+
+        try {
+            Fluent::beginTrans();
+
+            $sql = file_get_contents(Util::absolutePath(Hati::db_prepare_sql() . '.sql'));
+            Fluent::exeStatic($sql);
+
+            $ran = 'CREATE TABLE $ ($ int(0))';
+            Fluent::exeStatic($ran);
+
+            Fluent::commit();
+        } catch (Throwable $e) {
+            Fluent::rollback();
+            throw $e;
+        }
+
     }
 
     /**
@@ -154,6 +194,10 @@ class Hati {
     }
 
     /* the getters for the configurations */
+
+    public static function db_prepare_sql(): string {
+        return CONFIG['db_prepare_sql'];
+    }
 
     public static function composer_loader(): bool {
         return CONFIG['composer_loader'];

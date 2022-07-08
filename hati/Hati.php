@@ -47,7 +47,7 @@ use Throwable;
 class Hati {
 
     // version
-    private static string $version = '2.1.0';
+    private static string $version = '2.2.0';
 
     private static float $BENCHMARK_START = 0;
 
@@ -194,6 +194,26 @@ class Hati {
     }
 
     /* the getters for the configurations */
+
+    public static function jquery_version(): string {
+        return CONFIG['jquery'];
+    }
+
+    public static function jquery_ui_version(): string {
+        return CONFIG['jquery_ui'];
+    }
+
+    public static function angular_js_version(): string {
+        return CONFIG['angular_js'];
+    }
+
+    public static function jst_version(): string {
+        return CONFIG['jst'];
+    }
+
+    public static function bootstrap_version(): string {
+        return CONFIG['bootstrap'];
+    }
 
     public static function db_prepare_sql(): string {
         return CONFIG['db_prepare_sql'];

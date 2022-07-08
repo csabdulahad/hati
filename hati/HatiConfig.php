@@ -39,7 +39,7 @@ const CONFIG = [
     'global_php'                        =>          '',
 
     // database configuration
-    'db_host'                           =>          '',
+    'db_host'                           =>          'localhost',
     'db_name'                           =>          '',
     'db_username'                       =>          '',
     'db_password'                       =>          '',
@@ -68,6 +68,14 @@ const CONFIG = [
     // about this delay so that the developers don't accidentally forget or remove
     // the delay from the production release.
     'dev_API_delay'                     =>          0, // sec in integer
+
+    // various 3rd party libraries and framework version configuration
+    'jquery'                            =>          '3.6.0',
+    'angular_js'                        =>          '1.8.2',
+    'jst'                               =>          '1.0.0',
+    'bootstrap'                         =>          '5.1.3',
+    'jquery_ui'                         =>          '1.13.0',
+
 
     // settings for file extension and the Kuli uploader
 

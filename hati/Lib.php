@@ -34,7 +34,8 @@ class Lib {
     }
 
     public static function jst(): void {
-        echo '    <script src="https://cdn.jsdelivr.net/gh/csabdulahad/js-tea@'. Hati::jst_version() .'/dist/jst-mini.js"></script>'. PHP_EOL;
+        echo '    <link href="https://cdn.jsdelivr.net/gh/csabdulahad/jst@'. Hati::jst_version() .'/dist/jst-mini.css" rel="stylesheet">'. PHP_EOL;
+        echo '    <script src="https://cdn.jsdelivr.net/gh/csabdulahad/jst@'. Hati::jst_version() .'/dist/jst-mini.js"></script>'. PHP_EOL;
     }
 
     /**

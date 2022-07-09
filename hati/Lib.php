@@ -22,7 +22,7 @@ class Lib {
 
     public static function jquery_ui(): void {
         echo '    <link rel="stylesheet" href="https://code.jquery.com/ui/'. Hati::jquery_ui_version() .'/themes/base/jquery-ui.css">'. PHP_EOL;
-        echo '    <script src="https://code.jquery.com/ui'. Hati::jquery_ui_version() .'/jquery-ui.js"></script>'. PHP_EOL;
+        echo '    <script src="https://code.jquery.com/ui/'. Hati::jquery_ui_version() .'/jquery-ui.js"></script>'. PHP_EOL;
     }
 
     public static function material_icon(): void {

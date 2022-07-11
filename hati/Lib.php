@@ -41,8 +41,8 @@ class Lib {
     public static function blogger(): void {
         echo '    <script src="https://cdn.jsdelivr.net/npm/marked@4.0.17/marked.min.js"></script>'. PHP_EOL;
         echo '    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/highlight.min.js"></script>'. PHP_EOL;
-        echo '    <script src="https//cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.6.0/highlightjs-line-numbers.min.js"></script>'. PHP_EOL;
-        echo '    <link href=""https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/styles/'. Hati::highlight_js() .'.min.css" rel="stylesheet">'. PHP_EOL;
+        echo '    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.6.0/highlightjs-line-numbers.min.js"></script>'. PHP_EOL;
+        echo '    <link href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/styles/'. Hati::highlight_js() .'.min.css" rel="stylesheet">'. PHP_EOL;
     }
 
     /**

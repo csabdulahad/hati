@@ -38,18 +38,26 @@ class Lib {
         echo '    <script src="https://cdn.jsdelivr.net/gh/csabdulahad/jst@'. Hati::jst_version() .'/dist/jst-min.js"></script>'. PHP_EOL;
     }
 
+    public static function blogger(): void {
+        echo '    <script src="https://cdn.jsdelivr.net/npm/marked@4.0.17/marked.min.js"></script>'. PHP_EOL;
+        echo '    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/highlight.min.js"></script>'. PHP_EOL;
+        echo '    <script src="https//cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.6.0/highlightjs-line-numbers.min.js"></script>'. PHP_EOL;
+        echo '    <link href=""https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/styles/'. Hati::highlight_js() .'.min.css" rel="stylesheet">'. PHP_EOL;
+    }
+
     /**
      * Using this method by default all the required 3rd party libraries and frameworks can be included
      * as project dependencies. Moreover, any framework/library can be unselected from inclusion if
      * needed.
      * */
-    public static function get(bool $bootstrap = true, bool $mat = true, bool $jquery = true, bool $angularJS = true, bool $jqueryUI = true, bool $jst = true): void {
+    public static function get(bool $bootstrap = true, bool $mat = true, bool $jquery = true, bool $angularJS = true, bool $jqueryUI = true, bool $jst = true, bool $blogger = false): void {
         if ($jquery) self::jquery();
         if ($angularJS) self::angular_js();
         if ($jst) self::jst();
         if ($jqueryUI) self::jquery_ui();
         if ($bootstrap) self::bootstrap();
         if ($mat) self::material_icon();
+        if ($blogger) self::blogger();
     }
 
 }

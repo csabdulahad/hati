@@ -72,10 +72,10 @@ const CONFIG = [
     // various 3rd party libraries and framework version configuration
     'jquery'                            =>          '3.6.0',
     'angular_js'                        =>          '1.8.2',
-    'jst'                               =>          '1.0.0',
+    'jst'                               =>          '2.0.0',
     'bootstrap'                         =>          '5.1.3',
     'jquery_ui'                         =>          '1.13.0',
-
+    'highlight_js'                      =>          'intellij-light', // css file name for theme
 
     // settings for file extension and the Kuli uploader
 

@@ -12,9 +12,9 @@
 ##-----------------------------------HATI LOADER --------------------------------------------
 ## PREPEND HATI AS MASTER DEPENDENCY. FOR TESTING ENVIRONMENT SUCH AS XAMPP PATH CAN BE     |
 ## SOMETHING LIKE C:/xampp/htdocs/project/rootdata21/hati/Hati.php                          |
-## AS HATI COMES WITH COMPOSER, YOU ONLY NEED TO CHANGE 'ROOT_DIR' WITH ACTUAL DIRECTORY.   |
+## AS HATI COMES WITH COMPOSER, YOU ONLY NEED TO CHANGE 'PROJECT_DIR' WITH ACTUAL DIRECTORY.|
 ##----------------------------------------------------------------------------------------- |
-# php_value auto_prepend_file "RO0T_DIR/rootdata21/hati/Hati.php"
+# php_value auto_prepend_file "c:/xampp/PROJECT_DIR/rootdata21/hati/Hati.php"
 
 
 ## DIRECTORY LISTING OPTION; CAN BE DISABLED.

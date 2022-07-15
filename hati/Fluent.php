@@ -69,7 +69,7 @@ class Fluent {
             $this -> db -> setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
             // set the timezone offset
-            $this -> db -> exec("SET GLOBAL time_zone = '$timeZone';");
+            $this -> db -> exec("SET time_zone = '$timeZone';");
         } catch (Throwable $t) {
             throw new TrunkErr('Connection to database was failed: ' . $t -> getMessage());
         }

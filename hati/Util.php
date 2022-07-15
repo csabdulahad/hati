@@ -212,8 +212,9 @@ class Util {
      * @param string $folder any folder structure where the css files are residing.
      * */
     public static function css(string $files = '', string $folder = 'style'): void {
-        if(file_exists(self::absolutePath("$folder/common.css"))) {
-            echo sprintf('    <link rel="stylesheet" href="%s/%s.css">' . PHP_EOL, $folder, 'common');
+        foreach (Hati::common_css_files() as $file) {
+            if(!file_exists(self::absolutePath("style/$file.css"))) continue;
+            echo sprintf('    <link rel="stylesheet" href="%s/%s.css">' . PHP_EOL, 'style', $file);
         }
 
         if (empty($files)) return;
@@ -229,15 +230,16 @@ class Util {
      * directory in the root folder of the server. This can be changes using
      * folder argument. Folder name doesn't have any trailing slashes.
      *
-     * Any global JS code, functions or variables can be placed in the js/global.js
-     * file to be included within any HTML document.
+     * It also tries to load all the js files listed in the config files with
+     * file existence check.
      *
      * @param string $files comma separated files names without js extension.
      * @param string $folder any folder structure where the js files are residing.
      * */
     public static function js(string $files = '', string $folder = 'js'): void {
-        if(file_exists(self::absolutePath("$folder/global.js"))) {
-            echo sprintf('    <script src="%s/%s.js"></script>' . PHP_EOL, $folder, 'global');
+        foreach (Hati::common_js_files() as $file) {
+            if(!file_exists(self::absolutePath("js/$file.js"))) continue;
+            echo sprintf('    <script src="%s/%s.js"></script>' . PHP_EOL, 'js', $file);
         }
 
         if (empty($files)) return;

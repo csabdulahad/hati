@@ -71,7 +71,7 @@ class Filter {
      * @return ?string returns the input if the input is a valid ISO formatted date. on failure
      * it returns null if the trigger error is not set.
      * */
-    public static function ISODateFormat(mixed $input, bool $throwErr = false): ?string {
+    public static function isoDate(mixed $input, bool $throwErr = false): ?string {
         // check whether the input is null & empty
         if ($input === null) {
             if ($throwErr) throw new TrunkErr('Date is null');
@@ -92,6 +92,40 @@ class Filter {
         $pass = strlen($date) == 0;
 
         if (!$pass && $throwErr) throw new TrunkErr('Invalid date is given. Date must be in YYYY-MM-DD format.');
+        return !$pass ? null : $input;
+    }
+
+    /**
+     * Very similar to @link Filter::isoDate(). It only validates input as a valid fully
+     * qualified ISO datetime in YYYY-MM-DD HH:MM:SS format.
+     *
+     * @param mixed $input the string to be checked for ISO date format.
+     * @param bool $throwErr if it set then it throw HatiError on failure.
+     *
+     * @return ?string returns the input if the input is a valid ISO formatted date. on failure
+     * it returns null if the trigger error is not set.
+     * */
+    public static function isoDatetime(mixed $input, bool$throwErr = false): ?string {
+        // check whether the input is null & empty
+        if ($input === null) {
+            if ($throwErr) throw new TrunkErr('Datetime is null');
+            return null;
+        }
+
+        // check whether we have empty input
+        if (strlen($input) < 1) {
+            if ($throwErr) throw new TrunkErr('Datetime is empty');
+            return null;
+        }
+
+        // try to remove the YYYY-MM-DD match from the input if there is any
+        $date = self::sanitize($input, '#(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})#');
+
+        // it it was a valid ISO formatted date then it should have no character
+        // remaining after the filter.
+        $pass = strlen($date) == 0;
+
+        if (!$pass && $throwErr) throw new TrunkErr('Invalid datetime is given. Datetime must be in YYYY-MM-DD HH:MM:SS format.');
         return !$pass ? null : $input;
     }
 

@@ -47,7 +47,7 @@ use Throwable;
 class Hati {
 
     // version
-    private static string $version = '2.3.1';
+    private static string $version = '2.4.0';
 
     private static float $BENCHMARK_START = 0;
 
@@ -194,6 +194,14 @@ class Hati {
     }
 
     /* the getters for the configurations */
+
+    public static function common_js_files(): array {
+        return CONFIG['common_js_files'];
+    }
+
+    public static function common_css_files(): array {
+        return CONFIG['common_css_files'];
+    }
 
     public static function highlight_js(): string {
         return CONFIG['highlight_js'];

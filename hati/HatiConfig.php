@@ -30,13 +30,20 @@ const CONFIG = [
     // add the full path to favicon including http:// and .ico extension
     'favicon'                           =>          '',
 
-    // response output mode and its configuration
-    'as_JSON_output'                    =>          false,
-
     // php code file which is found every where throughout the project.
     // add the path to the file with directory structure and file name
     // without .php extension.
     'global_php'                        =>          '',
+
+    // common js and css files auto sourcing(js) or linking(css) when the script calls
+    // Util::js() or Util::css() function. The file names must be relative to the server
+    // root without file extension and must be kept inside js and style folders respectively.
+    // Files are checked for existence before adding to HTML document.
+    'common_js_files'                   =>          [],
+    'common_css_files'                  =>          [],
+
+    // response output mode and its configuration
+    'as_JSON_output'                    =>          false,
 
     // database configuration
     'db_host'                           =>          'localhost',
@@ -72,7 +79,7 @@ const CONFIG = [
     // various 3rd party libraries and framework version configuration
     'jquery'                            =>          '3.6.0',
     'angular_js'                        =>          '1.8.2',
-    'jst'                               =>          '2.0.0',
+    'jst'                               =>          '2.2.0',
     'bootstrap'                         =>          '5.1.3',
     'jquery_ui'                         =>          '1.13.0',
     'highlight_js'                      =>          'intellij-light', // css file name for theme

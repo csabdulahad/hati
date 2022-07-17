@@ -202,52 +202,60 @@ class Util {
 
     /**
      * All the tedious stylesheet linking in html pages can be replaced with
-     * this method call. By default it looks for css files inside the style
+     * this method call. By default it looks for css files inside the css
      * directory in the root folder of the server. This can be changes using
      * folder argument. Folder name doesn't have any trailing slashes.
      *
-     * Any global css styling can be linked within any HTML document using
-     * this method. All the common styling must be placed in style/common.css
-     * file.
+     * The css files will be linked by absolute path to avoid broken link because
+     * of directory structure changes by default.
      *
      * @param string $files comma separated files names without css extension.
      * @param string $folder any folder structure where the css files are residing.
+     * @param bool $common indicates whether to include common css as defined in config.
      * */
-    public static function css(string $files = '', string $folder = 'style'): void {
-        foreach (Hati::common_css_files() as $file) {
-            if(!file_exists(self::absolutePath("style/$file.css"))) continue;
-            echo sprintf('    <link rel="stylesheet" href="%s/%s.css">' . PHP_EOL, 'style', $file);
+    public static function css(string $files = '', string $folder = 'css', bool $common = true): void {
+        if ($common) {
+            foreach (Hati::common_css_files() as $file) {
+                if(!file_exists(self::absolutePath("style/$file.css"))) continue;
+                echo sprintf('    <link rel="stylesheet" href="%s/%s.css">' . PHP_EOL, Util::host() . 'css', $file);
+            }
         }
 
         if (empty($files)) return;
         $files = explode(',', $files);
         foreach ($files as $file) {
-            echo sprintf('    <link rel="stylesheet" href="%s/%s.css">' . PHP_EOL, $folder, trim($file));
+            echo sprintf('    <link rel="stylesheet" href="%s/%s.css">' . PHP_EOL, Util::host() . $folder, trim($file));
         }
     }
 
     /**
      * All the tedious js importing in html pages can be replaced with
      * this method call. By default it looks for js files inside the js
-     * directory in the root folder of the server. This can be changes using
+     * directory in the root folder of the server. This can be changed using
      * folder argument. Folder name doesn't have any trailing slashes.
      *
+     * The source will be linked by absolute path to avoid broken link because
+     * of directory structure changes.
+     *
      * It also tries to load all the js files listed in the config files with
-     * file existence check.
+     * file existence check by default.
      *
      * @param string $files comma separated files names without js extension.
      * @param string $folder any folder structure where the js files are residing.
+     * @param bool $common indicates whether to include common scripts as defined in config.
      * */
-    public static function js(string $files = '', string $folder = 'js'): void {
-        foreach (Hati::common_js_files() as $file) {
-            if(!file_exists(self::absolutePath("js/$file.js"))) continue;
-            echo sprintf('    <script src="%s/%s.js"></script>' . PHP_EOL, 'js', $file);
+    public static function js(string $files = '', string $folder = 'js', bool $common = true): void {
+        if ($common) {
+            foreach (Hati::common_js_files() as $file) {
+                if(!file_exists(self::absolutePath("js/$file.js"))) continue;
+                echo sprintf('    <script src="%s/%s.js"></script>' . PHP_EOL, Util::host() . 'js', $file);
+            }
         }
 
         if (empty($files)) return;
         $files = explode(',', $files);
         foreach ($files as $file) {
-            echo sprintf('    <script src="%s/%s.js"></script>' . PHP_EOL, $folder, trim($file));
+            echo sprintf('    <script src="%s/%s.js"></script>' . PHP_EOL, Util::host() . $folder, trim($file));
         }
     }
 

@@ -165,7 +165,7 @@ class Response {
     public function addToMap(string $mapKey, string $key, mixed $val) {
         $this -> addKey($mapKey);
         if ($this -> output[$mapKey] == null) $this -> output[$mapKey] = [];
-        $this -> output[$mapKey][$key] = $val;
+        $this -> output[$mapKey][$key] = $this -> getTypedValue($val);
     }
 
     /**
@@ -272,6 +272,7 @@ class Response {
     }
 
     private function getTypedValue($val) {
+        if (is_array($val)) foreach($val as $k => $v) $val[$k] = $this -> getTypedValue($v);
         if (!is_numeric($val))  return $val;
         return strpos($val, ".") ? (float) $val : (int) $val;
     }

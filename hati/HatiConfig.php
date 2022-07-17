@@ -27,7 +27,9 @@ const CONFIG = [
     // require to be loaded manually.
     'composer_loader'                   =>          true,
 
-    // add the full path to favicon including http:// and .ico extension
+    // Hati adds a favicon link when Util::titleTag() gets called. The favicon can be
+    // of any format but must be placed inside 'img' directory on the project root folder.
+    // here the value should be the file name with extension.
     'favicon'                           =>          '',
 
     // php code file which is found every where throughout the project.

@@ -188,14 +188,16 @@ class Util {
      * By default it is '-' which means that the file name has '-' in file names. For example
      * 'employee-profile.php' will be extracted as Employee Profile.     *
      * */
-    public static function titleTag(string $title = '', bool $capitalize = true, string $separatorInFileName = '-') {
+    public static function titleTag(string $title = '', bool $capitalize = true, string $separatorInFileName = '-'): void {
         if (empty($title)) $title = self::fileTitle($capitalize, $separatorInFileName);
 
         echo '<meta charset="UTF-8">'. PHP_EOL;
         echo '    <title>'. $title .'</title>'. PHP_EOL;
 
         // add favicon to the page
-        echo '    <link rel="icon" type="image/x-icon" href="'. Hati::favicon() .'">'. PHP_EOL;
+        if (!file_exists(Util::absolutePath('img/' . Hati::favicon()))) return;
+        $path = Util::host() .  'img/' . Hati::favicon();
+        echo '    <link rel="icon" type="image/x-icon" href="'. $path .'">'. PHP_EOL;
     }
 
     /**

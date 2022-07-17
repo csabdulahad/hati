@@ -6,7 +6,7 @@ namespace hati;
  * Modify the server configuration here as per settings and requirements.
  * Make sure that you don't change the key. This is default configuration.
  * The Hati library folder has to in root directory.
-*/
+ */
 
 const CONFIG = [
 
@@ -81,7 +81,7 @@ const CONFIG = [
     // various 3rd party libraries and framework version configuration
     'jquery'                            =>          '3.6.0',
     'angular_js'                        =>          '1.8.2',
-    'jst'                               =>          '2.2.0',
+    'jst'                               =>          '2.3.1',
     'bootstrap'                         =>          '5.1.3',
     'jquery_ui'                         =>          '1.13.0',
     'highlight_js'                      =>          'intellij-light', // css file name for theme

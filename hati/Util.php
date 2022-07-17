@@ -216,7 +216,7 @@ class Util {
     public static function css(string $files = '', string $folder = 'css', bool $common = true): void {
         if ($common) {
             foreach (Hati::common_css_files() as $file) {
-                if(!file_exists(self::absolutePath("style/$file.css"))) continue;
+                if(!file_exists(self::absolutePath("css/$file.css"))) continue;
                 echo sprintf('    <link rel="stylesheet" href="%s/%s.css">' . PHP_EOL, Util::host() . 'css', $file);
             }
         }

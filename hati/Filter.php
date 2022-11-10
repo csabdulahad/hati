@@ -67,20 +67,22 @@ class Filter {
      *
      * @param mixed $input the string to be checked for ISO date format.
      * @param bool $throwErr if it set then it throw HatiError on failure.
+     * @param string $msg any custom message for input error.
      *
      * @return ?string returns the input if the input is a valid ISO formatted date. on failure
      * it returns null if the trigger error is not set.
      * */
-    public static function isoDate(mixed $input, bool $throwErr = false): ?string {
+    public static function isoDate(mixed $input, bool $throwErr = false, string $msg = ''): ?string {
+
         // check whether the input is null & empty
         if ($input === null) {
-            if ($throwErr) throw new TrunkErr('Date is null');
+            if ($throwErr) throw new TrunkErr(empty($msg) ? 'Date is null' : $msg);
             return null;
         }
 
         // check whether we have empty input
         if (strlen($input) < 1) {
-            if ($throwErr) throw new TrunkErr('Date is empty');
+            if ($throwErr) throw new TrunkErr(empty($msg) ? 'Date is empty' : $msg);
             return null;
         }
 
@@ -91,7 +93,7 @@ class Filter {
         // remaining after the filter.
         $pass = strlen($date) == 0;
 
-        if (!$pass && $throwErr) throw new TrunkErr('Invalid date is given. Date must be in YYYY-MM-DD format.');
+        if (!$pass && $throwErr) throw new TrunkErr(empty($msg) ? 'Invalid date is given. Date must be in YYYY-MM-DD format.' : $msg);
         return !$pass ? null : $input;
     }
 
@@ -101,20 +103,21 @@ class Filter {
      *
      * @param mixed $input the string to be checked for ISO date format.
      * @param bool $throwErr if it set then it throw HatiError on failure.
+     * @param string $msg any custom message for input error.
      *
      * @return ?string returns the input if the input is a valid ISO formatted date. on failure
      * it returns null if the trigger error is not set.
      * */
-    public static function isoDatetime(mixed $input, bool$throwErr = false): ?string {
+    public static function isoDatetime(mixed $input, bool$throwErr = false, string $msg = ''): ?string {
         // check whether the input is null & empty
         if ($input === null) {
-            if ($throwErr) throw new TrunkErr('Datetime is null');
+            if ($throwErr) throw new TrunkErr( empty($msg) ? 'Datetime is null' : $msg);
             return null;
         }
 
         // check whether we have empty input
         if (strlen($input) < 1) {
-            if ($throwErr) throw new TrunkErr('Datetime is empty');
+            if ($throwErr) throw new TrunkErr(empty($msg) ? 'Datetime is empty' : $msg);
             return null;
         }
 
@@ -125,7 +128,7 @@ class Filter {
         // remaining after the filter.
         $pass = strlen($date) == 0;
 
-        if (!$pass && $throwErr) throw new TrunkErr('Invalid datetime is given. Datetime must be in YYYY-MM-DD HH:MM:SS format.');
+        if (!$pass && $throwErr) throw new TrunkErr(empty($msg) ? 'Invalid datetime is given. Datetime must be in YYYY-MM-DD HH:MM:SS format.' : $msg);
         return !$pass ? null : $input;
     }
 
@@ -155,25 +158,26 @@ class Filter {
      * @param mixed $input string containing email to be checked
      * @param bool $throwErr if it is set then it throws HatiError on failure
      * otherwise it will return null value instead.
+     * @param string $msg any custom message for input error.
      *
      * @return ?string it returns null on failure if trigger error is not set otherwise
      * it will return null. on successful pass it returns the sanitized email.
      * */
-    public static function email(mixed $input, bool $throwErr = false): ?string {
+    public static function email(mixed $input, bool $throwErr = false, string $msg = ''): ?string {
         // check whether the input is null & empty
         if ($input === null) {
-            if ($throwErr) throw new TrunkErr('Email is null');
+            if ($throwErr) throw new TrunkErr(empty($msg) ? 'Email is null' : $msg);
             return null;
         }
 
         // check whether we have empty input
         if (strlen($input) < 1) {
-            if ($throwErr) throw new TrunkErr('Email is empty');
+            if ($throwErr) throw new TrunkErr(empty($msg) ? 'Email is empty' : $msg);
             return null;
         }
 
         $isEmail = filter_var($input, FILTER_VALIDATE_EMAIL);
-        if ($throwErr && !$isEmail) throw new TrunkErr('The email is not valid');
+        if ($throwErr && !$isEmail) throw new TrunkErr(empty($msg) ? 'The email is not valid' : $msg);
         if (!$isEmail) return null;
 
         return  filter_var($input, FILTER_SANITIZE_EMAIL);
@@ -190,20 +194,21 @@ class Filter {
      * @param mixed $input string or integer to be checked
      * @param bool $throwErr if it is set then it throws HatiError on failure
      * otherwise it will return null value instead.
+     * @param string $msg any custom message for input error.
      *
      * @return ?int it returns null on failure if trigger error is not set otherwise
      * it will return null. on successful pass it returns the sanitized integer.
      * */
-    public static function int(mixed $input, bool $throwErr = false): ?int {
+    public static function int(mixed $input, bool $throwErr = false, string $msg = ''): ?int {
         // check whether the input is null & empty
         if ($input === null) {
-            if ($throwErr) throw new TrunkErr('Input number is null');
+            if ($throwErr) throw new TrunkErr(empty($msg) ? 'Input number is null' : $msg);
             return null;
         }
 
         // check whether we have empty input
         if (strlen($input) < 1) {
-            if ($throwErr) throw new TrunkErr('Input number is empty');
+            if ($throwErr) throw new TrunkErr(empty($msg) ? 'Input number is empty' : $msg);
             return null;
         }
 
@@ -213,7 +218,7 @@ class Filter {
         // have a length of zero after filtering.
         $filter = strlen(preg_replace('#-?\d+#', '', $input));
         if ($filter > 0) {
-            if ($throwErr) throw new TrunkErr('Number has illegal characters.');
+            if ($throwErr) throw new TrunkErr(empty($msg) ? 'Number has illegal characters.' : $msg);
             return null;
         }
 
@@ -222,7 +227,7 @@ class Filter {
         if ($input === 0) return $input;
 
         $isInt = filter_var($input, FILTER_VALIDATE_INT);
-        if (!$isInt && $throwErr) throw new TrunkErr($input . ' is not an integer number.');
+        if (!$isInt && $throwErr) throw new TrunkErr(empty($msg) ? $input . ' is not an integer number.' : $msg);
         if (!$isInt) return null;
 
         return filter_var($input, FILTER_SANITIZE_NUMBER_INT);
@@ -243,20 +248,21 @@ class Filter {
      * @param mixed $input string or number to be checked
      * @param bool $throwErr if it is set then it throws HatiError on failure
      * otherwise it will return null value instead.
+     * @param string $msg any custom message for input error.
      *
      * @return ?float it returns null on failure if trigger error is not set otherwise
      * it will return null. on successful pass it returns the number.
      * */
-    public static function float(mixed $input, bool $throwErr = false): ?float {
+    public static function float(mixed $input, bool $throwErr = false, string $msg = ''): ?float {
         // check whether the input is null & empty
         if ($input === null) {
-            if ($throwErr) throw new TrunkErr('Float number input is null');
+            if ($throwErr) throw new TrunkErr(empty($msg) ? 'Float number input is null' : $msg);
             return null;
         }
 
         // check whether we have empty input
         if (strlen($input) < 1) {
-            if ($throwErr) throw new TrunkErr('Float number input is empty');
+            if ($throwErr) throw new TrunkErr(empty($msg) ? 'Float number input is empty' : $msg);
             return null;
         }
 
@@ -269,12 +275,12 @@ class Filter {
         // have a length of zero after filtering.
         $filter = strlen(preg_replace('#-?\d+\.\d+#', '', $input));
         if ($filter > 0) {
-            if ($throwErr) throw new TrunkErr('Float number has illegal characters.');
+            if ($throwErr) throw new TrunkErr(empty($msg) ? 'Float number has illegal characters.' : $msg);
             return null;
         }
 
         $isFloat = filter_var($input, FILTER_VALIDATE_FLOAT);
-        if (!$isFloat && $throwErr) throw new TrunkErr($input . ' is not a floating number.');
+        if (!$isFloat && $throwErr) throw new TrunkErr(empty($msg) ? $input . ' is not a floating number.' : $msg);
         if (!$isFloat) return null;
 
         return $input;
@@ -291,19 +297,20 @@ class Filter {
      * @param mixed $input string to be escaped
      * @param bool $throwErr if it is set then it throws HatiError on empty string
      * value. if it is not set then it returns null on empty string value.
+     * @param string $msg any custom message for input error
      *
      * @return ?string returns the escaped string. null on failure if the trigger error
      * is set false, otherwise it will trow exception.
      * */
-    public static function string(mixed $input, bool $throwErr = false): ?string {
+    public static function string(mixed $input, bool $throwErr = false, string $msg = ''): ?string {
         // check if we have empty
         if ($input === null) {
-            if ($throwErr) throw new TrunkErr('String is null');
+            if ($throwErr) throw new TrunkErr(empty($msg) ? 'String is null' : $msg);
             return null;
         }
 
         $empty = empty($input);
-        if ($empty && $throwErr) throw new TrunkErr('The string is empty');
+        if ($empty && $throwErr) throw new TrunkErr(empty($msg) ? 'The string is empty' : $msg);
         if ($empty) return null;
         return filter_var($input, FILTER_SANITIZE_SPECIAL_CHARS);
     }
@@ -315,25 +322,26 @@ class Filter {
      *
      * @param mixed $input the url string for checking.
      * @param bool $throwErr whether to throw error upon failure of validation.
+     * @param string $msg any custom message for input error.
      *
      * @return ?string returns null on failure otherwise it returns the sanitized url string.
      */
-    public static function url(mixed $input, bool $throwErr = false): ?string {
+    public static function url(mixed $input, bool $throwErr = false, string $msg = ''): ?string {
         // check whether the input is null & empty
         if ($input === null) {
-            if ($throwErr) throw new TrunkErr('Url is null');
+            if ($throwErr) throw new TrunkErr(empty($msg) ? 'Url is null' : $msg);
             return null;
         }
 
         // check whether we have empty input
         if (strlen($input) < 1) {
-            if ($throwErr) throw new TrunkErr('Url is empty');
+            if ($throwErr) throw new TrunkErr(empty($msg) ? 'Url is empty' : $msg);
             return null;
         }
 
         $isUrl = filter_var($input, FILTER_VALIDATE_URL);
         if (!$isUrl && $throwErr)
-            throw new TrunkErr('The input has to be a valid url string');
+            throw new TrunkErr(empty($msg) ? 'The input has to be a valid url string' : $msg);
         if (!$isUrl) return null;
 
         return filter_var($input, FILTER_SANITIZE_URL);
@@ -351,24 +359,25 @@ class Filter {
      *
      * @param mixed $input a string possible holding boolean value.
      * @param bool $throwErr whether to throw error on failure.
+     * @param string $msg any custom message for input error.
      *
      * @return ?bool returns null on invalid boolean value, otherwise returns the original value.
      * */
-    public static function bool(mixed $input, bool $throwErr = false): ?bool {
+    public static function bool(mixed $input, bool $throwErr = false, string $msg = ''): ?bool {
         // check whether the input is null & empty
         if ($input === null) {
-            if ($throwErr) throw new TrunkErr('Boolean input is null');
+            if ($throwErr) throw new TrunkErr(empty($msg) ? 'Boolean input is null' : $msg);
             return null;
         }
 
         // check whether we have empty input
         if (gettype($input) != 'boolean' && strlen($input) < 1) {
-            if ($throwErr) throw new TrunkErr('Boolean input is empty');
+            if ($throwErr) throw new TrunkErr(empty($msg) ? 'Boolean input is empty' : $msg);
             return null;
         }
 
         $isBool = filter_var($input, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-        if ($isBool === null && $throwErr) throw new TrunkErr('The input has to be a valid boolean value.');
+        if ($isBool === null && $throwErr) throw new TrunkErr(empty($msg) ? 'The input has to be a valid boolean value.' : $msg);
         return $isBool;
     }
 
@@ -384,10 +393,11 @@ class Filter {
      * @param ?int $min the min length of the input.
      * @param ?int $max the max length of the input.
      * @param bool $throwErr whether to throw exception on range failure.
+     * @param string $msg any custom message for input error.
      *
      * @return ?string returns the input if it is within the range, otherwise null.
      */
-    public static function strLength(string $input, ?int $min = null, ?int $max = null, bool $throwErr = false): ?string {
+    public static function strLength(string $input, ?int $min = null, ?int $max = null, bool $throwErr = false, string $msg = ''): ?string {
         $minPass = false;
         $maxPass = false;
         if ($min != null) $minPass = strlen($input) >= $min;
@@ -395,19 +405,19 @@ class Filter {
 
         if ($min != null && $max != null && (!$minPass || !$maxPass)) {
             if ($throwErr)
-                throw new TrunkErr("The string has to be between $min and $max in length inclusive.");
+                throw new TrunkErr(empty($msg) ? "The string has to be between $min and $max in length inclusive." : $msg);
             return null;
         }
 
         if ($min != null && !$minPass) {
             if ($throwErr)
-                throw new TrunkErr("The string has to be equal to or greater than $min in length.");
+                throw new TrunkErr(empty($msg) ? "The string has to be equal to or greater than $min in length." : $msg);
             return null;
         }
 
         if ($max != null && !$maxPass) {
             if ($throwErr)
-                throw new TrunkErr("The string has to be equal to or less than $max in length.");
+                throw new TrunkErr(empty($msg) ? "The string has to be equal to or less than $max in length." : $msg);
             return null;
         }
 
@@ -426,10 +436,11 @@ class Filter {
      * @param ?int $min the min limit of the input.
      * @param ?int $max the max limit of the input.
      * @param bool $throwErr whether to throw exception on range failure.
+     * @param string $msg any custom message for input error.
      *
      * @return ?int returns true if the input is within the range, otherwise null.
      * **/
-    public static function intLimit(int $input, ?int $min = null, ?int $max = null, bool $throwErr = false): ?int {
+    public static function intLimit(int $input, ?int $min = null, ?int $max = null, bool $throwErr = false, string $msg = ''): ?int {
         $haveBothRange = $min != null && $max != null;
 
         $minPass = false;
@@ -439,19 +450,19 @@ class Filter {
 
         if ($haveBothRange && (!$minPass || !$maxPass)) {
             if ($throwErr)
-                throw new TrunkErr("The integer has to be between $min and $max inclusive.");
+                throw new TrunkErr(empty($msg) ? "The integer has to be between $min and $max inclusive." : $msg);
             return null;
         }
 
         if ($min != null && !$minPass) {
             if ($throwErr)
-                throw new TrunkErr("The integer has to be equal to or greater than $min.");
+                throw new TrunkErr(empty($msg) ? "The integer has to be equal to or greater than $min." : $msg);
             return null;
         }
 
         if ($max != null && !$maxPass) {
             if ($throwErr)
-                throw new TrunkErr("The integer has to be equal to or less than $max.");
+                throw new TrunkErr(empty($msg) ? "The integer has to be equal to or less than $max." : $msg);
             return null;
         }
 

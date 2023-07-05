@@ -47,11 +47,17 @@ const CONFIG = [
     // response output mode and its configuration
     'as_JSON_output'                    =>          false,
 
-    // database configuration
+    // live database configuration
     'db_host'                           =>          'localhost',
     'db_name'                           =>          '',
     'db_username'                       =>          '',
     'db_password'                       =>          '',
+
+    // testing database configuration
+    'db_test_host'                      =>          'localhost',
+    'db_test_name'                      =>          '',
+    'db_test_username'                  =>          '',
+    'db_test_password'                  =>          '',
 
     // predefined sql queries will run once to prepare the db environment
     // with procedures, functions, CTE, optimization etc.
@@ -80,8 +86,7 @@ const CONFIG = [
 
     // various 3rd party libraries and framework version configuration
     'jquery'                            =>          '3.6.0',
-    'angular_js'                        =>          '1.8.2',
-    'jst'                               =>          '2.3.1',
+    'jst'                               =>          '3.0.1',
     'bootstrap'                         =>          '5.1.3',
     'jquery_ui'                         =>          '1.13.0',
     'highlight_js'                      =>          'intellij-light', // css file name for theme

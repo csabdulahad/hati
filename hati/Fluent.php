@@ -56,10 +56,19 @@ class Fluent {
      */
     private function __construct() {
         try {
-            $host = Hati::dbHost();
-            $db = Hati::dbName();
-            $user = Hati::dbUsername();
-            $pass = Hati::dbPassword();
+
+            // are we running in local environment?
+            if (str_contains(Util::host(), '://localhost')) {
+                $host = Hati::dbTestHost();
+                $db = Hati::dbTestName();
+                $user = Hati::dbTestUsername();
+                $pass = Hati::dbTestPassword();
+            } else {
+                $host = Hati::dbHost();
+                $db = Hati::dbName();
+                $user = Hati::dbUsername();
+                $pass = Hati::dbPassword();
+            }
 
             // get the timezone offset
             $timeZone = date('P');

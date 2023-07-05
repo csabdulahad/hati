@@ -8,6 +8,9 @@ namespace hati;
  * tag which can be very helpful in validating legitimate users.
  * */
 
+use hati\trunk\TrunkErr;
+use InvalidArgumentException;
+
 class Req {
 
     public static function isGET(): bool {
@@ -20,6 +23,58 @@ class Req {
 
     public static function method(): string {
         return $_SERVER['REQUEST_METHOD'];
+    }
+
+    /**
+     * Checks whether the content type is set and the type is application/json.
+     *
+     * @param bool $throwErr Indicates to throw error on checking.
+     * @return bool true if the content type is set and it is application/json, false otherwise.
+     * @throws TrunkErr Throws TrunkErr when either content type is missing or not in json format.
+     * */
+    public static function contentTypeJSON(bool $throwErr = false): bool {
+        $headers = getallheaders();
+
+        if (isset($headers['Content-Type']) && $headers['Content-Type'] == 'application/json')
+            return true;
+
+        if ($throwErr)
+            throw new TrunkErr('Bad request. Content must be in json format.');
+
+        return false;
+    }
+
+    /**
+     * Extracts the request body either as 'json' or 'raw'. It also checks the request content type header.
+     *
+     *
+     * @param string $as The format you want to request body be in. Only supports 'raw' & 'json'.
+     * @param bool $throwErr Indicates whether to throw error on invalid request type or invalid data type as specified
+     * 'as' argument.
+     * @throws TrunkErr|InvalidArgumentException Throws TrunkErr when data is not in valid format as specified 'as'
+     * argument. If the 'as' is either json or raw then throws InvalidArgumentException.
+     * @return array|string|null throws null when $throwErr is set to false when the data is not in right format or the content
+     * type is not matching as specified. Returns associative array if it is parsed successfully for json data. Otherwise
+     * returns null.
+     */
+    public static function body(string $as = 'json', bool $throwErr = false) : array|string|null {
+
+        if (!in_array($as, ['json', 'raw'])) {
+            throw new InvalidArgumentException('Argument must be either json or raw');
+        }
+
+        if ($as === 'json') {
+            if (!Req::contentTypeJSON($throwErr)) return null;
+
+            $data = json_decode(file_get_contents('php://input'), true);
+            if (json_last_error() != JSON_ERROR_NONE) {
+                if ($throwErr) throw new TrunkErr('Bad request. The data must in valid JSON syntax.');
+                return null;
+            }
+            return $data;
+        }
+
+        return file_get_contents('php://input');
     }
 
     /**

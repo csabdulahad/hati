@@ -47,7 +47,7 @@ use Throwable;
 class Hati {
 
     // version
-    private static string $version = '2.6.2';
+    private static string $version = '3.0.0';
 
     private static float $BENCHMARK_START = 0;
 
@@ -289,6 +289,22 @@ class Hati {
 
     public static function dbPassword(): string {
         return CONFIG['db_password'];
+    }
+
+    public static function dbTestHost(): string {
+        return CONFIG['db_test_host'];
+    }
+
+    public static function dbTestName(): string {
+        return CONFIG['db_test_name'];
+    }
+
+    public static function dbTestUsername(): string {
+        return CONFIG['db_test_username'];
+    }
+
+    public static function dbTestPassword(): string {
+        return CONFIG['db_test_password'];
     }
 
     public static function mailerPort(): int {

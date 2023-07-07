@@ -22,7 +22,7 @@ class Param {
      * @return string beautified string separated by space and capitalized.
      */
     public static function beautifyString(string $string): string {
-        return ucfirst(str_replace('_', ' ', $string));
+        return ucfirst(trim(str_replace('_', ' ', $string)));
     }
 
     public static function invalidGet(string $params, bool $throwErr = false): string|bool {

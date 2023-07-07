@@ -3,6 +3,7 @@
 namespace hati;
 
 use InvalidArgumentException;
+use JetBrains\PhpStorm\NoReturn;
 
 /**
  * Response - A JSON response writer class
@@ -72,15 +73,16 @@ class Response {
     // buffer for json output
     private array $output = [];
 
-    public function addKey(string $key) {
+    public function addKey(string $key): void {
         if (!array_key_exists($key, $this -> output)) $this -> output[$key] = null;
     }
 
-    public function add(string $key, $value) {
+    public function add(string $key, $value): void {
         $this -> output[$key] = $this -> getTypedValue($value);
     }
 
-    public function addAll($keys, $values) {
+    /** @noinspection PhpUnused **/
+    public function addAll($keys, $values): void {
         $keyCount = count($keys);
         if ($keyCount != count($values)) throw new InvalidArgumentException('Keys and values are not of same length.');
 
@@ -96,8 +98,10 @@ class Response {
      * @param mixed $val <p>any value you want to add to the array. passed value will be parsed
      * to obtain the right type.</p>
      * @return void
+     *
+     * @noinspection PhpUnused
      * */
-    public function addToArr(string $arrKey, mixed $val) {
+    public function addToArr(string $arrKey, mixed $val): void {
         // first define the array with given key if we don't have already
         $this -> addKey($arrKey);
         if (!is_array($this -> output[$arrKey])) $this -> output[$arrKey] = [];
@@ -109,7 +113,7 @@ class Response {
         else $this -> addToArray($arrKey, $val);
     }
 
-    private function addToArray(string $arrKey, $val) {
+    private function addToArray(string $arrKey, $val): void {
         $this -> output[$arrKey][] =  $this -> getTypedValue($val);
     }
 
@@ -122,7 +126,7 @@ class Response {
      * @param $map <p>The map(array/object) you want to add directly to the JSON output object.</p>
      * @return void
      */
-    public function addFromMap($map) {
+    public function addFromMap($map): void {
         $this -> checkMap($map);
         foreach ($map as $key => $value) $this -> add($key, $value);
     }
@@ -133,8 +137,10 @@ class Response {
      *
      * @param $maps <p>It must be an array containing maps(array/object).</p>
      * @return void
+     *
+     * @noinspection PhpUnused
      * */
-    public function addFromMaps($maps) {
+    public function addFromMaps($maps): void {
         if (!is_array($maps)) throw new InvalidArgumentException('The value has to be an array of maps');
         foreach ($maps as $map) $this -> addFromMap($map);
     }
@@ -146,7 +152,7 @@ class Response {
      * @param $value <p>The value which has to be a map</p>
      * @return void
      * */
-    private function checkMap($val) {
+    private function checkMap($val): void {
         if (!is_object($val) && !is_array($val))
             throw new InvalidArgumentException('The value has to be a map of either array or object.');
     }
@@ -162,7 +168,7 @@ class Response {
      * @param mixed $val <p>The value of the property.</p>
      * @return void
      */
-    public function addToMap(string $mapKey, string $key, mixed $val) {
+    public function addToMap(string $mapKey, string $key, mixed $val): void {
         $this -> addKey($mapKey);
         if ($this -> output[$mapKey] == null) $this -> output[$mapKey] = [];
         $this -> output[$mapKey][$key] = $this -> getTypedValue($val);
@@ -180,7 +186,7 @@ class Response {
      * JSON output object.</p>
      * @return void
      */
-    public function addMapToMap(string $mapKey, $map) {
+    public function addMapToMap(string $mapKey, $map): void {
         $this -> checkMap($map);
         foreach ($map as $key => $value) $this -> addToMap($mapKey, $key, $value);
     }
@@ -191,8 +197,10 @@ class Response {
      * map.</p>
      * @param $mapArray <p>The array which contains the maps of arrays or objects</p>
      * @return void
+     *
+     * @noinspection PhpUnused
      */
-    public function addMapsToMap(string $mapKey, $mapArray) {
+    public function addMapsToMap(string $mapKey, $mapArray): void {
         if (!is_array($mapArray)) throw new InvalidArgumentException('an array of maps is required.');
         foreach ($mapArray as $map) $this -> addMapToMap($mapKey, $map);
     }
@@ -201,19 +209,21 @@ class Response {
         return json_encode($this -> output);
     }
 
-    public function reply($msg = '', $stat = Response::SUCCESS, $lvl = Response::LVL_USER) {
+    #[NoReturn] public function reply($msg = '', $stat = Response::SUCCESS, $lvl = Response::LVL_USER): void {
         $resObj = self::addResponseObject($stat, $lvl, $msg);
         $this -> add(self::$KEY_RESPONSE, $resObj);
 
 
         if (Hati::asJSONOutput()) header('Content-Type: application/json');
 
-        exit($this -> getJSON());
+        echo $this -> getJSON();
+        exit;
     }
 
-    public static function report($msg, $stat, $lvl) {
+    #[NoReturn] public static function report($msg, $stat, $lvl): void {
         if (Hati::asJSONOutput()) header('Content-Type: application/json');
-        exit(self::reportJSON($msg, $stat, $lvl));
+        echo self::reportJSON($msg, $stat, $lvl);
+        exit;
     }
 
     // when the Hati has dev_API_delay flag turned on, then it adds additional
@@ -226,19 +236,23 @@ class Response {
         if (Hati::dev_api_delay()) $buffer['delay_time'] = Hati::dev_api_delay();
     }
 
-    public static function reportOk(string $msg = '', int $lvl = self::LVL_USER) {
+    /** @noinspection PhpUnused **/
+    #[NoReturn] public static function reportOk(string $msg = '', int $lvl = self::LVL_USER): void {
         self::report($msg, Response::SUCCESS, $lvl);
     }
 
-    public static function reportInfo(string $msg = '', int $lvl = self::LVL_USER) {
+    /** @noinspection PhpUnused **/
+    #[NoReturn] public static function reportInfo(string $msg = '', int $lvl = self::LVL_USER): void {
         self::report($msg, Response::INFO, $lvl);
     }
 
-    public static function reportWarn(string $msg = '', int $lvl = self::LVL_USER) {
+    /** @noinspection PhpUnused **/
+    #[NoReturn] public static function reportWarn(string $msg = '', int $lvl = self::LVL_USER): void {
         self::report($msg, Response::WARNING, $lvl);
     }
 
-    public static function reportErr(string $msg = '', int $lvl = self::LVL_USER) {
+    /** @noinspection PhpUnused **/
+    #[NoReturn] public static function reportErr(string $msg = '', int $lvl = self::LVL_USER): void {
         self::report($msg, Response::ERROR, $lvl);
     }
 
@@ -256,6 +270,25 @@ class Response {
         $output[self::$KEY_RESPONSE] = self::addResponseObject($status, $level, $msg);
         if (Hati::asJSONOutput()) header('Content-Type: application/json');
         return json_encode($output);
+    }
+
+    #[NoReturn] public static function sendJSON(array $data = []): void {
+        $output = [];
+
+        if (is_array($data)) {
+            foreach ($data as $k => $v)
+                $output[$k] = $v;
+        }
+
+        // check whether we have any API testing properties to perform
+        $delay = Hati::dev_api_delay();
+        if ($delay > 0) sleep($delay);
+        self::addDevProperties($output);
+
+
+        if (Hati::asJSONOutput()) header('Content-Type: application/json');
+        echo count($output) == 0 ? '{}' : json_encode($output);
+        exit;
     }
 
     private static function addResponseObject($stat, $lvl, $msg): array {

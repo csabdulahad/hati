@@ -3,6 +3,7 @@
 namespace hati\trunk;
 
 use hati\Response;
+use JetBrains\PhpStorm\NoReturn;
 use RuntimeException;
 
 abstract class Trunk extends RuntimeException {
@@ -22,8 +23,9 @@ abstract class Trunk extends RuntimeException {
         return Response::reportJSON($this -> msg, $this -> status, $this -> level);
     }
 
-    public function report() {
-        exit($this);
+    #[NoReturn] public function report(): void {
+        echo $this;
+        exit;
     }
 
     public function getMsg(): string {

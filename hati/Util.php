@@ -104,7 +104,7 @@ class Util {
      *
      * @param string $key The session variable key whose value is to be printed out.
      * */
-    public static function printSessVar(string $key){
+    public static function printSessVar(string $key):void {
         echo self::sessVar($key);
     }
 
@@ -115,7 +115,7 @@ class Util {
      *
      * @param string $key The cookie variable key whose value is to be printed out.
      * */
-    public static function printCookie(string $key) {
+    public static function printCookie(string $key):void {
         echo self::cookieVar($key);
     }
 
@@ -358,7 +358,7 @@ class Util {
     /**
      * this function print out the host address
      * */
-    public static function printHost() {
+    public static function printHost(): void {
         echo self::host();
     }
 
@@ -374,12 +374,38 @@ class Util {
      * @param string $autoHide whether to auto hide the toast.
      * @param int $delay the number seconds the toast will be displayed for.
      * */
-    public static function toast(string $msg, string $to = '', int $type = Response::WARNING, string $autoHide = 'true', int $delay = 2) {
+    public static function toast(string $msg, string $to = '', int $type = Response::WARNING, string $autoHide = 'true', int $delay = 2): void {
         Biscuit::giveAway('toast_msg', $msg, httpOnly: false);
         Biscuit::giveAway('toast_type', $type, httpOnly: false);
         Biscuit::giveAway('toast_auto_hide', $autoHide, httpOnly: false);
         Biscuit::giveAway('toast_delay', $delay, httpOnly: false);
         if (!empty($to)) header("Location: $to");
+    }
+
+    /**
+     * For an array, it checks whether the given key is present in the array.
+     * It returns either true or false when the comparing argument $comVal is set
+     * to null.
+     * When the $comVal is set, it tries to match with the value under the
+     * specified key in the array. If matches then returns the $comValue, otherwise
+     * returns the default value as specified by $def argument.
+     *
+     * @param string $key The key to look for in the array
+     * @param array $arr The array
+     * @param mixed|null $comVal The value to compare with
+     * @param mixed $def Any default to be returned when there is no match
+     * */
+    public static function setOrDef(string $key, array $arr, mixed $comVal = null, mixed $def = ''): mixed {
+        $set = isset($arr[$key]);
+
+        if (!$set && is_null($comVal)) return false;
+
+        if ($set && is_null($comVal)) return true;
+
+        if ($arr[$key] == $comVal) {
+            return $comVal;
+        }
+        return $def;
     }
 
 }

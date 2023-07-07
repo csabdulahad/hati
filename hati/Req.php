@@ -57,7 +57,7 @@ class Req {
      * type is not matching as specified. Returns associative array if it is parsed successfully for json data. Otherwise
      * returns null.
      */
-    public static function body(string $as = 'json', bool $throwErr = false) : array|string|null {
+    public static function body(bool $throwErr = false, string $as = 'json') : array|string|null {
 
         if (!in_array($as, ['json', 'raw'])) {
             throw new InvalidArgumentException('Argument must be either json or raw');

@@ -33,6 +33,10 @@ class Param {
         return self::scanInvalid($params, $_POST, $throwErr);
     }
 
+    public static function invalidBody(string $params, array $arr, bool $throwErr = false): string|bool {
+        return self::scanInvalid($params, $arr, $throwErr);
+    }
+
     /**
      * This method can perform checks on parameter lists seperated by commas. If the param is empty
      * or not set then it can trigger/throw an error or it can return the param as string to indicate
@@ -75,7 +79,7 @@ class Param {
      * It does the actual checking on the super-global array $_GET and $_POST.
      *
      * @param array $array the super-global array.
-     * @param string the key has to be set and has to have a non-empty value.
+     * @param string $param the key has to be set and has to have a non-empty value.
      *
      * @return int it returns 0 when the key is not set, returns -1 when the
      * value is empty. Otherwise it returns 1.

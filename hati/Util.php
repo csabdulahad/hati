@@ -382,30 +382,4 @@ class Util {
         if (!empty($to)) header("Location: $to");
     }
 
-    /**
-     * For an array, it checks whether the given key is present in the array.
-     * It returns either true or false when the comparing argument $comVal is set
-     * to null.
-     * When the $comVal is set, it tries to match with the value under the
-     * specified key in the array. If matches then returns the $comValue, otherwise
-     * returns the default value as specified by $def argument.
-     *
-     * @param string $key The key to look for in the array
-     * @param array $arr The array
-     * @param mixed|null $comVal The value to compare with
-     * @param mixed $def Any default to be returned when there is no match
-     * */
-    public static function setOrDef(string $key, array $arr, mixed $comVal = null, mixed $def = ''): mixed {
-        $set = isset($arr[$key]);
-
-        if (!$set && is_null($comVal)) return false;
-
-        if ($set && is_null($comVal)) return true;
-
-        if ($arr[$key] == $comVal) {
-            return $comVal;
-        }
-        return $def;
-    }
-
 }

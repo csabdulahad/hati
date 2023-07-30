@@ -14,6 +14,7 @@ namespace hati\uploader;
  *
  * */
 
+use hati\config\Key;
 use hati\Hati;
 use hati\trunk\TrunkErr;
 use hati\Util;
@@ -72,7 +73,7 @@ class Kuli {
     public function __construct(bool $uniqueName = false, bool $throwErr = false) {
         $this -> uniqueName = $uniqueName;
         $this -> triggerError = $throwErr;
-        $this -> rootFolder = Hati::docRoot();
+        $this -> rootFolder = Hati::root();
         $this -> loadConfig();
     }
 
@@ -244,7 +245,7 @@ class Kuli {
 
     private function deleteUpload() {
         foreach ($this -> movedFileName as $file) {
-            $file = Hati::neutralizeSeparator(Hati::docRoot() . $file);
+            $file = Hati::fixSeparator(Hati::root() . $file);
             unlink($file);
         }
     }
@@ -309,10 +310,10 @@ class Kuli {
     }
 
     private function loadConfig() {
-        $this -> docConfig = Hati::docConfig();
-        $this -> imgConfig = Hati::imgConfig();
-        $this -> videoConfig = Hati::videoConfig();
-        $this -> audioConfig = Hati::audioConfig();
+        $this -> docConfig = Hati::config(Key::DOC_CONFIG, 'arr');
+        $this -> imgConfig = Hati::config(Key::IMG_CONFIG, 'arr');
+        $this -> videoConfig = Hati::config(Key::VIDEO_CONFIG, 'arr');
+        $this -> audioConfig = Hati::config(Key::AUDIO_CONFIG, 'arr');
 
         // trim any whitespace from the extension list
         $this -> trimExt($this -> docConfig);
@@ -321,10 +322,10 @@ class Kuli {
         $this -> trimExt($this -> audioConfig);
 
         // neutralize the directory separator in folder path
-        $this -> docConfig['folder'] = Hati::neutralizeSeparator($this -> docConfig['folder']);
-        $this -> imgConfig['folder'] = Hati::neutralizeSeparator($this -> imgConfig['folder']);
-        $this -> videoConfig['folder'] = Hati::neutralizeSeparator($this -> videoConfig['folder']);
-        $this -> audioConfig['folder'] = Hati::neutralizeSeparator($this -> audioConfig['folder']);
+        $this -> docConfig['folder'] = Hati::fixSeparator($this -> docConfig['folder']);
+        $this -> imgConfig['folder'] = Hati::fixSeparator($this -> imgConfig['folder']);
+        $this -> videoConfig['folder'] = Hati::fixSeparator($this -> videoConfig['folder']);
+        $this -> audioConfig['folder'] = Hati::fixSeparator($this -> audioConfig['folder']);
     }
 
     // This method is used internally to trim any extra whitespaces from the

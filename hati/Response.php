@@ -2,6 +2,7 @@
 
 namespace hati;
 
+use hati\config\Key;
 use InvalidArgumentException;
 use JetBrains\PhpStorm\NoReturn;
 
@@ -214,14 +215,14 @@ class Response {
         $this -> add(self::$KEY_RESPONSE, $resObj);
 
 
-        if (Hati::asJSONOutput()) header('Content-Type: application/json');
+        if (Hati::config(Key::AS_JSON_OUTPUT, 'bool')) header('Content-Type: application/json');
 
         echo $this -> getJSON();
         exit;
     }
 
     #[NoReturn] public static function report($msg, $stat, $lvl): void {
-        if (Hati::asJSONOutput()) header('Content-Type: application/json');
+        if (Hati::config(Key::AS_JSON_OUTPUT, 'bool')) header('Content-Type: application/json');
         echo self::reportJSON($msg, $stat, $lvl);
         exit;
     }
@@ -230,10 +231,12 @@ class Response {
     // DE_API_DELAY to the response object to indicate/remind the developer for
     // future work or production release.
     private static function addDevProperties(array &$buffer): void {
-        if (Hati::dev_API_benchmark())
+        if (Hati::config(Key::DEV_API_BENCHMARK, 'bool'))
             $buffer['exe_time'] = sprintf('%.4f', microtime(true) - Hati::benchmarkStart());
 
-        if (Hati::dev_api_delay()) $buffer['delay_time'] = Hati::dev_api_delay();
+        // For any positive DEV_API_DELAY config, we need to add 'delay_time' to the output json
+        $apiDelay = Hati::config(Key::DEV_API_DELAY, 'int');
+        if ($apiDelay) $buffer['delay_time'] = $apiDelay;
     }
 
     /** @noinspection PhpUnused **/
@@ -268,7 +271,7 @@ class Response {
     */
     public static function reportJSON(string $msg, int $status, int $level): string {
         $output[self::$KEY_RESPONSE] = self::addResponseObject($status, $level, $msg);
-        if (Hati::asJSONOutput()) header('Content-Type: application/json');
+        if (Hati::config(Key::AS_JSON_OUTPUT, 'bool')) header('Content-Type: application/json');
         return json_encode($output);
     }
 
@@ -281,12 +284,12 @@ class Response {
         }
 
         // check whether we have any API testing properties to perform
-        $delay = Hati::dev_api_delay();
+        $delay = Hati::config(Key::DEV_API_DELAY, 'int');
         if ($delay > 0) sleep($delay);
         self::addDevProperties($output);
 
 
-        if (Hati::asJSONOutput()) header('Content-Type: application/json');
+        if (Hati::config(Key::AS_JSON_OUTPUT, 'bool')) header('Content-Type: application/json');
         echo count($output) == 0 ? '{}' : json_encode($output);
         exit;
     }
@@ -297,7 +300,7 @@ class Response {
         $output[self::$KEY_MSG] = $msg;
 
         // check whether we have any API testing properties to perform
-        $delay = Hati::dev_api_delay();
+        $delay = Hati::config(Key::DEV_API_DELAY, 'int');
         if ($delay > 0) sleep($delay);
         self::addDevProperties($output);
 

@@ -14,6 +14,7 @@ namespace hati;
  * well supported by this class.
  * */
 
+use hati\config\Key;
 use hati\trunk\TrunkErr;
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\PHPMailer;
@@ -41,13 +42,13 @@ class Perok {
 
         // initialize google account SMTP protocol details
         $this -> phpMailer -> Host = 'smtp.gmail.com';
-        $this -> phpMailer -> Port = Hati::mailerPort();
-        $this -> phpMailer -> Username = Hati::mailerEmail();
-        $this -> phpMailer -> Password = Hati::mailerPass();
+        $this -> phpMailer -> Port = Hati::config(Key::MAILER_PORT, 'int');
+        $this -> phpMailer -> Username = Hati::config(Key::MAILER_EMAIL);
+        $this -> phpMailer -> Password = Hati::config(Key::MAILER_PASS);
 
         // set up mailing profile
         try {
-            $this -> phpMailer -> setFrom(Hati::mailerEmail(), Hati::mailerName());
+            $this -> phpMailer -> setFrom(Hati::config(Key::MAILER_EMAIL), Hati::config(Key::MAILER_NAME));
         } catch (Exception $e) {
             throw new TrunkErr('Perok encountered error during initialization: ' . $e -> getMessage());
         }
@@ -95,17 +96,17 @@ class Perok {
      * This method eases the composing HTML email by getting the contents from an HTML file.
      * The file path is the full name of the file with extension and directory appended in
      * front inside the server document root. Perok does the server root directory path
-     * appending by using @link Hati::docRoot() method internally.
-     *
-     * @param string $filePath The file name with extension and path within the server root folder.
+     * appending by using @param string $filePath The file name with extension and path within the server root folder.
      * @param bool $throwErr Indicate whether to throw exception upon encountering any error.
      *
      * @return bool Returns true if it can successfully compose message body from the HTML file.
-     * */
+     * *@link Hati::root() method internally.
+     *
+     */
     public static function composeFromHtml(string $filePath, bool $throwErr = false): bool {
         $ins = self::get();
         $ins -> phpMailer -> isHTML();
-        $path = Hati::neutralizeSeparator(Hati::docRoot(). $filePath);
+        $path = Hati::fixSeparator(Hati::root(). $filePath);
         try {
             $ins -> phpMailer -> msgHTML(file_get_contents($path));
             return true;
@@ -129,16 +130,16 @@ class Perok {
     /**
      * Any file can be composed as part of attachment of the email. The file path is the full
      * name of the file with extension and directory appended in front inside the server document
-     * root. Perok does the server root directory path appending by using @link Hati::docRoot()
-     * method internally.
-     *
-     * @param string $filePath The file name with extension and path within the server root folder.
+     * root. Perok does the server root directory path appending by using @param string $filePath The file name with extension and path within the server root folder.
      * @param string $fileName File name as it will be shown in the email client.
      * @param bool $throwErr Indicate whether to throw exception upon encountering any error.
-     * */
+     * *@link Hati::root()
+     * method internally.
+     *
+     */
     public static function attachFile(string $filePath, string $fileName = '', bool $throwErr = false) {
         $ins = self::get();
-        $path = Hati::neutralizeSeparator(Hati::docRoot() . $filePath);
+        $path = Hati::fixSeparator(Hati::root() . $filePath);
         try {
             $ins -> phpMailer -> addAttachment($path, $fileName);
         } catch (Exception $e) {
@@ -165,16 +166,16 @@ class Perok {
     /**
      * This method can embed any image for including images as CID image in the HTML message.
      * The path to the image file is only with the directory and full name with extension. Perok
-     * does the server root directory path appending by using @link Hati::docRoot() method internallly.
-     *
-     * @param string $filePath The file name with extension and path within the server root folder.
+     * does the server root directory path appending by using @param string $filePath The file name with extension and path within the server root folder.
      * @param string $fileName Argument for CID image to be used inside the HTML message.
      * @param bool $throwErr Indicate whether to throw exception upon encountering any error.
-     * */
+     * *@link Hati::root() method internallly.
+     *
+     */
     public static function embedCIDImage(string $filePath, string $fileName, bool $throwErr = false): void {
         $ins = self::get();
         try {
-            $path = Hati::neutralizeSeparator(Hati::docRoot() . $filePath);
+            $path = Hati::fixSeparator(Hati::root() . $filePath);
             $ins -> phpMailer -> addEmbeddedImage($path, $fileName);
         } catch (Exception $e) {
             if ($throwErr) throw new TrunkErr('Failed embedding image: ' . $e -> getMessage());
@@ -200,7 +201,7 @@ class Perok {
             $perok = self::get();
 
             // get the reply to address either from the argument or the configuration file
-            $replyTo = empty($replyTo) ? Hati::mailerReplyTo() : $replyTo;
+            $replyTo = empty($replyTo) ? Hati::config(Key::MAILER_REPLY_TO) : $replyTo;
             if (!empty($replyTo)) $perok -> phpMailer -> addReplyTo($replyTo);
 
             $perok -> phpMailer -> addAddress($to);
@@ -249,7 +250,7 @@ class Perok {
      * @return  bool Returns true on successful sending email; false otherwise.
      * */
     public static function sendStd(string $to, string $subject, string $message): bool {
-        $nameEmail = Hati::mailerName() . ' <' . Hati::mailerEmail() . '>';
+        $nameEmail = Hati::config(Key::MAILER_NAME) . ' <' . Hati::config(Key::MAILER_EMAIL) . '>';
         $header  = "From: $nameEmail\n";
         $header .= "X-Sender: $nameEmail\n";
         $header .= 'X-Mailer: PHP/' . phpversion();

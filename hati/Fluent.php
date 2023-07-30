@@ -2,6 +2,14 @@
 
 namespace hati;
 
+use hati\config\Key;
+use hati\trunk\TrunkErr;
+use PDO;
+use PDOStatement;
+use RuntimeException;
+use stdClass;
+use Throwable;
+
 /**
  * Fluent is wrapper class around PDO extension to allow simple, flawless
  * easy access and manipulation of the database query operations. It uses
@@ -22,12 +30,6 @@ namespace hati;
  * or reactive to any error.
  *
  * */
-
-use hati\trunk\TrunkErr;
-use PDO;
-use PDOStatement;
-use stdClass;
-use Throwable;
 
 class Fluent {
 
@@ -59,15 +61,15 @@ class Fluent {
 
             // are we running in local environment?
             if (str_contains(Util::host(), '://localhost')) {
-                $host = Hati::dbTestHost();
-                $db = Hati::dbTestName();
-                $user = Hati::dbTestUsername();
-                $pass = Hati::dbTestPassword();
+                $host = Hati::config(Key::DB_TEST_HOST);
+                $db = Hati::config(Key::DB_TEST_NAME);
+                $user = Hati::config(Key::DB_TEST_USERNAME);
+                $pass = Hati::config(Key::DB_TEST_PASSWORD);
             } else {
-                $host = Hati::dbHost();
-                $db = Hati::dbName();
-                $user = Hati::dbUsername();
-                $pass = Hati::dbPassword();
+                $host = Hati::config(Key::DB_HOST);
+                $db = Hati::config(Key::DB_NAME);
+                $user = Hati::config(Key::DB_USERNAME);
+                $pass = Hati::config(Key::DB_PASSWORD);
             }
 
             // get the timezone offset
@@ -182,6 +184,215 @@ class Fluent {
     }
 
     /**
+     * This method performs the update operation based on the argument values.
+     *
+     * @param string $table The table name where this update operation is going to be performed
+     * @param array $columns Array containing column-values pari. Values can be left out. Missing values will be picked
+     * up from the values array.
+     * @param array $values Values for the columns.
+     * @param bool $usePrepare Indicates to whether use the prepare statement for the query. This method does all the
+     * tricks for marking values with ? and binding them before query execution.
+     * @param string $where Where clauses to control the update operation. Values can be left out by ? mark be picked
+     * up from the whereValues array.
+     * @param array $whereVal Array containing the values for the where clauses
+     * @param string $msg Any message to replace SQL error
+     *
+     * @throws RuntimeException When column-value pair mismatched
+     * @return int Number of raw were updated by this query
+     **/
+    private static function updateData(string $table, array $columns, array $values, bool $usePrepare, string $where, array $whereVal, string $msg): int {
+        list($cols, $val) = self::toQueryStruct($columns, $values, ' = ', $usePrepare);
+        $cols = explode(',', $cols);
+        $val = explode(',', $val);
+
+        $sets = '';
+        foreach ($cols as $i => $v) {
+            $sets .= "$v$val[$i], ";
+        }
+        $sets = substr($sets, 0, strlen($sets) - 2);
+
+        $q = "UPDATE $table SET $sets";
+
+        if (!empty($where)) {
+            $w = self::bind($usePrepare, $where, $whereVal, 'The number of values and where clause columns requiring values do not match');
+            $q .= " WHERE $w";
+        }
+
+        if ($usePrepare) {
+            $values = array_merge($values, $whereVal);
+        }
+
+        return $usePrepare ? self::exePrepare($q, $values, $msg) : self::exeStatic($q, $msg);
+    }
+
+    /**
+     * This method performs the update operation based on the argument values.
+     *
+     * @param string $table The table name
+     * @param string $where The where clause of the query. This can have column with values as regular queries have. But
+     * can also be left out with ? mark so that the values can fetched from the whereValues.
+     * @param array $whereValues Array containing values for the ? marked columns
+     * @param bool $usePrepare Indicates whether the value should use prepare statement or regular query
+     * @param string $msg Any message to replace SQL query error
+     *
+     * @throws RuntimeException When the number of values doesn't with the number of question mark for binding
+     * @return int The number of rows were affected by this query
+     **/
+    private static function deleteDate(string $table, string $where, array $whereValues, bool $usePrepare, string $msg): int {
+        $q = "DELETE FROM $table";
+
+        if (!empty($where)) {
+            $w = self::bind($usePrepare, $where, $whereValues, "Number of values passed for where clause don't match");
+            $q .= " WHERE $w";
+        }
+
+        return $usePrepare ? self::exePrepare($q, $whereValues, $msg) : self::exeStatic($q, $msg);
+    }
+
+    /**
+     * This method build up the query string based on how the columns & values array are set.
+     * It is private only because of function signature.
+     *
+     * @param string $table The name of the table to perform this insert operation to
+     * @param array $columns It can be a normal array containing columns for prepare statement
+     * or can be an associative array containing name-value mapping.
+     * @param array $values Array containing the values for the prepared statement data binding or columns
+     * @param bool $usePrepare Indicates whether the query it to use prepare statement or not
+     * @param string $msg Any message to replace the default mysql error with
+     *
+     * @throws RuntimeException If the number of bind columns don't match with the number of values passed-in
+     * @return int indicates how many rows were affected by the query execution.
+     **/
+    private static function insertData(string $table, array $columns, array $values = [], bool $usePrepare = false, string $msg = ''): int {
+        list($cols, $val) = self::toQueryStruct($columns, $values, '', $usePrepare);
+
+        // build up the query string & execute as per request
+        $q = "INSERT INTO $table($cols) VALUES($val)";
+        return $usePrepare ? self::exePrepare($q, $values, $msg) : self::exeStatic($q, $msg);
+    }
+
+    /**
+     * Helper method with allows easy data insertion with prepare statement.
+     *
+     * @param string $table The name of the table to perform this insert operation to
+     * @param array $columns It can be either:
+     * <br>- a normal array containing columns for prepare statement
+     * <br>- an associative array of column-value mapping
+     * <br>- mixed of both.
+     * <br>If associative array is passed-in then, these column-value pairs are not used in
+     * data binding of the prepare statement. They will be just added as part of normal
+     * insert query.
+     * <br>For mixed array, it tries to match the missing value from the values array as
+     * prepare statement.
+     *
+     * @param array $values Array containing the values for the prepared statement data binding
+     * @param string $msg Any message to replace the default mysql error with
+     *
+     * @throws RuntimeException If the number of bind columns don't match with the number of values passed-in
+     * @return int indicates how many rows were affected by the query execution.
+     **/
+    public static function insertPrepare(string $table, array $columns, array $values = [], string $msg = ''): int {
+        return self::insertData($table, $columns, $values, true, $msg);
+    }
+
+    /**
+     * Helper method with allows easy data insertion
+     *
+     * @param string $table The name of the table to perform this insert operation to
+     * @param array $columns It can be either:
+     * <br>- a normal array containing columns for the query
+     * <br>- an associative array of column-value mapping
+     * <br>- mixed of both.
+     * <br>If associative array is passed-in then, these column-value mapping happens
+     * as they are defined by the array.
+     * <br>For mixed array where some columns don't have value pair, then it tries to
+     * match the missing value from the values array to complete the array
+     *
+     * @param array $values Array containing the values for the query
+     * @param string $msg Any message to replace the default mysql error with
+     *
+     * @throws RuntimeException If the number of columns which have missing values don't
+     * match with the number of values passed-in
+     * @return int indicates how many rows were affected by the query execution.
+     **/
+    public static function insert(string $table, array $columns, array $values = [], string $msg = ''): int {
+        return self::insertData($table, $columns, $values, false, $msg);
+    }
+
+    /**
+     * Helper method allows easy update operation. It doesn't use prepare statement. No values are prepared for the
+     * query. Use Fluent::updatePrepare() method instead.
+     *
+     * @param string $table The table name
+     * @param array $cols It the column which needs to be updated. Can contain key-value mapping too. The value for a
+     * can be left out, be passed-in in values array.
+     * @param string $where Optional where clause to control the update operation. Column here can be set as part of
+     * the string or be marked with ? mark which can be passed in by whereValues array.
+     * @param array $whereValues Array containing the values for the where clauses
+     * @param string $msg Any custom message to replace SQL error message
+     *
+     * @throws RuntimeException It throws run time exception when number cols-values or where-whereValue pair don't
+     * match
+     * @return int The number of raws were updated by the query
+     **/
+    public static function update(string $table, array $cols, array $values = [], string $where = '', array $whereValues = [], string $msg = ''): int {
+        return self::updateData($table, $cols, $values, false, $where, $whereValues, $msg);
+    }
+
+    /**
+     * Helper method allows easy update operation. It uses prepare statement to bind values for column values and
+     * where clauses.
+     *
+     * @param string $table The table name
+     * @param array $cols It the column which needs to be updated. Can contain key-value mapping too. The value for a
+     * can be left out, be passed-in in values array.
+     * @param string $where Optional where clause to control the update operation. Column here can be set as part of
+     * the string or be marked with ? mark which can be passed in by whereValues array.
+     * @param array $whereValues Array containing the values for the where clauses
+     * @param string $msg Any custom message to replace SQL error message
+     *
+     * @throws RuntimeException It throws run time exception when number cols-values or where-whereValue pair don't
+     * match
+     * @return int The number of raws were updated by the query
+     **/
+    public static function updatePrepare(string $table, array $cols, array $values = [], string $where = '', array $whereValues = [], string $msg = ''): int {
+        return self::updateData($table, $cols, $values, true, $where, $whereValues,  $msg);
+    }
+
+    /**
+     * Helper method allows easy delete operation. It doesn't use prepare statement. No values are prepared for the
+     * query. Use Fluent::deletePrepare() method instead.
+     *
+     * @param string $table The table name
+     * @param string $where The where clause to control the update operation. Column here can be set as part of
+     * the string or be marked with ? mark which can be passed in by whereValues array.
+     * @param array $whereValues Array containing the values for the where clauses
+     * @param string $msg Any custom message to replace SQL error message
+     *
+     * @throws RuntimeException It throws run time exception when number of  where-whereValue pair don't match
+     * @return int The number of raws were deleted by the query
+     **/
+    public static function delete(string $table, string $where = '', array $whereValues = [], string $msg = ''): int {
+        return self::deleteDate($table, $where, $whereValues, false, $msg);
+    }
+
+    /**
+     * Helper method allows easy delete operation. It uses prepare statement to bind values for where clauses.
+     *
+     * @param string $table The table name
+     * @param string $where The where clause to control the delete operation. Column here can be set as part of
+     * the string or be marked with ? mark which can be passed in by whereValues array.
+     * @param array $whereValues Array containing the values for the where clauses
+     * @param string $msg Any custom message to replace SQL error message
+     *
+     * @throws RuntimeException It throws run time exception when number where-whereValue pair don't match
+     * @return int The number of raws were deleted by the query
+     **/
+    public static function deletePrepare(string $table, string $where = '', array $whereValues = [], string $msg = ''): int {
+        return self::deleteDate($table, $where, $whereValues, true, $msg);
+    }
+
+    /**
      * When a query get successfully prepared with the query string, a PDOStatement
      * can be achieved for further processing. This method first checks whether it
      * has already been prepared by null checking on the stmt internal buffer.
@@ -238,14 +449,9 @@ class Fluent {
     }
 
     /**
-     * In order to get a Fluent object, it needs a dependency of type FluentConfig
-     * under exact namespace "data\DBMeta". From this it gets information about
-     * the database that you want it to connect to.
-     *
-     * It throws runtime exception of HatiError if the dependency is not present at
-     * the specific location or the configuration class isn't of type FluentConfig.
-     * However, upon getting the right class it initializes a connection using the
-     * information provided.
+     * The Fluent wrapper object is created by this call. It creates database connection
+     * as specified in the hati.json file. It uses singleton pattern to cache the
+     * connection object.
      *
      * @return Fluent a fluent instance
      */
@@ -399,6 +605,77 @@ class Fluent {
     public static function commit(): bool {
         $db = Fluent::get() -> db;
         return $db -> inTransaction() && $db -> commit();
+    }
+
+    /**
+     * Replace ? mark with bind values array. if it is for non-prepare statement the values get directly added
+     * as part of the query, otherwise left out with ? mark so that it can be uses as prepare statement.
+     *
+     * @param bool $usePrepare Indicates whether the calculated returned query be used for prepare statement
+     * @param string $query The query where this binding operation to be performed
+     * @param array $values Values for those ? mark
+     * @param string $errMsg Any message in case there is mismatch between number of values and ? marks
+     *
+     * @throws RuntimeException If there is a mismatch between number of values and ? marks
+     * @return string Completed query where ? are either replaced with values or left out as is based on $usePrepare
+     * flag
+     **/
+    public static function bind(bool $usePrepare, string $query, array $values, string $errMsg): string {
+        if (substr_count($query, '?') !== count($values)) {
+            throw new RuntimeException($errMsg);
+        }
+
+        $i = 0;
+        return preg_replace_callback('/\?/', function () use ($usePrepare, $values, &$i) {
+            return $usePrepare ? '?' : self::typedValue($values[$i++]);
+        }, $query);
+    }
+
+    /**
+     * For a column value, it adds appropriate single quotes to be query friendly
+     * */
+    private static function typedValue($val): int|string {
+        if (is_string($val)) return "'$val'";
+        else if (is_object($val)) return "'{$val->__toSting()}'";
+        return $val;
+    }
+
+    /**
+     * This method breaks the key-value pairs into SQL syntax like fragments so that they
+     * can easily be processed by insert/update/delete methods.
+     *
+     * @param array $columns The list of columns
+     * @param array $values The values for those columns
+     * @param string $sign any extra separator between column-value such as = for update query
+     * @param bool $usePrepare Indicates whether the values needs to be marked resolved after the sign directly
+     * or be left with ? mark so that it can easily be plugged into exePrepare method.
+     *
+     * @throws RuntimeException When there is a mismatch between number of column-values pair combination
+     * @return array Containing two items, first one for the column values and the second one including values with
+     * any specified sign in front such as = ?, = 'X_VALUE'
+     * */
+    private static function toQueryStruct(array $columns, array $values, string $sign, bool $usePrepare): array {
+        $cols = '';
+        $val = '';
+
+        foreach ($columns as $c => $v) {
+            if (is_integer($c)) {
+                $cols .= "$v, ";
+                $val .= "$sign?, ";
+            } else {
+                $cols .= "$c, ";
+                $v = self::typedValue($v);
+                $val .= "$sign$v, ";
+            }
+        }
+
+        // Remove the extra ', ' from the end of both cols, values
+        $cols = substr($cols, 0, strlen($cols) - 2);
+        $val = substr($val, 0, strlen($val) - 2);
+
+        $val = self::bind($usePrepare, $val, $values, 'The number of values for columns missing values do not match');
+
+        return [$cols, $val];
     }
 
 }

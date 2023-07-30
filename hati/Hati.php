@@ -1,29 +1,5 @@
 <?php
 
-/*                            _
-                          .'``'.__
-                         /      \ `'"-,
-        .-''''--...__..-/ .     |      \
-      .'               ; :'     '.  a   |
-     /                 | :.       \     =\
-    ;                   \':.      /  ,-.__;.-;`
-   /|     .              '--._   /-.7`._..-;`
-  ; |       '                |`-'      \  =|
-  |/\        .   -' /     /  ;         |  =/
-  (( ;.       ,_  .:|     | /     /\   | =|
-   ) / `\     | `""`;     / |    | /   / =/
-     | ::|    |      \    \ \    \ `--' =/
-    /  '/\    /       )    |/     `-...-`
-   /    | |  `\    /-'    /;
-   \  ,,/ |    \   D    .'  \
-    `""`   \  nnh  D_.-'L__nnh
-            `"""`
-
-    Hati - A Speedy PHP Library
-    RootData21 Inc.
-*/
-
-
 /**
  *
  * WARNING : DON'T MODIFY THIS CLASS ANY POINT BELOW THIS COMMENT.
@@ -33,15 +9,17 @@
  * can execute. This prepares dependencies by setting a class loader.
  *
  * It uses the configuration object to prepare the working environment
- * properly. Please use HatiConfig.php file in order to customize your
+ * properly. Please use hati.json file in order to customize your
  * great HATI.
  *
- * WARNING : DON'T MODIFY THIS CLASS ANY POINT BELOW THIS COMMENT
+ * WARNING : DON'T MODIFY THIS CLASS ANY POINT BELOW THIS COMMENT.
  *
  * */
 
 namespace hati;
 
+use hati\config\Key;
+use RuntimeException;
 use Throwable;
 
 class Hati {
@@ -53,40 +31,74 @@ class Hati {
 
     private static ?object $loader = null;
 
+    // The project root directory
+    private static ?string $ROOT = null;
+
+    // The hati configuration file is cached as json decoded array
+    private static ?array $CONFIG = null;
+
     /**
-     * This is the first method call of the server. It initializes the environment
+     * This is the first method call of the execution. It initializes the environment
      * as per configuration and resolve dependencies.
      *
      * @throws Throwable
      */
     public static function start(): void {
+        self::loadConfig();
+        date_default_timezone_set(self::config(Key::TIME_ZONE));
 
-        // register appropriate auto loader function
-        if (self::composer_loader())
-            Hati::$loader = require Hati::neutralizeSeparator(Hati::docRoot(). 'vendor/autoload.php');
+        // register appropriate autoloader function
+        if (self::config(Key::COMPOSER_LOADER, 'bool'))
+            Hati::$loader = require self::absPath('vendor/autoload.php');
         else self::setLoader();
 
-        // prepare the database environment
-        if (strlen(Hati::db_prepare_sql()) > 0) Hati::prepareDbSql();
-
         // start the benchmark if Hati is setup to include dev benchmark
-        if(Hati::dev_API_benchmark()) self::$BENCHMARK_START = microtime(true);
+        if(self::config(Key::DEV_API_BENCHMARK, 'bool'))
+            self::$BENCHMARK_START = microtime(true);
 
-        date_default_timezone_set(self::defaultTimezone());
+        // set project root as include path
+        if (self::config(Key::ROOT_AS_INCLUDE_PATH, 'bool'))
+            set_include_path(self::root());
 
-        if (CONFIG['session_auto_start']) {
+        // prepare the database environment
+        if (!empty(self::config(Key::DB_PREPARE_SQL)))
+            self::prepareDbSql();
+
+        if (self::config(Key::SESSION_AUTO_START, 'bool')) {
             // Cookies will only be sent in a first-party context and not be sent along with
             // requests initiated by third party websites.
             session_set_cookie_params(['SameSite' => 'Strict', 'Secure' => true]);
             session_start();
         }
 
-        // include global php code file here
-        $globalPHP = self::global_php();
-        $globalPHPPath = Util::absolutePath($globalPHP . '.php');
-        if (!empty($globalPHP) && file_exists($globalPHPPath)) require_once $globalPHPPath;
+        // Loads global functions as per configuration
+        if (self::config(Key::USE_GLOBAL_FUNC, 'bool')) {
+            require self::absPath('hati/GlobalFunc.php');
+        }
 
-        if (CONFIG['welcome_hati']) self::printHati();
+        // include global php code files here
+        $globalPHP = self::config(Key::GLOBAL_PHP, 'arr');
+        foreach ($globalPHP as $file) {
+            $file = trim($file);
+            $path = self::absPath("$file.php");
+            if (file_exists($path)) require_once $path;
+        }
+
+        if (self::config(Key::WELCOME_HATI, 'bool'))
+            self::printHati();
+    }
+
+    private static function loadConfig(): void {
+        $configFile = self::absPath('hati.json');
+        if (!file_exists($configFile))
+            throw new RuntimeException('Hati config file is missing. Please reinstall hati.');
+
+        $config = file_get_contents($configFile);
+        $config = json_decode($config, true);
+        if (json_last_error() != JSON_ERROR_NONE)
+            throw new RuntimeException('The hati.json seems to be corrupted. Please reinstall hati.');
+
+        self::$CONFIG = $config;
     }
 
     // This method sets up Hati auto loader which resolves all the dependencies
@@ -94,21 +106,11 @@ class Hati {
     // name provided by the configuration
     private static function setLoader(): void {
         spl_autoload_register(function ($className) {
-            $file = self::docRoot() . $className . '.php';
-            $file = self::neutralizeSeparator($file);
+            $file = self::root() . $className . '.php';
+            $file = self::fixSeparator($file);
             if (class_exists($className)) return;
             if (file_exists($file)) include $file;
         });
-    }
-
-    /**
-     * This returns the loader instance of the composer auto loader.
-     * It returns null if Hati is configured to use its own loader.
-     *
-     * @return object The composer auto loader object.
-     */
-    public static function loader(): object {
-        return self::$loader;
     }
 
     /**
@@ -124,13 +126,13 @@ class Hati {
     private static function prepareDbSql(): void {
         // check whether we have already prepared the db environment already
         $q = 'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = ? AND table_name = ?';
-        Fluent::exePrepare($q, [Hati::dbName(), '$']);
+        Fluent::exePrepare($q, [self::config(Key::DB_NAME), '$']);
         if(Fluent::sqlCount() > 0) return;
 
         try {
             Fluent::beginTrans();
 
-            $sql = file_get_contents(Util::absolutePath(Hati::db_prepare_sql() . '.sql'));
+            $sql = file_get_contents(self::absPath(self::config(Key::DB_PREPARE_SQL) . '.sql'));
             Fluent::exeStatic($sql);
 
             $ran = 'CREATE TABLE $ ($ int(0))';
@@ -141,7 +143,43 @@ class Hati {
             Fluent::rollback();
             throw $e;
         }
+    }
 
+    /**
+     * Using this method, code can get the path to the root directory of the project.
+     * Root path can be set by hati config file. If it is set, then Hati uses that
+     * as project root path for everything.
+     *
+     * <br>Otherwise, Hati calculates the project root path by directory magic constant
+     * of php.
+     *
+     * <br><b>Directory separator is added at the end of the root folder.</b>
+     *
+     * @return string The project root folder
+     * */
+    public static function root(): string {
+        if (self::$ROOT != null) return self::$ROOT;
+
+        // If user wants a custom path as root then set and return it
+        $path = self::config(Key::ROOT_PATH);
+        if (!empty($path)) {
+            $path = rtrim(self::fixSeparator($path), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+            self::$ROOT = $path;
+            return self::$ROOT;
+        }
+
+        self::$ROOT = self::absPath();
+        return self::$ROOT;
+    }
+
+    /**
+     * This returns the loader instance of the composer auto loader.
+     * It returns null if Hati is configured to use its own loader.
+     *
+     * @return object The composer auto loader object.
+     */
+    public static function loader(): object {
+        return self::$loader;
     }
 
     /**
@@ -152,191 +190,25 @@ class Hati {
      *
      * @return string system's neutral path with directory separator.
     */
-    public static function neutralizeSeparator(string $path): string {
+    public static function fixSeparator(string $path): string {
         if (DIRECTORY_SEPARATOR == '\\') return str_replace('/', '\\', $path);
         return str_replace('\\', '/', $path);
     }
 
-    /**
-     * This returns the name of folder if all the resources and code files
-     * are kept within that folder. This is really helpful to easily switch
-     * between testing environment and live sever.
+    /*
+     * Gets the absolute path added to the specified path. It uses __DIR__ magic
+     * constant in Hati.php to calculate the base directory and appends the path.
+     * The specified is neutralized with directory separators.
      *
-     * @return string the name of the root folder defined by configuration
-     * */
-    public static function rootFolder(): string {
-        return CONFIG['root_folder'];
-    }
-
-    /**
-     * Using this method, code can get the path to the document root.
-     * The speciality of this method is that it also considers the
-     * root folder name given by configuration beside server's document
-     * root. At the end, you get an un-breaking, right document root.
-     *
-     * @return string it returns calculated document root by configuration.
-     * */
-    public static function docRoot(): string {
-        if (empty(self::rootFolder())) $ext = DIRECTORY_SEPARATOR;
-        else $ext = DIRECTORY_SEPARATOR . self::rootFolder() . DIRECTORY_SEPARATOR;
-        return self::neutralizeSeparator($_SERVER['DOCUMENT_ROOT']) . $ext;
-    }
-
-    /**
-     * Using this method, code can get the current working path with no
-     * trailing slash at the end.
-     *
-     * @return string it returns the current working path  of the file
-     * being executed with no trailing slash.
-    */
-    public static function currentDir(): string {
-        return self::neutralizeSeparator(getcwd());
-    }
-
-    /* the getters for the configurations */
-
-    public static function common_js_files(): array {
-        return CONFIG['common_js_files'];
-    }
-
-    public static function common_css_files(): array {
-        return CONFIG['common_css_files'];
-    }
-
-    public static function highlight_js(): string {
-        return CONFIG['highlight_js'];
-    }
-
-    public static function jquery_version(): string {
-        return CONFIG['jquery'];
-    }
-
-    public static function jquery_ui_version(): string {
-        return CONFIG['jquery_ui'];
-    }
-
-    public static function angular_js_version(): string {
-        return CONFIG['angular_js'];
-    }
-
-    public static function jst_version(): string {
-        return CONFIG['jst'];
-    }
-
-    public static function bootstrap_version(): string {
-        return CONFIG['bootstrap'];
-    }
-
-    public static function db_prepare_sql(): string {
-        return CONFIG['db_prepare_sql'];
-    }
-
-    public static function composer_loader(): bool {
-        return CONFIG['composer_loader'];
-    }
-
-    public static function global_php(): string {
-        return CONFIG['global_php'];
-    }
-
-    public static function dev_API_benchmark(): bool {
-        return CONFIG['dev_API_benchmark'];
-    }
-
-    public static function dev_api_delay(): int {
-        return CONFIG['dev_API_delay'];
-    }
-
-    public static function docConfig(): array {
-        return CONFIG['doc_config'];
-    }
-
-    public static function imgConfig(): array {
-        return CONFIG['img_config'];
-    }
-
-    public static function videoConfig(): array {
-        return CONFIG['video_config'];
-    }
-
-    public static function audioConfig(): array {
-        return CONFIG['audio_config'];
-    }
-
-    public static function sessionMsgKey(): bool {
-        return CONFIG['session_msg_key'];
-    }
-
-    public static function asJSONOutput(): bool {
-        return CONFIG['as_JSON_output'];
-    }
-
-    public static function defaultTimezone(): string {
-        return CONFIG['time_zone'];
-    }
-
-    public static function dbHost(): string {
-        return CONFIG['db_host'];
-    }
-
-    public static function dbName(): string {
-        return CONFIG['db_name'];
-    }
-
-    public static function dbUsername(): string {
-        return CONFIG['db_username'];
-    }
-
-    public static function dbPassword(): string {
-        return CONFIG['db_password'];
-    }
-
-    public static function dbTestHost(): string {
-        return CONFIG['db_test_host'];
-    }
-
-    public static function dbTestName(): string {
-        return CONFIG['db_test_name'];
-    }
-
-    public static function dbTestUsername(): string {
-        return CONFIG['db_test_username'];
-    }
-
-    public static function dbTestPassword(): string {
-        return CONFIG['db_test_password'];
-    }
-
-    public static function mailerPort(): int {
-        return CONFIG['mailer_port'];
-    }
-
-    public static function mailerEmail(): string {
-        return CONFIG['mailer_email'];
-    }
-
-    public static function mailerPass(): string{
-        return CONFIG['mailer_pass'];
-    }
-
-    public static function mailerName(): string {
-        return CONFIG['mailer_name'];
-    }
-
-    public static function mailerReplyTo() {
-        return CONFIG['mailer_reply_to'];
-    }
-
-    public static function favicon(): string {
-        return CONFIG['favicon'];
+     * @param string $path The path to calculate absolute path for
+     * @return string The absolute for the path specified
+     **/
+    public static function absPath(string $path = ''): string {
+        return dirname(__DIR__) . DIRECTORY_SEPARATOR . self::fixSeparator($path);
     }
 
     public static function version(): string {
-        return Hati::$version;
-    }
-
-    public static function configObj(): array {
-        return CONFIG;
+        return self::$version;
     }
 
     public static function benchmarkStart(): float {
@@ -344,13 +216,29 @@ class Hati {
     }
 
     private static function printHati(): void {
-        include('page/welcome.php');
+        if (Util::cli()) include self::absPath('hati/page/welcome.txt');
+        else include self::absPath('hati/page/welcome.php');
+    }
+
+    public static function config(string $key, string $as = 'str') : string|array|int|bool|float {
+        if (!isset(self::$CONFIG))
+            throw new RuntimeException("Hati config file is missing $key. Please reinstall hati.");
+
+        $data = self::$CONFIG[$key];
+
+        if ($as == 'int') return (int) $data;
+        else if ($as == 'bool') return (bool) $data;
+        else if ($as == 'str') return (string) $data;
+        else if ($as == 'arr') return (array) $data;
+        return (float) $data;
     }
 
 }
 
 try {
-    require_once(__DIR__ . DIRECTORY_SEPARATOR . 'HatiConfig.php');
+    // Fetch the user configuration for this Hati
+    require Hati::absPath('hati/config/Key.php');
+
     Hati::start();
 } catch (Throwable $t) {
     echo 'Hati encountered error while initializing: ' . $t -> getMessage();

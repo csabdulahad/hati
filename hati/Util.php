@@ -2,6 +2,7 @@
 
 namespace hati;
 
+use hati\config\Key;
 use hati\trunk\TrunkErr;
 use hati\trunk\TrunkInfo;
 use hati\trunk\TrunkOK;
@@ -16,7 +17,25 @@ use hati\trunk\TrunkWarn;
 class Util {
 
     /**
-     * Using this method, a session message can be set using the key from HatiConfig.php.
+     * PHP can run in both server & CLI. Using this, the execution environment
+     * can be detected.
+     *
+     * @return bool true if the environment is CLI, false otherwise
+     * **/
+    public static function cli(): bool {
+        return !(php_sapi_name() === 'apache2handler' || php_sapi_name() === 'cgi-fcgi');
+    }
+
+    /**
+     * Using this method the execution environment can be extracted.
+     * @return string Returns 'cli' if it is running CLI, 'server' if running in Apache/CGI
+     * **/
+    public static function exeEnv(): string {
+        return self::cli() ? 'cli' : 'server';
+    }
+
+    /**
+     * Using this method, a session message can be set using the key from hati.json.
      * The key can be configured. The message is set without any escaping so it can be
      * containing manipulating code inside it. Always use @link sessVar method with
      * escaping turned on. Both message and redirect path is optional as it can support
@@ -45,7 +64,7 @@ class Util {
     }
 
     /**
-     * This method can display any previously set session message using the key from HatiConfig.php.
+     * This method can display any previously set session message using the key from hati.json.
      * If there is not already set a message then this function doesn't print anything; just simply
      * returns.
      *
@@ -55,11 +74,11 @@ class Util {
      * @param string $cssClass Optional css classes for decorating the UI.
      * */
     public static function displayMsg(string $cssClass = ''): void {
-        if (!isset($_SESSION[Hati::sessionMsgKey()])) return;
+        if (!isset($_SESSION[Hati::config(Key::SESSION_MSG_KEY, 'bool')])) return;
 
-        $msg = self::sessVar(Hati::sessionMsgKey());
+        $msg = self::sessVar(Hati::config(Key::SESSION_MSG_KEY, 'bool'));
         echo "<div class='$cssClass'><p>$msg</p></div>";
-        self::unsetSess(Hati::sessionMsgKey());
+        self::unsetSess(Hati::config(Key::SESSION_MSG_KEY, 'bool'));
     }
 
     /**
@@ -195,15 +214,15 @@ class Util {
         echo '    <title>'. $title .'</title>'. PHP_EOL;
 
         // add favicon to the page
-        if (!file_exists(Util::absolutePath('img/' . Hati::favicon()))) return;
-        $path = Util::host() .  'img/' . Hati::favicon();
+        if (!file_exists(Hati::absPath('img/' . Hati::config(Key::FAVICON)))) return;
+        $path = Util::host() .  'img/' . Hati::config(Key::FAVICON);
         echo '    <link rel="icon" type="image/x-icon" href="'. $path .'">'. PHP_EOL;
     }
 
     /**
      * All the tedious stylesheet linking in html pages can be replaced with
      * this method call. By default it looks for css files inside the css
-     * directory in the root folder of the server. This can be changes using
+     * directory in the root folder of the server. This can be changed using
      * folder argument. Folder name doesn't have any trailing slashes.
      *
      * The css files will be linked by absolute path to avoid broken link because
@@ -215,8 +234,8 @@ class Util {
      * */
     public static function css(string $files = '', string $folder = 'css', bool $common = true): void {
         if ($common) {
-            foreach (Hati::common_css_files() as $file) {
-                if(!file_exists(self::absolutePath("css/$file.css"))) continue;
+            foreach (Hati::config(Key::COMMON_CSS_FILES, 'arr') as $file) {
+                if(!file_exists(Hati::absPath("css/$file.css"))) continue;
                 echo sprintf('    <link rel="stylesheet" href="%s/%s.css">' . PHP_EOL, Util::host() . 'css', $file);
             }
         }
@@ -246,8 +265,8 @@ class Util {
      * */
     public static function js(string $files = '', string $folder = 'js', bool $common = true): void {
         if ($common) {
-            foreach (Hati::common_js_files() as $file) {
-                if(!file_exists(self::absolutePath("js/$file.js"))) continue;
+            foreach (Hati::config(Key::COMMON_JS_FILES, 'arr') as $file) {
+                if(!file_exists(Hati::absPath("js/$file.js"))) continue;
                 echo sprintf('    <script src="%s/%s.js"></script>' . PHP_EOL, Util::host() . 'js', $file);
             }
         }
@@ -262,7 +281,7 @@ class Util {
     /**
      * Any php files inside the inc folder on project root folder can be included
      * simply passing their names without php extension at the end. Before each
-     * inclusion it checks whether the files exists or not. If triggerError is on,
+     * inclusion it checks whether the files exists or not. If triggerErr is on,
      * then it throws exception, otherwise it ignores that inclusion.
      *
      * @param string $files comma separated php files names to be included.
@@ -272,26 +291,12 @@ class Util {
     public static function inc(string $files, string $folder = 'inc', bool $throwErr = false): void {
         $files = explode(',', $files);
         foreach ($files as $file) {
-            if(!file_exists(self::absolutePath('inc/' . $file . '.php'))) {
+            if(!file_exists(Hati::absPath('inc/' . $file . '.php'))) {
                 if ($throwErr) throw new TrunkErr('Failed to include '. $file .'.php');
                 continue;
             }
             include(sprintf('%s/%s.php', $folder, trim($file)));
         }
-    }
-
-    /**
-     * The absolute path to a file can sometime be problematic to extract. Using this
-     * method it can be done easily. This uses @link Hati::docRoot() method internally
-     * to append the server document root to the path to point the file absolutely.
-     *
-     * @param string $filePath The file name with extension and any directory structure
-     * appended in front it.
-     *
-     * @return string The absolute path to the file.
-     * */
-    public static function absolutePath(string $filePath): string {
-        return Hati::neutralizeSeparator(Hati::docRoot() . $filePath);
     }
 
     /**
@@ -346,13 +351,24 @@ class Util {
      * This function can return the server root address. If the hati is inside
      * any folder then it also includes that as part of the host address.
      *
+     * @param bool $secure When set to true, the host url is returned in HTTPS
+     *
      * @return String the server address including folder if Hati has one defined
      * in HatiConfig file.
      * */
-    public static function host(): string {
+    public static function host(bool $secure = true): string {
+        $root = Hati::root();
+        if (self::cli()) return $root;
+
         $host = $_SERVER['HTTP_HOST'];
-        if ($host == 'localhost') $host = 'localhost/' . Hati::rootFolder();
-        return sprintf('http://%s/', $host);
+        if ($host == 'localhost') {
+            $folder = explode(DIRECTORY_SEPARATOR, rtrim($root, DIRECTORY_SEPARATOR));
+            $folder = $folder[count($folder) - 1];
+            $host = 'localhost/' . $folder;
+        }
+
+        $protocol = $secure ? 'https' : 'http';
+        return sprintf("$protocol://%s/", $host);
     }
 
     /**

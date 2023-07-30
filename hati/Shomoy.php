@@ -4,9 +4,9 @@ namespace hati;
 
 use DateInterval;
 use DateTime;
-use DateTimeInterface;
 use DateTimeZone;
 use Exception;
+use hati\config\Key;
 use hati\trunk\TrunkErr;
 use Throwable;
 
@@ -14,9 +14,9 @@ use Throwable;
  * Shomoy class is a wrapper class around php's DateTime object class. It has many
  * helpful methods and constants to simplify date and time calculation in the client
  * code. It creates datetime of default timezone as how it is configured in the
- * HatiConfig.php file.
+ * hati.json file.
  *
- * See HatiConfig.php file for changing the default timezone.
+ * See hati.json file for changing the default timezone.
  * */
 
 class Shomoy {
@@ -27,11 +27,11 @@ class Shomoy {
     private DateTime $dateTime;
 
     // During construction of shomoy object, it created the internal datetime
-    // object with the default timezone as it is configured in the HatiConfig.php
+    // object with the default timezone as it is configured in the hati.json
     // file. By default, it creates current datetime object.
     public function __construct(string $time = 'now', string $timezone = null) {
        try {
-           $timezone = $timezone ?? Hati::defaultTimezone();
+           $timezone = $timezone ?? Hati::config(Key::TIME_ZONE);
            $this -> dateTime = new DateTime($time, new DateTimeZone($timezone));
        } catch (Throwable $t) {
            throw new TrunkErr('Shomoy encountered error while creating current date & time: ' . $t -> getMessage());
@@ -48,10 +48,10 @@ class Shomoy {
     public static function fromTimestamp(int $timestamp): Shomoy {
         // first, convert the timestamp into textual representation.
         // then create datetime object from that string.
-        $dateTime = date_create(date(DateTimeInterface::ISO8601, $timestamp));
+        $dateTime = date_create(date('Y-m-d\TH:i:sO', $timestamp));
 
         // finally wrap that formatted string value of datetime within shomoy and return.
-        return new Shomoy($dateTime -> format(DateTimeInterface::ISO8601));
+        return new Shomoy($dateTime -> format('Y-m-d\TH:i:sO'));
     }
 
     /**
@@ -59,7 +59,7 @@ class Shomoy {
      * that the comparing date time object is in the same timezone as this shomoy date
      * time is. The  Shomoy gets its default timezone from the Hati by calling
      * Hati::defaultTimezone() method. It can be configured with other flags in
-     * HatiConfig.php file.
+     * hati.json file.
      *
      * For removing all the confusion and ambiguity in date time, please always store and
      * use one timezone in all persistent storage. Just convert the timezone into native
@@ -74,8 +74,8 @@ class Shomoy {
      */
     public function compareDateTime(DateTime $dateTime): int {
         // get micro-seconds from both objects
-        $thisSec = strtotime($this -> dateTime -> format(DateTimeInterface::ISO8601)) * 1000;
-        $thatSec = strtotime($dateTime -> format(DateTimeInterface::ISO8601)) * 1000;
+        $thisSec = strtotime($this -> dateTime -> format('Y-m-d\TH:i:sO')) * 1000;
+        $thatSec = strtotime($dateTime -> format('Y-m-d\TH:i:sO')) * 1000;
 
         // now calculate the difference
         if ($thisSec == $thatSec) return 0;
@@ -213,7 +213,7 @@ class Shomoy {
     }
 
     public function iso8601(): string {
-        return $this -> dateTime -> format(DateTimeInterface::ISO8601);
+        return $this -> dateTime -> format('Y-m-d\TH:i:sO');
     }
 
     public function isoDate(): string {
@@ -283,7 +283,7 @@ class Shomoy {
 
     public function strDate(bool $separated = false): string {
         if ($separated) return "{$this -> date()}-{$this -> month()}-{$this -> year()}";
-        else return "{$this -> date()} {$this -> monthStr(true)}, {$this -> year()}";
+        else return "{$this -> date()} {$this -> monthStr()}, {$this -> year()}";
     }
 
     public function echoDate(bool $separated = false): void {

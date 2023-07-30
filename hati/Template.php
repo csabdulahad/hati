@@ -41,7 +41,7 @@ class Template {
      * @return ?string Either returns or print out the rendered template file based on argument value.
      * */
     public static function render(string $tlpFilePath, array $params = [], bool $print = false, bool $throwErr = false): ?string {
-        $path = Util::absolutePath($tlpFilePath) . '.tlp.php';
+        $path = Hati::absPath($tlpFilePath) . '.tlp.php';
         if (!file_exists($path)) {
             if ($throwErr) throw new TrunkErr("Couldn't locate the template file.");
             return null;

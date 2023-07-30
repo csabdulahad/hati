@@ -69,20 +69,18 @@ class ConfigWriter {
         ];
     }
 
-
-    // Beautify the json output and remove the \ from the output json string
+    // Beautify the json output
     private static function beautifyAsJSON(array $json): string {
-        $output = json_encode($json, JSON_PRETTY_PRINT);
+        $output = json_encode($json, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
         $data = json_decode($output, true);
-        $jsonOutput = json_encode($data, JSON_PRETTY_PRINT);
+        $jsonOutput = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
         foreach (self::$group as $item) {
             $pattern = '/^(\s*)"(' . preg_quote($item, '/') . '"):/m';
             $replacement = "$1\n    \"$2:";
             $jsonOutput = preg_replace($pattern, $replacement, $jsonOutput);
         }
 
-        // Convert the array back to a JSON string with line breaks inserted before specified keys
-        return str_replace('\\/', '/', $jsonOutput);
+        return $jsonOutput;
     }
 
 }

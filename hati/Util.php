@@ -35,6 +35,16 @@ class Util {
     }
 
     /**
+     * Figures out whether a directory is empty or not.
+     *
+     * @param string $dirPath The directory path
+     * @return bool True if the directory is empty, false otherwise
+     **/
+    public static function isDirEmpty(string $dirPath): bool {
+        return count(glob($dirPath . '/*')) === 0;
+    }
+
+    /**
      * Using this method, a session message can be set using the key from hati.json.
      * The key can be configured. The message is set without any escaping so it can be
      * containing manipulating code inside it. Always use @link sessVar method with

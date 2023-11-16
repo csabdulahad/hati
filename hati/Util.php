@@ -23,7 +23,10 @@ class Util {
      * @return bool true if the environment is CLI, false otherwise
      * **/
     public static function cli(): bool {
-        return !(php_sapi_name() === 'apache2handler' || php_sapi_name() === 'cgi-fcgi');
+		$sAPI = php_sapi_name();
+		if (!$sAPI) return true;
+
+		return ($sAPI === 'cli' || $sAPI === 'phpdbg');
     }
 
     /**
@@ -368,7 +371,10 @@ class Util {
      * */
     public static function host(bool $secure = true): string {
         $root = Hati::root();
-        if (self::cli()) return $root;
+
+        if (empty($_SERVER['HTTP_HOST'])) {
+			return $root;
+        }
 
         $host = $_SERVER['HTTP_HOST'];
         if ($host == 'localhost') {

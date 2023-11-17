@@ -14,7 +14,7 @@ namespace hati;
  * well supported by this class.
  * */
 
-use hati\config\Key;
+use hati\hati_config\Key;
 use hati\trunk\TrunkErr;
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\PHPMailer;

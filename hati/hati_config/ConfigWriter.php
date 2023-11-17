@@ -1,14 +1,14 @@
 <?php
 
-namespace hati\config;
+namespace hati\hati_config;
 
 class ConfigWriter {
 
     //Add extra line break before these json keys
     private static array $group = [
-        'root_path', 'as_JSON_output', 'time_zone', 'global_php', 'db_prepare_sql',
-        'db_host', 'db_test_host', 'mailer_email', 'doc_config', 'img_config',
-        'video_config', 'audio_config', 'jquery',
+        'root_as_include_path', 'as_JSON_output', 'time_zone',
+		'global_php', 'mailer_email', 'doc_config','img_config',
+		'video_config', 'audio_config', 'jquery',
     ];
 
     private static function writeConfig(array $config, string $path): bool {

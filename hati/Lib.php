@@ -8,7 +8,7 @@
 
 namespace hati;
 
-use hati\config\Key;
+use hati\hati_config\Key;
 
 class Lib {
 

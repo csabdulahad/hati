@@ -2,7 +2,7 @@
 
 namespace hati;
 
-use hati\config\Key;
+use hati\hati_config\Key;
 use InvalidArgumentException;
 use JetBrains\PhpStorm\NoReturn;
 

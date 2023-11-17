@@ -1,0 +1,14 @@
+{
+   "default_prod_db_id" : "Example-Localhost",
+   "default_test_db_id" : "Example-Localhost",
+
+   "db_profiles": [
+	  {
+		 "id": "Example-Localhost",
+		 "host": "localhost",
+		 "db": "Example-DB-Name",
+		 "username": "root",
+		 "password": ""
+	  }
+   ]
+}

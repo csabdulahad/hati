@@ -14,13 +14,9 @@
 
 return [
 
-    'welcome_hati'                      =>          true,
-    'app_name'                          =>          '',
     'favicon'                           =>          '',
 
-    'root_path'                         =>          '',
     'root_as_include_path'              =>          false,
-    'composer_loader'                   =>          true,
     'use_global_func'                   =>          true,
 
     'as_JSON_output'                    =>          false,
@@ -34,18 +30,6 @@ return [
     'global_php'                        =>          [],
     'common_js_files'                   =>          [],
     'common_css_files'                  =>          [],
-
-    'db_prepare_sql'                    =>          '',
-
-    'db_host'                           =>          'localhost',
-    'db_name'                           =>          '',
-    'db_username'                       =>          '',
-    'db_password'                       =>          '',
-
-    'db_test_host'                      =>          'localhost',
-    'db_test_name'                      =>          '',
-    'db_test_username'                  =>          'root',
-    'db_test_password'                  =>          '',
 
     'mailer_email'                      =>          '',
     'mailer_pass'                       =>          '',

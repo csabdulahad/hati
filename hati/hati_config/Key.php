@@ -1,16 +1,12 @@
 <?php
 
-namespace hati\config;
+namespace hati\hati_config;
 
 class Key {
 
-    const WELCOME_HATI = 'welcome_hati';
-    const APP_NAME = 'app_name';
     const FAVICON = 'favicon';
 
-    const ROOT_PATH = 'root_path';
     const ROOT_AS_INCLUDE_PATH = 'root_as_include_path';
-    const COMPOSER_LOADER = 'composer_loader';
     const USE_GLOBAL_FUNC = 'use_global_func';
 
     const AS_JSON_OUTPUT = 'as_JSON_output';
@@ -24,18 +20,6 @@ class Key {
     const GLOBAL_PHP = 'global_php';
     const COMMON_JS_FILES = 'common_js_files';
     const COMMON_CSS_FILES = 'common_css_files';
-
-    const DB_PREPARE_SQL = 'db_prepare_sql';
-
-    const DB_HOST = 'db_host';
-    const DB_NAME = 'db_name';
-    const DB_USERNAME = 'db_username';
-    const DB_PASSWORD = 'db_password';
-
-    const DB_TEST_HOST = 'db_test_host';
-    const DB_TEST_NAME = 'db_test_name';
-    const DB_TEST_USERNAME = 'db_test_username';
-    const DB_TEST_PASSWORD = 'db_test_password';
 
     const MAILER_EMAIL = 'mailer_email';
     const MAILER_PASS = 'mailer_pass';

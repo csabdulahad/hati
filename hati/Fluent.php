@@ -2,7 +2,6 @@
 
 namespace hati;
 
-use hati\config\Key;
 use hati\trunk\TrunkErr;
 use PDO;
 use PDOStatement;
@@ -58,19 +57,28 @@ class Fluent {
      */
     private function __construct() {
         try {
+			$dbConfig = Hati::dbConfigObj();
+
+			$prodProfile = $dbConfig['default_prod_db_id'] ?? null;
+			$testProfile = $dbConfig['default_test_db_id'] ?? null;
 
             // are we running in local environment?
             if (str_contains(Util::host(), '://localhost')) {
-                $host = Hati::config(Key::DB_TEST_HOST);
-                $db = Hati::config(Key::DB_TEST_NAME);
-                $user = Hati::config(Key::DB_TEST_USERNAME);
-                $pass = Hati::config(Key::DB_TEST_PASSWORD);
+				if (empty($testProfile)) return;
+
+				$config = $dbConfig['db_profiles'][$testProfile] ?? null;
+				if (empty($config)) throw new TrunkErr("Testing db profile $testProfile was not found in db.json file");
             } else {
-                $host = Hati::config(Key::DB_HOST);
-                $db = Hati::config(Key::DB_NAME);
-                $user = Hati::config(Key::DB_USERNAME);
-                $pass = Hati::config(Key::DB_PASSWORD);
+				if (empty($prodProfile)) return;
+
+				$config = $dbConfig['db_profiles'][$prodProfile] ?? null;
+				if (empty($config)) throw new TrunkErr("Database profile $prodProfile was not found in db.json file");
             }
+
+			$host = $config['host'];
+			$db = $config['db'];
+			$user = $config['username'];
+			$pass = $config['password'];
 
             // get the timezone offset
             $timeZone = date('P');

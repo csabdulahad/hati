@@ -18,7 +18,7 @@
 
 namespace hati;
 
-use hati\config\Key;
+use hati\hati_config\Key;
 use RuntimeException;
 use Throwable;
 
@@ -31,11 +31,17 @@ class Hati {
 
     private static ?object $loader = null;
 
-    // The project root directory
-    private static ?string $ROOT = null;
+    // The project root directory [where the vendor folder is found]
+    private static ?string $DIR_ROOT = null;
 
-    // The hati configuration file is cached as json decoded array
-    private static ?array $CONFIG = null;
+	// The config directory
+	private static ?string $DIR_CONFIG = null;
+
+	// The hati configuration file is cached as json decoded array
+	private static ?array $CONFIG = null;
+
+	// The db configuration file is cached as json decoded array
+	private static ?array $DB_CONFIG = [];
 
     /**
      * This is the first method call of the execution. It initializes the environment
@@ -44,13 +50,16 @@ class Hati {
      * @throws Throwable
      */
     public static function start(): void {
-        self::loadConfig();
-        date_default_timezone_set(self::config(Key::TIME_ZONE));
+		// calculate the project root folder
+		self::$DIR_ROOT = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR;
 
-        // register appropriate autoloader function
-        if (self::config(Key::COMPOSER_LOADER, 'bool'))
-            Hati::$loader = require self::absPath('vendor/autoload.php');
-        else self::setLoader();
+        // register autoloader function
+		Hati::$loader = require self::$DIR_ROOT . 'vendor/autoload.php';
+
+		// load the correct config json file
+        self::loadConfig();
+
+        date_default_timezone_set(self::config(Key::TIME_ZONE));
 
         // start the benchmark if Hati is setup to include dev benchmark
         if(self::config(Key::DEV_API_BENCHMARK, 'bool'))
@@ -59,10 +68,6 @@ class Hati {
         // set project root as include path
         if (self::config(Key::ROOT_AS_INCLUDE_PATH, 'bool'))
             set_include_path(self::root());
-
-        // prepare the database environment
-        if (!empty(self::config(Key::DB_PREPARE_SQL)))
-            self::prepareDbSql();
 
         if (self::config(Key::SESSION_AUTO_START, 'bool')) {
             // Cookies will only be sent in a first-party context and not be sent along with
@@ -83,67 +88,60 @@ class Hati {
             $path = self::absPath("$file.php");
             if (file_exists($path)) require_once $path;
         }
-
-        if (self::config(Key::WELCOME_HATI, 'bool'))
-            self::printHati();
     }
 
     private static function loadConfig(): void {
-        $configFile = self::absPath('hati.json');
-        if (!file_exists($configFile))
-            throw new RuntimeException('Hati config file is missing. Please reinstall hati.');
+		/*
+		 * Calculate the config path by going directory up to find any hati/hati.json file
+		 * */
+		$cwd = getcwd();
+		while ($cwd !== false) {
+			$hatiJson = $cwd . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'hati.json';
 
-        $config = file_get_contents($configFile);
-        $config = json_decode($config, true);
-        if (json_last_error() != JSON_ERROR_NONE)
-            throw new RuntimeException('The hati.json seems to be corrupted. Please reinstall hati.');
+			if (file_exists($hatiJson)) {
+				self::$DIR_CONFIG = $cwd . DIRECTORY_SEPARATOR;
+			}
 
-        self::$CONFIG = $config;
+			// go one directory up
+			$cwd = realpath($cwd . '/..');
+		}
+
+		/*
+		 * If we could not figure out any path for config then fallback to default root directory
+		 * */
+		if (empty(self::$DIR_CONFIG)) {
+			self::$DIR_CONFIG = self::$DIR_ROOT;
+		}
+
+		/*
+		 * Load hati configuration json object
+		 * */
+		$configFile = self::absPath('config/hati.json');
+		if (!file_exists($configFile))
+			throw new RuntimeException("hati.json file was not found in $configFile");
+
+		$config = file_get_contents($configFile);
+		$config = json_decode($config, true);
+		if (json_last_error() != JSON_ERROR_NONE)
+			throw new RuntimeException("hati.json seems to be corrupted in $configFile");
+
+		self::$CONFIG = $config;
+
+		/*
+		 * Load db configuration json object
+		 * */
+		$configFile = self::absPath('config/db.json');
+		if (file_exists($configFile)) {
+			$dbConfig = file_get_contents($configFile);
+			$dbConfig = json_decode($dbConfig, true);
+			if (json_last_error() == JSON_ERROR_NONE)
+				self::$DB_CONFIG = $dbConfig;
+		}
     }
 
-    // This method sets up Hati auto loader which resolves all the dependencies
-    // automatically by class file inclusion using server root with root folder
-    // name provided by the configuration
-    private static function setLoader(): void {
-        spl_autoload_register(function ($className) {
-            $file = self::root() . $className . '.php';
-            $file = self::fixSeparator($file);
-            if (class_exists($className)) return;
-            if (file_exists($file)) include $file;
-        });
-    }
-
-    /**
-     * Any predefined sql quires as configured, which need to be executed first
-     * before any other sql quires be able run. Hati first checks whether there is
-     * a table named with '$'. If there is a table already exists then Hati has
-     * already executed the predefined sql quires.
-     * If not, then Hati runs the predefined sql queries in a transactions and afterwards
-     * it marks the execution by creating a dummy table with name '$'.
-     *
-     * @throws Throwable
-     */
-    private static function prepareDbSql(): void {
-        // check whether we have already prepared the db environment already
-        $q = 'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = ? AND table_name = ?';
-        Fluent::exePrepare($q, [self::config(Key::DB_NAME), '$']);
-        if(Fluent::sqlCount() > 0) return;
-
-        try {
-            Fluent::beginTrans();
-
-            $sql = file_get_contents(self::absPath(self::config(Key::DB_PREPARE_SQL) . '.sql'));
-            Fluent::exeStatic($sql);
-
-            $ran = 'CREATE TABLE $ ($ int(0))';
-            Fluent::exeStatic($ran);
-
-            Fluent::commit();
-        } catch (Throwable $e) {
-            Fluent::rollback();
-            throw $e;
-        }
-    }
+	public static function dbConfigObj(): array {
+		return self::$DB_CONFIG;
+	}
 
     /**
      * Using this method, code can get the path to the root directory of the project.
@@ -158,27 +156,16 @@ class Hati {
      * @return string The project root folder
      * */
     public static function root(): string {
-        if (self::$ROOT != null) return self::$ROOT;
-
-        // If user wants a custom path as root then set and return it
-        $path = self::config(Key::ROOT_PATH);
-        if (!empty($path)) {
-            $path = rtrim(self::fixSeparator($path), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
-            self::$ROOT = $path;
-            return self::$ROOT;
-        }
-
-        self::$ROOT = self::absPath();
-        return self::$ROOT;
+        return self::$DIR_CONFIG;
     }
 
     /**
      * This returns the loader instance of the composer auto loader.
      * It returns null if Hati is configured to use its own loader.
      *
-     * @return object The composer auto loader object.
+     * @return ?object The composer auto loader object.
      */
-    public static function loader(): object {
+    public static function loader(): ?object {
         return self::$loader;
     }
 
@@ -204,7 +191,7 @@ class Hati {
      * @return string The absolute for the path specified
      **/
     public static function absPath(string $path = ''): string {
-        return dirname(__DIR__) . DIRECTORY_SEPARATOR . self::fixSeparator($path);
+		return self::$DIR_CONFIG . self::fixSeparator($path);
     }
 
     public static function version(): string {
@@ -213,11 +200,6 @@ class Hati {
 
     public static function benchmarkStart(): float {
         return self::$BENCHMARK_START;
-    }
-
-    private static function printHati(): void {
-        if (Util::cli()) include self::absPath('hati/page/welcome.txt');
-        else include self::absPath('hati/page/welcome.php');
     }
 
     public static function config(string $key, string $as = 'str') : string|array|int|bool|float {
@@ -237,7 +219,7 @@ class Hati {
 
 try {
     // Fetch the user configuration for this Hati
-    require Hati::absPath('hati/config/Key.php');
+    require __DIR__ . DIRECTORY_SEPARATOR . 'hati_config' .  DIRECTORY_SEPARATOR . 'Key.php';
 
     Hati::start();
 } catch (Throwable $t) {

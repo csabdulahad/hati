@@ -5,8 +5,8 @@ namespace hati;
 /**
  * Hati provides very simple means of Benchmarking functionalities. This class uses
  * singleton pattern like many Hati class libraries. Any starting point of the
- * benchmark must be started with calling @link Benchmark::from() method and end point must
- * call the @link Benchmark::to() method in order to calculate the execution time.
+ * benchmark must be started with calling {@link Benchmark::from()} method and end point must
+ * call the {@link Benchmark::to()} method in order to calculate the execution time.
  * */
 
 class Benchmark {

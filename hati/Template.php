@@ -13,8 +13,8 @@ use hati\trunk\TrunkErr;
  * and makes it easier to mark that the file is meant to go through template engine.
  *
  * It holds all the passed parameters to the template in a static manner. The template file
- * can access them in a safe way using shorted function names namely @link Template::g()
- * and @link Template::w().
+ * can access them in a safe way using shorted function names namely {@link Template::g()}
+ * and {@link Template::w()}
  * */
 
 class Template {
@@ -67,7 +67,7 @@ class Template {
 
     /**
      * The template file which is being rendered can access any passed argument using
-     * key value and the value will be printed. This uses @link Template::g() to get
+     * key value and the value will be printed. This uses {@link Template::g()} to get
      * the parameter value in a safe manner.
      *
      * @param string $key The key for the parameter.

@@ -47,24 +47,15 @@ function println(mixed $value, int $numOfBreak = 1, bool $pretty = true): void {
         $numOfBreak -= 1;
     }
 
-    // Remove one extra break if it of type array/obj for CLI output
-    if (Util::cli() && (is_array($value) || is_object($value))) {
-        $numOfBreak -= 1;
-    }
+    // Remove one extra break if it of type array/obj for CLI outpu
+	if ((is_array($value) || is_object($value) && Util::cli()))
+		$numOfBreak -= 1;
 
     // Can't have zero number of break for str_repeat function
     if ($numOfBreak < 0) $numOfBreak = 0;
     $break = str_repeat($b, $numOfBreak);
 
-    if (is_object($value)) {
-        if ($pretty && !Util::cli()) echo "<pre>";
-        var_dump($value);
-        if ($pretty && !Util::cli()) echo "</pre>";
-        echo $break;
-        return;
-    }
-
-    if (is_array($value)) {
+    if (is_array($value) || is_object($value)) {
         $value = print_r($value, true);
     } elseif (is_bool($value)) {
         $value = $value ? 'true' : 'false';

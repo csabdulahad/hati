@@ -58,7 +58,7 @@ class Url {
 
     /**
      * The last fragment path of the url is extracted by this method.
-     * Internally it uses @link path() method to get the path then it
+     * Internally it uses {@link path()} method to get the path then it
      * finds the last fragment of the path and returns.
      *
      * @param string $url the url whose path is to be extracted.

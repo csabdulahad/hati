@@ -71,7 +71,7 @@ class NumFormat {
     }
 
     /**
-     * It prints out the input using @link format() method as specified by the arguments.
+     * It prints out the input using {@link format()} method as specified by the arguments.
      *
      * @param mixed $input The input which is to converted.
      * @param string $sign Any currency sign.

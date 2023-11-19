@@ -13,7 +13,7 @@ use JetBrains\PhpStorm\NoReturn;
  * powerful functions which allow to avoid creating and keeping track of various variables
  * that were previously required to write JSON output.
  *
- * It has two JSON output methods namely @link report and @link reply. These methods add
+ * It has two JSON output methods namely {@link report} and {@link reply}. These methods add
  * a <b>response</b> object at the end of the JSON output object to indicate response level,
  * message and status.
  *
@@ -33,14 +33,21 @@ use JetBrains\PhpStorm\NoReturn;
  * When constructing an instance, optional header value of Content-Type of application/json
  * can be turned on or off by devMode flag.
  *
- * Example:
+ *  Example:
+ *  <code>
  *  $response = new Response();
- *  $response -> add('name', 'ABDUL AHAD'); // single key-value pair
- *  $response -> addAll(['age', 'sex'], [26, 'male']); // multiple key-value pairs in order
- *  $response -> getJSON();
  *
+ *  // single key-value pair
+ *  $response -> add('name', 'ABDUL AHAD');
+ *
+ *  // multiple key-value pairs in order
+ *  $response -> addAll(['age', 'sex'], [26, 'male']);
+ *
+ *  $response -> getJSON();
+ * </code>
  * Output:
- *  {
+ * <code>
+ * {
  *      'name': 'ABDUL AHAD',
  *      'age': 26,
  *      'sex': 'male',
@@ -49,7 +56,8 @@ use JetBrains\PhpStorm\NoReturn;
  *          'level': 0,
  *          'msg': ''
  *      }
- *  }
+ * }
+ * </code>
  *
  * */
 
@@ -133,7 +141,7 @@ class Response {
     }
 
     /**
-     * This method internally calls on @link addFromMap on the argument map array iteratively. This method
+     * This method internally calls on {@link addFromMap} on the argument map array iteratively. This method
      * will override the existing property value if any presents already in the JSON output object.
      *
      * @param $maps <p>It must be an array containing maps(array/object).</p>
@@ -146,14 +154,14 @@ class Response {
         foreach ($maps as $map) $this -> addFromMap($map);
     }
 
-    /*
+    /**
      * This method checks whether a value is either a map of array or object. If not then
      * it throw an InvalidArgumentException.
      *
-     * @param $value <p>The value which has to be a map</p>
+     * @param mixed $val The value which has to be a map
      * @return void
      * */
-    private function checkMap($val): void {
+    private function checkMap(mixed $val): void {
         if (!is_object($val) && !is_array($val))
             throw new InvalidArgumentException('The value has to be a map of either array or object.');
     }
@@ -163,10 +171,11 @@ class Response {
      * output object. Each key-value pair or property will go under the map key of JSON output
      * object.
      *
-     * @param $mapKey <p>The name of the property of the JSON output object which will hold
-     * key-value pari property.</p>
-     * @param string $key <p>The name of the property.</p>
-     * @param mixed $val <p>The value of the property.</p>
+     * @param string $mapKey The name of the property of the JSON output object which will hold
+     * key-value pari property.
+     * @param string $key The name of the property.
+     * @param mixed $val The value of the property
+	 *
      * @return void
      */
     public function addToMap(string $mapKey, string $key, mixed $val): void {
@@ -178,30 +187,30 @@ class Response {
     /**
      * This methods takes a map/object and put their properties with values under a direct property
      * of the JSON output object. It checks whether passed map is an actual map or not. It then
-     * internally call @link addToMap iteratively to add all the properties of the given map to the
+     * internally call {@link addToMap} iteratively to add all the properties of the given map to the
      * specified map/object of the JSON output object.
      *
-     * @param string $mapKey <p>The property of JSON output object which will hold each property of given
-     * map.</p>
-     * @param $map <p>The map(array/object) whose properties will be copied to the property-object of
-     * JSON output object.</p>
+     * @param string $mapKey The property of JSON output object which will hold each property of given
+     * map.
+     * @param array $map The map(array/object) whose properties will be copied to the property-object of
+     * JSON output object.
      * @return void
      */
-    public function addMapToMap(string $mapKey, $map): void {
+    public function addMapToMap(string $mapKey, array $map): void {
         $this -> checkMap($map);
         foreach ($map as $key => $value) $this -> addToMap($mapKey, $key, $value);
     }
 
     /**
      * This method iteratively calls on
-     * @param string $mapKey <p>The property of JSON output object which will hold each property of given
-     * map.</p>
-     * @param $mapArray <p>The array which contains the maps of arrays or objects</p>
+     * @param string $mapKey The property of JSON output object which will hold each property of given
+     * map.
+     * @param mixed $mapArray The array which contains the maps of arrays or objects
      * @return void
      *
      * @noinspection PhpUnused
      */
-    public function addMapsToMap(string $mapKey, $mapArray): void {
+    public function addMapsToMap(string $mapKey, mixed $mapArray): void {
         if (!is_array($mapArray)) throw new InvalidArgumentException('an array of maps is required.');
         foreach ($mapArray as $map) $this -> addMapToMap($mapKey, $map);
     }

@@ -58,7 +58,7 @@ class Shomoy {
      * When this methods compares itself with other date time object, it is considered
      * that the comparing date time object is in the same timezone as this shomoy date
      * time is. The  Shomoy gets its default timezone from the Hati by calling
-     * Hati::defaultTimezone() method. It can be configured with other flags in
+     * {@link Hati::defaultTimezone()} method. It can be configured with other flags in
      * hati.json file.
      *
      * For removing all the confusion and ambiguity in date time, please always store and
@@ -85,7 +85,7 @@ class Shomoy {
 
     /**
      * A shomoy object can compare itself with other shomoy object. Internally it
-     * uses the @link compareDateTime() function to calculate the difference in
+     * uses the {@link compareDateTime()} function to calculate the difference in
      * timestamp and returns either 0, 1, or -1 based on the calculation.
      *
      * @param Shomoy $shomoy The Shomoy object to calculate against
@@ -96,7 +96,7 @@ class Shomoy {
         return $this -> compareDateTime($shomoy -> getDateTime());
     }
 
-    /*
+    /**
      * The difference between two shomoy objects can be calculated either in
      * milliseconds(which is default) or microseconds(timestamp) value. It always
      * finds the difference from $this object to passed one.
@@ -313,7 +313,7 @@ class Shomoy {
         }
     }
 
-    public function echoTime(bool $sec = true, bool $ampm = true, bool $uppercase = true) {
+    public function echoTime(bool $sec = true, bool $ampm = true, bool $uppercase = true): void	{
         echo $this -> strTime($sec, $ampm, $uppercase);
     }
 
@@ -399,7 +399,7 @@ class Shomoy {
 
     // This method either adds or removes interval to the datetime object
     // based on the sign of the value is being added or subtracted.
-    private function adjustInterval(int $signed, $interval) {
+    private function adjustInterval(int $signed, $interval): void {
         if ($signed < 0)
             $interval = str_replace('-', '', $interval);
 

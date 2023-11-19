@@ -16,15 +16,15 @@
            \  ,,/ |    \   D    .'  \
             `""`   \  nnh  D_.-'L__nnh
                     `"""`
-------------------------------------------------------------
-|               Hati - A Speedy PHP Library                 |
-|               RootData21 Inc.                             |
-------------------------------------------------------------
-Hati installation successfully. Consider doing:
-➡️ Modify the hati.json configuration file
-➡️ Move the .htaccess file to root from hati/config folder
+---------------------------------------------------------------------
+|                     Hati - A Speedy PHP Library                   |
+|                     RootData21                                    |
+---------------------------------------------------------------------
+Hati installation successfully. See config folder & consider doing:
+➡️ Modify the db & hati json configuration files as per requirements
+➡️ Move the .htaccess file to root directory from the config folder
 ➡️ Delete .htaccess if you don't need
 
-MAKE SURE YOU HAVE PROTECTED ACCESS TO HATI.JSON FILE BY
-MOVING hati/config/.htaccess FILE TO PROJECT ROOT FOLDER OR
-WRITE HTACCESS RULE FOR THAT.
+MAKE SURE YOU HAVE PROTECTED ACCESS TO CONFIG & HATI FOLDERS BY USING
+SERVER CONFIGURATION OR .htaccess FILE WHICH IS ALREADY PROVIDED AS
+AN EXAMPLE IN THE CONFIG FOLDER.

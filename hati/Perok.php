@@ -2,6 +2,11 @@
 
 namespace hati;
 
+use hati\hati_config\Key;
+use hati\trunk\TrunkErr;
+use PHPMailer\PHPMailer\Exception;
+use PHPMailer\PHPMailer\PHPMailer;
+
 /**
  * Perok is a wrapper class around PHP Mailer library. The class has singleton pattern
  * implemented for providing a simple line API to the client code. It uses SMTP protocol
@@ -13,11 +18,6 @@ namespace hati;
  * Many powerful emailing feature such as attachment, HTML email, CID image in HTML, BCC are
  * well supported by this class.
  * */
-
-use hati\hati_config\Key;
-use hati\trunk\TrunkErr;
-use PHPMailer\PHPMailer\Exception;
-use PHPMailer\PHPMailer\PHPMailer;
 
 class Perok {
 
@@ -96,12 +96,12 @@ class Perok {
      * This method eases the composing HTML email by getting the contents from an HTML file.
      * The file path is the full name of the file with extension and directory appended in
      * front inside the server document root. Perok does the server root directory path
-     * appending by using @param string $filePath The file name with extension and path within the server root folder.
+     * appending by using {@link Hati::root()} method internally.
+	 *
+	 * @param string $filePath The file name with extension and path within the server root folder.
      * @param bool $throwErr Indicate whether to throw exception upon encountering any error.
      *
      * @return bool Returns true if it can successfully compose message body from the HTML file.
-     * *@link Hati::root() method internally.
-     *
      */
     public static function composeFromHtml(string $filePath, bool $throwErr = false): bool {
         $ins = self::get();
@@ -122,7 +122,7 @@ class Perok {
      *
      * @param string $msg Textual representation of the HTML email.
      * */
-    public static function altEmail(string $msg) {
+    public static function altEmail(string $msg): void {
         $ins = self::get();
         $ins -> phpMailer -> AltBody = $msg;
     }
@@ -130,14 +130,14 @@ class Perok {
     /**
      * Any file can be composed as part of attachment of the email. The file path is the full
      * name of the file with extension and directory appended in front inside the server document
-     * root. Perok does the server root directory path appending by using @param string $filePath The file name with extension and path within the server root folder.
+     * root. Perok does the server root directory path appending by using {@link Hati::root()}
+     * method internally.
+	 *
+	 * @param string $filePath The file name with extension and path within the server root folder.
      * @param string $fileName File name as it will be shown in the email client.
      * @param bool $throwErr Indicate whether to throw exception upon encountering any error.
-     * *@link Hati::root()
-     * method internally.
-     *
      */
-    public static function attachFile(string $filePath, string $fileName = '', bool $throwErr = false) {
+    public static function attachFile(string $filePath, string $fileName = '', bool $throwErr = false): void {
         $ins = self::get();
         $path = Hati::fixSeparator(Hati::root() . $filePath);
         try {
@@ -154,7 +154,7 @@ class Perok {
      * @param string $fileName File name, preferably with extension.
      * @param bool $throwErr Indicate whether to throw exception upon encountering any error.
      * */
-    public static function attachStr(string $fileAsStr, string $fileName, bool $throwErr = false) {
+    public static function attachStr(string $fileAsStr, string $fileName, bool $throwErr = false): void	{
         $ins = self::get();
         try {
             $ins -> phpMailer -> addStringAttachment($fileAsStr, $fileName);
@@ -166,10 +166,11 @@ class Perok {
     /**
      * This method can embed any image for including images as CID image in the HTML message.
      * The path to the image file is only with the directory and full name with extension. Perok
-     * does the server root directory path appending by using @param string $filePath The file name with extension and path within the server root folder.
+     * does the server root directory path appending by using {@link Hati::root()} method internally.
+	 *
+	 * @param string $filePath The file name with extension and path within the server root folder.
      * @param string $fileName Argument for CID image to be used inside the HTML message.
      * @param bool $throwErr Indicate whether to throw exception upon encountering any error.
-     * *@link Hati::root() method internallly.
      *
      */
     public static function embedCIDImage(string $filePath, string $fileName, bool $throwErr = false): void {
@@ -187,7 +188,7 @@ class Perok {
      * The only difference is that in bulk emailing we don't have custom email subject. However, for
      * a single email we could have. That is why this message was added to Perok for convenient.
      *
-     * It internally uses @link phpMailerSend for setting the subject and sending the email.
+     * It internally uses {@link phpMailerSend} for setting the subject and sending the email.
      *
      * @param string $to The email address of the recipient.
      * @param string $subject The subject for the email.
@@ -218,7 +219,7 @@ class Perok {
      * is type of string where emails are separated by comma(,). The message is sent as BCC
      * to the recipients.
      *
-     * It internally uses @link phpMailerSend for setting the subject and sending the email.
+     * It internally uses {@link phpMailerSend} for setting the subject and sending the email.
      *
      * @param string $addresses Comma seperated emails as recipients.
      * @param string $subject The subject which stays same for all the recipients.

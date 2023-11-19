@@ -21,7 +21,7 @@ use hati\trunk\TrunkErr;
  * === should be used to strictly match and avoid language construction confusions as it is
  * seen in JS, PHP like languages.
  *
- * Specially there is one method @link Filter::sanitize which can directly work with any regular
+ * Specially there is one method {@link Filter::sanitize} which can directly work with any regular
  * expression or some predefined pattern constants by Filter class.
  *
  **/
@@ -31,7 +31,7 @@ class Filter {
     /**
      * Predefined regular expression pattern for filtering input in various formats.
      * This list has a useful pattern which can be used in general for any project.
-     * However, any required pattern can be passed as an argument to @link sanitize
+     * However, any required pattern can be passed as an argument to {@link sanitize}
      * method.
      *
      * In the naming of these constants, they have meaning like regular expression.
@@ -98,7 +98,7 @@ class Filter {
     }
 
     /**
-     * Very similar to @link Filter::isoDate(). It only validates input as a valid fully
+     * Very similar to {@link Filter::isoDate()}. It only validates input as a valid fully
      * qualified ISO datetime in YYYY-MM-DD HH:MM:SS format.
      *
      * @param mixed $input the string to be checked for ISO date format.
@@ -133,7 +133,7 @@ class Filter {
     }
 
     /**
-     * This method can work with any @link Filter defined sanitizing patterns of client code defined
+     * This method can work with any {@link Filter} defined sanitizing patterns of client code defined
      * pattern as method argument. By default, upon matching the pattern it replaces with an empty
      * string.
      *

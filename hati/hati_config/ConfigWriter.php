@@ -23,7 +23,7 @@ class ConfigWriter {
         return true;
     }
 
-    public static function write(string $rootPath, bool $createNew = false): array {
+    public static function write(string $rootPath, bool $createNew = false): array { 
 
         /*
          * Get both the configuration files & decode it

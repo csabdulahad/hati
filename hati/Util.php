@@ -50,7 +50,7 @@ class Util {
     /**
      * Using this method, a session message can be set using the key from hati.json.
      * The key can be configured. The message is set without any escaping so it can be
-     * containing manipulating code inside it. Always use @link sessVar method with
+     * containing manipulating code inside it. Always use {@link sessVar} method with
      * escaping turned on. Both message and redirect path is optional as it can support
      * no redirection by setting message or any redirection with no message.
      *
@@ -155,7 +155,7 @@ class Util {
      * A random token can be generated using this method. Default length
      * of the token is 11. It uses shuffling of time value after md5
      * encryption. However, it doesn't guarantee the uniqueness of the token.
-     * In order to get a unique id use @link uniqueId instead.
+     * In order to get a unique id use {@link uniqueId} instead.
      *
      * @param int $len The length of the token.
      * @return string A randomly generated token.
@@ -211,7 +211,7 @@ class Util {
      * Tedious title and meta tag can be replaced with this method call. It no title
      * is provided then it tries to extract the title from the file name where file
      * name is separated by -. Optional capitalization can be set using the augment.
-     * Internally this method uses @link fileTitle method to obtain the file title
+     * Internally this method uses {@link fileTitle} method to obtain the file title
      * from the file name.
      *
      * @param string $title Any specified title to override the file name as title.

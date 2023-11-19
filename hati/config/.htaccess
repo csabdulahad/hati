@@ -1,7 +1,8 @@
 ## THIS .HTACCESS FILE COMES WITH HATI - A SPEEDY PHP LIBRARY.
 
-## THIS .HTACCESS FILE MUST BE PLACED IN THE ROOT DIRECTORY OF THE PROJECT.
-## OTHERWISE HATI WILL FAIL TO LOAD ITS DEPENDENCIES.
+## PLACHING THIS .HTACCESS FILE IN THE ROOT DIRECTORY OF THE PROJECT,
+## YOU WOULDN'T NEED TO USE 'require' FUNCTION TO LOAD COMPOSER AUTOLADER,
+## OR HATI INIT FILE.
 
 ## YOU ARE FREE TO MAKE CHANGES HERE AS PER YOUR REQUIREMENTS.
 ## HOWEVER, MAKE SURE YOU AER POINTING THE HATI FILE CORRECTLY.
@@ -14,7 +15,13 @@
 ## SOMETHING LIKE C:/xampp/htdocs/project/hati/Hati.php                                     |
 ## AS HATI COMES WITH COMPOSER, YOU ONLY NEED TO CHANGE 'PROJECT_DIR' WITH ACTUAL DIRECTORY.|
 ##----------------------------------------------------------------------------------------- |
-# php_value auto_prepend_file "c:/xampp/PROJECT_DIR/hati/Hati.php"
+# php_value auto_prepend_file "hati/Hati.php"
+
+
+## PROTECT SENSITIVE FOLDERS
+RewriteEngine On
+RewriteRule ^hati/ - [F]
+RewriteRule ^config/ - [F]
 
 
 ## DIRECTORY LISTING OPTION; CAN BE DISABLED.

@@ -2,14 +2,14 @@
 
 namespace hati;
 
-/*
+use hati\trunk\TrunkErr;
+use InvalidArgumentException;
+
+/**
  * Req class stands for Request handling. It can check whether a request is
  * done by GET or POST request. Using this, you can get the browser and OS
  * tag which can be very helpful in validating legitimate users.
  * */
-
-use hati\trunk\TrunkErr;
-use InvalidArgumentException;
 
 class Req {
 

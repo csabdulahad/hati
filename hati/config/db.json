@@ -1,14 +1,16 @@
 {
-   "default_prod_db_id" : "Example-Localhost",
-   "default_test_db_id" : "Example-Localhost",
+	"default_prod_db": "Example-Localhost:test",
+	"default_cli_db" : "Example-Localhost:test",
+	"default_test_db": "Example-Localhost:test",
 
-   "db_profiles": [
-	  {
-		 "id": "Example-Localhost",
-		 "host": "localhost",
-		 "db": "Example-DB-Name",
-		 "username": "root",
-		 "password": ""
-	  }
-   ]
+	"db_profiles": {
+
+		"Example-Localhost": {
+			"address": "localhost",
+			"username": "root",
+			"password": "",
+			"db": ["test"]
+		}
+
+	}
 }

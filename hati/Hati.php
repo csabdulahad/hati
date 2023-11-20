@@ -65,9 +65,18 @@ class Hati {
 		if(self::config(Key::DEV_API_BENCHMARK, 'bool'))
 			self::$BENCHMARK_START = microtime(true);
 
-		// set project root as include path
-		if (self::config(Key::ROOT_AS_INCLUDE_PATH, 'bool'))
-			set_include_path(self::projectRoot());
+		/*
+		 * Adjust include paths
+		 * */
+		$projectDirAsInclude = self::config(Key::PROJECT_DIR_AS_INCLUDE_PATH, 'bool');
+		if ($projectDirAsInclude) {
+			set_include_path(get_include_path() . PATH_SEPARATOR . self::projectRoot());
+		}
+
+		// See if root is already added
+		if (!str_ends_with(get_include_path(), self::root())) {
+			set_include_path(get_include_path() . PATH_SEPARATOR . self::root());
+		}
 
 		if (self::config(Key::SESSION_AUTO_START, 'bool')) {
 			// Cookies will only be sent in a first-party context and not be sent along with
@@ -137,14 +146,9 @@ class Hati {
 		self::$CONFIG = $config;
 
 		/*
-		 * Load db configuration json object
+		 * Load db configuration json object from root
 		 * */
-		$configFile = self::projectRoot('hati/db.json');
-		if (!file_exists($configFile)) {
-			// Fallback to default one
-			$configFile = self::root('hati/db.json');
-		}
-
+		$configFile = self::root('hati/db.json');
 		if (!file_exists($configFile))
 			throw new RuntimeException("db.json file is missing in $configFile");
 
@@ -193,7 +197,6 @@ class Hati {
 	 * @return string The project root folder
 	 * */
 	public static function projectRoot(string $path = ''): string {
-		// TODO - remove the usage of absPath & update the functions doc where it was used
 		return self::fixSeparator(self::$DIR_PROJECT . $path);
 	}
 

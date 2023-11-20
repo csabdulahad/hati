@@ -6,7 +6,7 @@ class Key {
 
     const FAVICON = 'favicon';
 
-    const ROOT_AS_INCLUDE_PATH = 'root_as_include_path';
+    const PROJECT_DIR_AS_INCLUDE_PATH = 'project_dir_as_include_path';
     const USE_GLOBAL_FUNC = 'use_global_func';
 
     const AS_JSON_OUTPUT = 'as_JSON_output';

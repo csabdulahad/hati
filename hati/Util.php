@@ -37,6 +37,21 @@ class Util {
         return self::cli() ? 'cli' : 'server';
     }
 
+	/**
+	 * Require any file either from the root or the project folder.
+	 *
+	 * @param string $path The relative path to the file
+	 * @param bool $fromRoot Indicates whether the root or project root should be appended to the path.
+	 * By default, it uses {@link Hati::root()}. When set to false, {@link Hati::projectRoot()} is used.
+	 * @param bool $requireOnce When set to ture it uses {@link require_once()}, otherwise {@link requrie()}
+	 * is used.
+	 * @return mixed value returned by the {@link require()} or {@link require_once()} function on the file
+	 * */
+	public static function require(string $path, bool $fromRoot = false, bool $requireOnce = true): mixed {
+		$path = $fromRoot ? Hati::root($path) : Hati::projectRoot($path);
+		return $requireOnce ? (require_once $path) : (require $path);
+	}
+
     /**
      * Figures out whether a directory is empty or not.
      *

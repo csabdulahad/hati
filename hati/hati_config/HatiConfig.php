@@ -16,7 +16,7 @@ return [
 
     'favicon'                           =>          '',
 
-    'root_as_include_path'              =>          false,
+    'project_dir_as_include_path'       =>          true,
     'use_global_func'                   =>          true,
 
     'as_JSON_output'                    =>          false,

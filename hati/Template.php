@@ -28,22 +28,22 @@ class Template {
     }
 
     /**
-     * A template file has to be of '.tlp.php' extension in order to be rendered by template
-     * engine. Files can be put anywhere on the server. The path argument to the file only requires
-     * directory structure appended in front of the file name without extension as server document
-     * root gets added by Hati behind the scene. Rendered output can be returned or written in the
-     * buffer by specifying print argument.
+     * Any php file can be used as template file. It is advised to keep the file extension
+	 * as '.tlp.php' to make it distinguishable from other php scripts file. Rendered output
+	 * can be returned or written in the buffer by specifying print argument.
+	 *
+	 * Use helper methods {@link Hati::root()} & {@link Hati::projectRoot()} to explicitly
+	 * get the path to the template file.
      *
-     * @param string $tlpFilePath Template file name without extension and directory structure.
-     * @param bool $print Specify whether to print out the rendered template or return.
-     * @param bool $throwErr Indicates whether to throw error.
+     * @param string $filePath Path to the template file
+     * @param bool $print Specify whether to print out the rendered template or return
+     * @param bool $throwErr Indicates whether to throw error
      *
      * @return ?string Either returns or print out the rendered template file based on argument value.
      * */
-    public static function render(string $tlpFilePath, array $params = [], bool $print = false, bool $throwErr = false): ?string {
-        $path = Hati::absPath($tlpFilePath) . '.tlp.php';
-        if (!file_exists($path)) {
-            if ($throwErr) throw new TrunkErr("Couldn't locate the template file.");
+    public static function render(string $filePath, array $params = [], bool $print = false, bool $throwErr = false): ?string {
+        if (!file_exists($filePath)) {
+            if ($throwErr) throw new TrunkErr("Couldn't locate the template file at: $filePath");
             return null;
         }
 
@@ -52,7 +52,7 @@ class Template {
         // start a local buffer
         ob_start();
 
-        include($path);
+        include($filePath);
 
         // flush the buffer and clean the resources
         $rendered = ob_get_clean();

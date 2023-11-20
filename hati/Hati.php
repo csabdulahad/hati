@@ -35,7 +35,7 @@ class Hati {
 	private static ?string $DIR_ROOT = null;
 
 	// The config directory
-	private static ?string $DIR_CONFIG = null;
+	private static ?string $DIR_PROJECT = null;
 
 	// The hati configuration file is cached as json decoded array
 	private static ?array $CONFIG = null;
@@ -51,7 +51,7 @@ class Hati {
 	 */
 	public static function start(): void {
 		// calculate the project root folder
-		self::$DIR_ROOT = realpath(dirname(__DIR__) . '../') . DIRECTORY_SEPARATOR;
+		self::$DIR_ROOT = realpath(dirname(__DIR__, 4)) . DIRECTORY_SEPARATOR;
 
 		// register autoloader function
 		Hati::$loader = require self::$DIR_ROOT . 'vendor/autoload.php';
@@ -67,7 +67,7 @@ class Hati {
 
 		// set project root as include path
 		if (self::config(Key::ROOT_AS_INCLUDE_PATH, 'bool'))
-			set_include_path(self::root());
+			set_include_path(self::projectRoot());
 
 		if (self::config(Key::SESSION_AUTO_START, 'bool')) {
 			// Cookies will only be sent in a first-party context and not be sent along with
@@ -76,16 +76,17 @@ class Hati {
 			session_start();
 		}
 
-		// Loads global functions as per configuration
+		// Load the global functions file
 		if (self::config(Key::USE_GLOBAL_FUNC, 'bool')) {
-			require self::absPath('hati/GlobalFunc.php');
+			$path = self::root('hati/global_func.php');
+			if (file_exists($path)) require $path;
 		}
 
-		// include global php code files here
+		// include global php code files for project
 		$globalPHP = self::config(Key::GLOBAL_PHP, 'arr');
 		foreach ($globalPHP as $file) {
 			$file = trim($file);
-			$path = self::absPath("$file.php");
+			$path = self::projectRoot("$file.php");
 			if (file_exists($path)) require_once $path;
 		}
 	}
@@ -98,10 +99,10 @@ class Hati {
 		$cwd = getcwd();
 
 		while ($cwd !== false) {
-			$hatiJson = $cwd . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'hati.json';
+			$hatiJson = $cwd . DIRECTORY_SEPARATOR . 'hati' . DIRECTORY_SEPARATOR . 'hati.json';
 
 			if (file_exists($hatiJson)) {
-				self::$DIR_CONFIG = $cwd . DIRECTORY_SEPARATOR;
+				self::$DIR_PROJECT = $cwd . DIRECTORY_SEPARATOR;
 				break;
 			}
 
@@ -112,16 +113,21 @@ class Hati {
 		/*
 		 * If we could not figure out any path for config then fallback to default root directory
 		 * */
-		if (empty(self::$DIR_CONFIG)) {
-			self::$DIR_CONFIG = self::$DIR_ROOT;
+		if (empty(self::$DIR_PROJECT)) {
+			self::$DIR_PROJECT = self::$DIR_ROOT;
 		}
 
 		/*
 		 * Load hati configuration json object
 		 * */
-		$configFile = self::absPath('config/hati.json');
+		$configFile = self::projectRoot('hati/hati.json');
+		if (!file_exists($configFile)) {
+			// Fallback to default one
+			$configFile = self::root('hati/hati.json');
+		}
+
 		if (!file_exists($configFile))
-			throw new RuntimeException("hati.json file was not found in $configFile");
+			throw new RuntimeException("hati.json file is missing in $configFile");
 
 		$config = file_get_contents($configFile);
 		$config = json_decode($config, true);
@@ -133,9 +139,14 @@ class Hati {
 		/*
 		 * Load db configuration json object
 		 * */
-		$configFile = self::absPath('config/db.json');
+		$configFile = self::projectRoot('hati/db.json');
+		if (!file_exists($configFile)) {
+			// Fallback to default one
+			$configFile = self::root('hati/db.json');
+		}
+
 		if (!file_exists($configFile))
-			throw new RuntimeException("Hati couldn't find the hati.json file to configure");
+			throw new RuntimeException("db.json file is missing in $configFile");
 
 		$dbConfig = file_get_contents($configFile);
 		$dbConfig = json_decode($dbConfig, true);
@@ -145,24 +156,45 @@ class Hati {
 		self::$DB_CONFIG = $dbConfig;
 	}
 
+	/**
+	 * The hati/db.json file is parsed as array using {@link json_decode()} to be used by {@link Fluent}
+	 * to manage database configurations & connections
+	 *
+	 * @return array represents the database configuration object
+	 * */
 	public static function dbConfigObj(): array {
 		return self::$DB_CONFIG;
 	}
 
 	/**
-	 * Using this method, code can get the path to the root directory of the project.
-	 * Root path can be set by hati config file. If it is set, then Hati uses that
-	 * as project root path for everything.
+	 * Since version 5, Hati can be installed once and be reused in sub-project like structure.
+	 * Using this method, code can get the root path, the path where the vendor folder is found.
 	 *
-	 * <br>Otherwise, Hati calculates the project root path by directory magic constant
-	 * of php.
+	 * This way it makes it easier for sub-projects to refer to any file/folder from the root
+	 * directory path, avoid confusion and it becomes very clear what the path is referring to.
 	 *
-	 * <br><b>Directory separator is added at the end of the root folder.</b>
+	 * @param string $path Any path segment to be appended to the root path
+	 * @return string The path referring from the root directory
+	 * */
+	public static function root(string $path = ''): string {
+		return self::fixSeparator(self::$DIR_ROOT . $path);
+	}
+
+	/**
+	 * With introduction of version 5, Hati can be reused in more than one project in
+	 * the same parent folder. Using this method, code can get the path to the
+	 * sub-project directory.
 	 *
+	 * This method always returns the sub-project directory, not the parent folder.
+	 * If the project is not a sub-project, then both {@link Hati::root()} & this
+	 * method return the same path.
+	 *
+	 * @param string $path Any path segment to be appended to the root path
 	 * @return string The project root folder
 	 * */
-	public static function root(): string {
-		return self::$DIR_CONFIG;
+	public static function projectRoot(string $path = ''): string {
+		// TODO - remove the usage of absPath & update the functions doc where it was used
+		return self::fixSeparator(self::$DIR_PROJECT . $path);
 	}
 
 	/**
@@ -186,18 +218,6 @@ class Hati {
 	public static function fixSeparator(string $path): string {
 		if (DIRECTORY_SEPARATOR == '\\') return str_replace('/', '\\', $path);
 		return str_replace('\\', '/', $path);
-	}
-
-	/*
-	 * Gets the absolute path added to the specified path. It uses __DIR__ magic
-	 * constant in Hati.php to calculate the base directory and appends the path.
-	 * The specified is neutralized with directory separators.
-	 *
-	 * @param string $path The path to calculate absolute path for
-	 * @return string The absolute for the path specified
-	 **/
-	public static function absPath(string $path = ''): string {
-		return self::$DIR_CONFIG . self::fixSeparator($path);
 	}
 
 	public static function version(): string {

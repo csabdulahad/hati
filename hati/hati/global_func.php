@@ -3,6 +3,13 @@
 use hati\Util;
 
 /**
+ * The functions, this file contains are global. You can access them from anywhere within
+ * the project. Hati has provided a few useful functions. Feel free to add any function
+ * you need.
+ * */
+
+
+/**
  * Var dump any type of variable for debugging.
  *
  * @param mixed $var Any variable

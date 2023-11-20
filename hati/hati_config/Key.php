@@ -21,6 +21,7 @@ class Key {
     const COMMON_JS_FILES = 'common_js_files';
     const COMMON_CSS_FILES = 'common_css_files';
 
+	const MAILER_HOST = 'mailer_host';
     const MAILER_EMAIL = 'mailer_email';
     const MAILER_PASS = 'mailer_pass';
     const MAILER_PORT = 'mailer_port';

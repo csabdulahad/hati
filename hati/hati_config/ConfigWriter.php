@@ -7,7 +7,7 @@ class ConfigWriter {
     //Add extra line break before these json keys
     private static array $group = [
         'root_as_include_path', 'as_JSON_output', 'time_zone',
-		'global_php', 'mailer_email', 'doc_config','img_config',
+		'global_php', 'mailer_host', 'doc_config','img_config',
 		'video_config', 'audio_config', 'jquery',
     ];
 

@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection JSUnresolvedLibraryURL */
 
 /**
  * This library class holds all the inclusion urls for many 3rd party libraries/frameworks.

@@ -31,6 +31,7 @@ return [
     'common_js_files'                   =>          [],
     'common_css_files'                  =>          [],
 
+	'mailer_host'						=>			'smtp.gmail.com',
     'mailer_email'                      =>          '',
     'mailer_pass'                       =>          '',
     'mailer_port'                       =>          587,

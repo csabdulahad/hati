@@ -117,11 +117,11 @@ class Shomoy {
      *
      * @param int $sec number of seconds to be added.
      * */
-    public function addSec(int $sec) {
+    public function addSec(int $sec): void {
         try {
             $interval = sprintf('PT%dS', $sec);
             $this -> adjustInterval($sec, $interval);
-        } catch (Exception $e) {
+        } catch (Exception) {
         }
     }
 
@@ -131,7 +131,7 @@ class Shomoy {
      *
      * @param int $min number of minutes to be added.
      * */
-    public function addMin(int $min) {
+    public function addMin(int $min): void {
         try {
             $interval = sprintf('PT%dM', $min);
             $this -> adjustInterval($min, $interval);
@@ -144,7 +144,7 @@ class Shomoy {
      *
      * @param int $hour number of hours to be added.
      * */
-    public function addHour(int $hour) {
+    public function addHour(int $hour): void {
         try {
             $interval = sprintf('PT%dH', $hour);
             $this -> adjustInterval($hour, $interval);
@@ -157,7 +157,7 @@ class Shomoy {
      *
      * @param int $day number of days to be added.
      * */
-    public function addDay(int $day) {
+    public function addDay(int $day): void {
         try {
             $interval = sprintf('P%dD', $day);
             $this -> adjustInterval($day, $interval);
@@ -170,7 +170,7 @@ class Shomoy {
      *
      * @param int $month number of months to be added.
      * */
-    public function addMonth(int $month) {
+    public function addMonth(int $month): void {
         try {
             $interval = sprintf('P%dM', $month);
             $this -> adjustInterval($month, $interval);
@@ -183,23 +183,25 @@ class Shomoy {
      *
      * @param int $year number of years to be added.
      * */
-    public function addYear(int $year) {
+    public function addYear(int $year): void {
         try {
             $interval = sprintf('P%dY', $year);
             $this -> adjustInterval($year, $interval);
         } catch (Exception) {}
     }
 
-    /**
-     * It changes the timezone of the datetime object. However, it doesn't
-     * affect the underlying timestamp so changing timezone it just a
-     * representational function.
-     *
-     * Currently Shomoy has two default timezone constants for Dhaka & London.
-     *
-     * @param string $timeZone the timezone must in region/city format such
-     * as Asia/Dhaka.
-     * */
+	/**
+	 * It changes the timezone of the datetime object. However, it doesn't
+	 * affect the underlying timestamp so changing timezone it just a
+	 * representational function.
+	 *
+	 * Currently Shomoy has two default timezone constants for Dhaka & London.
+	 *
+	 * @param string $timeZone the timezone must in region/city format such
+	 * as Asia/Dhaka.
+	 *
+	 * @throws Exception When fails to set the timezone
+	 */
     public function changeTimeZoneTo(string $timeZone): void {
         $this -> dateTime -> setTimezone(new DateTimeZone($timeZone));
     }

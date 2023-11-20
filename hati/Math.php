@@ -11,7 +11,7 @@ namespace hati;
  * we discover over time.
  */
 
-class Number {
+class Math {
 
     /**
      * The fractional part of any floating number can ba calculated by this method.

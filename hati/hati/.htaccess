@@ -12,16 +12,15 @@
 
 ##-----------------------------------HATI LOADER --------------------------------------------
 ## PREPEND HATI AS MASTER DEPENDENCY. FOR TESTING ENVIRONMENT SUCH AS XAMPP PATH CAN BE     |
-## SOMETHING LIKE C:/xampp/htdocs/project/hati/Hati.php                                     |
+## SOMETHING LIKE C:/xampp/htdocs/project/hati/init.php                                     |
 ## AS HATI COMES WITH COMPOSER, YOU ONLY NEED TO CHANGE 'PROJECT_DIR' WITH ACTUAL DIRECTORY.|
 ##----------------------------------------------------------------------------------------- |
-# php_value auto_prepend_file "hati/Hati.php"
+# php_value auto_prepend_file "hati/init.php"
 
 
-## PROTECT SENSITIVE FOLDERS
+## PROTECT HATI FOLDER
 RewriteEngine On
 RewriteRule ^hati/ - [F]
-RewriteRule ^config/ - [F]
 
 
 ## DIRECTORY LISTING OPTION; CAN BE DISABLED.

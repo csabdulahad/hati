@@ -227,7 +227,7 @@ class Util {
         echo '    <title>'. $title .'</title>'. PHP_EOL;
 
         // add favicon to the page
-        if (!file_exists(Hati::absPath('img/' . Hati::config(Key::FAVICON)))) return;
+        if (!file_exists(Hati::projectRoot('img/' . Hati::config(Key::FAVICON)))) return;
         $path = Util::host() .  'img/' . Hati::config(Key::FAVICON);
         echo '    <link rel="icon" type="image/x-icon" href="'. $path .'">'. PHP_EOL;
     }
@@ -248,7 +248,7 @@ class Util {
     public static function css(string $files = '', string $folder = 'css', bool $common = true): void {
         if ($common) {
             foreach (Hati::config(Key::COMMON_CSS_FILES, 'arr') as $file) {
-                if(!file_exists(Hati::absPath("css/$file.css"))) continue;
+                if(!file_exists(Hati::projectRoot("css/$file.css"))) continue;
                 echo sprintf('    <link rel="stylesheet" href="%s/%s.css">' . PHP_EOL, Util::host() . 'css', $file);
             }
         }
@@ -279,7 +279,7 @@ class Util {
     public static function js(string $files = '', string $folder = 'js', bool $common = true): void {
         if ($common) {
             foreach (Hati::config(Key::COMMON_JS_FILES, 'arr') as $file) {
-                if(!file_exists(Hati::absPath("js/$file.js"))) continue;
+                if(!file_exists(Hati::projectRoot("js/$file.js"))) continue;
                 echo sprintf('    <script src="%s/%s.js"></script>' . PHP_EOL, Util::host() . 'js', $file);
             }
         }
@@ -304,7 +304,7 @@ class Util {
     public static function inc(string $files, string $folder = 'inc', bool $throwErr = false): void {
         $files = explode(',', $files);
         foreach ($files as $file) {
-            if(!file_exists(Hati::absPath('inc/' . $file . '.php'))) {
+            if(!file_exists(Hati::projectRoot('inc/' . $file . '.php'))) {
                 if ($throwErr) throw new TrunkErr('Failed to include '. $file .'.php');
                 continue;
             }
@@ -370,7 +370,7 @@ class Util {
      * in HatiConfig file.
      * */
     public static function host(bool $secure = true): string {
-        $root = Hati::root();
+        $root = Hati::projectRoot();
 
         if (empty($_SERVER['HTTP_HOST'])) {
 			return $root;

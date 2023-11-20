@@ -56,7 +56,7 @@ class Kuli {
      *
      * @param string $folder the folder name.
      * */
-    public function setFolder(string $folder) {
+    public function setFolder(string $folder): void	{
         $this -> folder = $folder;
     }
 
@@ -66,14 +66,14 @@ class Kuli {
      *
      * @param float $mb The limit for file max size.
      * */
-    public function setMaxSize(float $mb) {
+    public function setMaxSize(float $mb): void {
         $this -> maxSize = $mb * 1000000;
     }
 
     public function __construct(bool $uniqueName = false, bool $throwErr = false) {
         $this -> uniqueName = $uniqueName;
         $this -> triggerError = $throwErr;
-        $this -> rootFolder = Hati::root();
+        $this -> rootFolder = Hati::projectRoot();
         $this -> loadConfig();
     }
 
@@ -100,9 +100,9 @@ class Kuli {
             $folder = substr($item, 0, $index);
             $name = substr($item, $index + 1);
 
-            array_push($array['folder'], $folder);
-            array_push($array['name'], $name);
-            array_push($array['path'], $folder . DIRECTORY_SEPARATOR . $name);
+            $array['folder'][] = $folder;
+            $array['name'][] = $name;
+            $array['path'][] = $folder . DIRECTORY_SEPARATOR . $name;
         }
 
         return $array;
@@ -216,7 +216,7 @@ class Kuli {
         }
 
         // add the file to the array to say we have uploaded the file
-        array_push($this -> movedFileName, $file -> folder . DIRECTORY_SEPARATOR . $file -> name);
+        $this->movedFileName[] = $file->folder . DIRECTORY_SEPARATOR . $file->name;
 
         // check for unique name and store the uploaded file path with folder and file name
         if ($this -> uniqueName) {
@@ -237,15 +237,15 @@ class Kuli {
     // folder name followed by directory separator and the file name with extension.
     // It becomes very useful to delete uploaded files where required setting is on
     // and one of the files was failed to upload.
-    private function updateLastFileName(string $newName) {
+    private function updateLastFileName(string $newName): void {
         $lastIndex = count($this -> movedFileName) - 1;
         if ($lastIndex < 0) return;
         $this -> movedFileName[$lastIndex] = $newName;
     }
 
-    private function deleteUpload() {
+    private function deleteUpload(): void {
         foreach ($this -> movedFileName as $file) {
-            $file = Hati::fixSeparator(Hati::root() . $file);
+            $file = Hati::fixSeparator(Hati::projectRoot() . $file);
             unlink($file);
         }
     }
@@ -270,7 +270,7 @@ class Kuli {
     }
 
     // It calculates the destination folder for the file and extension.
-    private function getFolderAndType(FileInfo $fileInfo) {
+    private function getFolderAndType(FileInfo $fileInfo): void {
         if (in_array($fileInfo -> ext, $this -> docConfig['ext'])) {
             if ($this -> folder == null) $fileInfo -> folder = $this -> docConfig['folder'];
             $fileInfo -> type = FileInfo::TYPE_DOC;
@@ -291,7 +291,7 @@ class Kuli {
     // This method runs over all the files from the form data and calculates
     // various information such as name, temp name, size etc. and keeps the
     // info into file info array.
-    private function prepareFileInfo($file, $index = -1) {
+    private function prepareFileInfo($file, $index = -1): void {
         $singleFile = $index == -1;
 
         $name = $singleFile ? basename($file['name']) : basename($file['name'][$index]);
@@ -306,10 +306,10 @@ class Kuli {
         $fileInfo -> ext = $ext;
         $fileInfo -> size = $size;
         $this -> getFolderAndType($fileInfo);
-        array_push($this -> fileInfo, $fileInfo);
+        $this->fileInfo[] = $fileInfo;
     }
 
-    private function loadConfig() {
+    private function loadConfig(): void {
         $this -> docConfig = Hati::config(Key::DOC_CONFIG, 'arr');
         $this -> imgConfig = Hati::config(Key::IMG_CONFIG, 'arr');
         $this -> videoConfig = Hati::config(Key::VIDEO_CONFIG, 'arr');

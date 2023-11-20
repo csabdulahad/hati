@@ -49,11 +49,22 @@ class Fluent {
 	// holds the actual result set array of the query
 	private mixed $data = null;
 
+	// indicates whether to show query in the error output
+	private bool $debugSql = false;
+
 	// a Fluent instance for singleton pattern
 	private static ?Fluent $INS = null;
 
 	private function __construct() {
 		$this -> dbMan = new DBMan();
+	}
+
+	/**
+	 * Show sql which runs into SQL error in to debug
+	 * */
+	public static function debugSQL(): void {
+		$ins = Fluent::get();
+		$ins -> debugSql = true;
 	}
 
 	/**
@@ -130,14 +141,14 @@ class Fluent {
 	 * @return int indicates how many rows were affected by the query execution.
 	 * */
 	public static function exePrepareWith(PDO $pdo, string $query, array $param = [], string $msg = ''): int {
-		try {
-			$ins = self::usePDO($pdo);
+		$ins = self::usePDO($pdo);
 
+		try {
 			$ins -> stmtBuffer = $pdo -> prepare($query);
 			$ins -> executed = $ins -> stmtBuffer -> execute($param);
 			return $ins -> stmtBuffer -> rowCount();
 		} catch (Throwable $t) {
-			$message = empty($msg) ? $t -> getMessage() : $msg;
+			$message = self::buildErrMsg($msg, $query, $ins, $t);
 			throw new TrunkErr($message);
 		}
 	}
@@ -154,15 +165,9 @@ class Fluent {
 	 * @return int indicates how many rows were affected by the query execution.
 	 * */
 	public static function exePrepare(string $query, array $param = [], string $msg = ''): int {
-		try {
-			$ins = Fluent::get();
-			$pdo = $ins -> dbMan -> connect(self::defaultProfileId());
-
-			return self::exePrepareWith($pdo, $query, $param, $msg);
-		} catch (Throwable $t) {
-			$message = empty($msg) ? $t -> getMessage() : $msg;
-			throw new TrunkErr($message);
-		}
+		$ins = Fluent::get();
+		$pdo = $ins -> dbMan -> connect(self::defaultProfileId());
+		return self::exePrepareWith($pdo, $query, $param, $msg);
 	}
 
 	/**
@@ -178,14 +183,14 @@ class Fluent {
 	 * @return int indicates how many rows were affected by the query execution.
 	 * */
 	public static function exeStaticWith(PDO $pdo, string $query, string $msg = ''): int {
-		try {
-			$ins = self::usePDO($pdo);
+		$ins = self::usePDO($pdo);
 
+		try {
 			$ins -> stmtBuffer = $pdo -> query($query);
 			$ins -> executed = $ins -> stmtBuffer != false;
 			return $ins -> stmtBuffer -> rowCount();
 		} catch (Throwable $t) {
-			$message = empty($msg) ? $t -> getMessage() : $msg;
+			$message = self::buildErrMsg($msg, $query, $ins, $t);
 			throw new TrunkErr($message);
 		}
 	}
@@ -201,15 +206,9 @@ class Fluent {
 	 * @return int indicates how many rows were affected by the query execution.
 	 * */
 	public static function exeStatic(string $query, string $msg = ''): int {
-		try {
-			$ins = Fluent::get();
-			$pdo = $ins -> dbMan -> connect(self::defaultProfileId());
-
-			return self::exeStaticWith($pdo, $query, $msg);
-		} catch (Throwable $t) {
-			$message = empty($msg) ? $t -> getMessage() : $msg;
-			throw new TrunkErr($message);
-		}
+		$ins = Fluent::get();
+		$pdo = $ins -> dbMan -> connect(self::defaultProfileId());
+		return self::exeStaticWith($pdo, $query, $msg);
 	}
 
 	/**
@@ -234,13 +233,8 @@ class Fluent {
 	 * @return int indicates how many rows were affected by the query execution.
 	 **/
 	public static function insertPrepare(string $table, array $columns, array $values = [], string $msg = ''): int {
-		try {
 			Fluent::use(self::defaultProfileId());
 			return self::insertData($table, $columns, $values, true, $msg);
-		} catch (Throwable $t) {
-			$message = empty($msg) ? $t -> getMessage() : $msg;
-			throw new TrunkErr($message);
-		}
 	}
 
 	/**
@@ -265,13 +259,8 @@ class Fluent {
 	 * *@throws RuntimeException If the number of bind columns don't match with the number of values passed-in
 	 */
 	public static function insertPrepareWith(PDO $pdo, string $table, array $columns, array $values = [], string $msg = ''): int {
-		try {
-			self::usePDO($pdo);
-			return self::insertData($table, $columns, $values, true, $msg);
-		} catch (Throwable $t) {
-			$message = empty($msg) ? $t -> getMessage() : $msg;
-			throw new TrunkErr($message);
-		}
+		self::usePDO($pdo);
+		return self::insertData($table, $columns, $values, true, $msg);
 	}
 
 	/**
@@ -295,13 +284,8 @@ class Fluent {
 	 * @return int indicates how many rows were affected by the query execution.
 	 **/
 	public static function insert(string $table, array $columns, array $values = [], string $msg = ''): int {
-		try {
-			Fluent::use(self::defaultProfileId());
-			return self::insertData($table, $columns, $values, false, $msg);
-		} catch (Throwable $t) {
-			$message = empty($msg) ? $t -> getMessage() : $msg;
-			throw new TrunkErr($message);
-		}
+		Fluent::use(self::defaultProfileId());
+		return self::insertData($table, $columns, $values, false, $msg);
 	}
 
 	/**
@@ -326,13 +310,8 @@ class Fluent {
 	 * match with the number of values passed-in
 	 */
 	public static function insertWith(PDO $pdo, string $table, array $columns, array $values = [], string $msg = ''): int {
-		try {
-			Fluent::usePDO($pdo);
-			return self::insertData($table, $columns, $values, false, $msg);
-		} catch (Throwable $t) {
-			$message = empty($msg) ? $t -> getMessage() : $msg;
-			throw new TrunkErr($message);
-		}
+		Fluent::usePDO($pdo);
+		return self::insertData($table, $columns, $values, false, $msg);
 	}
 
 	/**
@@ -352,13 +331,8 @@ class Fluent {
 	 * match
 	 */
 	public static function update(string $table, array $cols, array $values = [], string $where = '', array $whereValues = [], string $msg = ''): int {
-		try {
-			Fluent::use(self::defaultProfileId());
-			return self::updateData($table, $cols, $values, false, $where, $whereValues, $msg);
-		} catch (Throwable $t) {
-			$message = empty($msg) ? $t->getMessage() : $msg;
-			throw new TrunkErr($message);
-		}
+		Fluent::use(self::defaultProfileId());
+		return self::updateData($table, $cols, $values, false, $where, $whereValues, $msg);
 	}
 
 	/**
@@ -379,13 +353,8 @@ class Fluent {
 	 * match
 	 */
 	public static function updateWith(PDO $pdo, string $table, array $cols, array $values = [], string $where = '', array $whereValues = [], string $msg = ''): int {
-		try {
-			Fluent::usePDO($pdo);
-			return self::updateData($table, $cols, $values, false, $where, $whereValues, $msg);
-		} catch (Throwable $t) {
-			$message = empty($msg) ? $t->getMessage() : $msg;
-			throw new TrunkErr($message);
-		}
+		Fluent::usePDO($pdo);
+		return self::updateData($table, $cols, $values, false, $where, $whereValues, $msg);
 	}
 
 	/**
@@ -405,13 +374,8 @@ class Fluent {
 	 * match
 	 */
 	public static function updatePrepare(string $table, array $cols, array $values = [], string $where = '', array $whereValues = [], string $msg = ''): int {
-		try {
-			Fluent::use(self::defaultProfileId());
-			return self::updateData($table, $cols, $values, true, $where, $whereValues,  $msg);
-		} catch (Throwable $t) {
-			$message = empty($msg) ? $t->getMessage() : $msg;
-			throw new TrunkErr($message);
-		}
+		Fluent::use(self::defaultProfileId());
+		return self::updateData($table, $cols, $values, true, $where, $whereValues,  $msg);
 	}
 
 	/**
@@ -432,13 +396,8 @@ class Fluent {
 	 * match
 	 */
 	public static function updatePrepareWith(PDO $pdo, string $table, array $cols, array $values = [], string $where = '', array $whereValues = [], string $msg = ''): int {
-		try {
-			Fluent::usePDO($pdo);
-			return self::updateData($table, $cols, $values, true, $where, $whereValues,  $msg);
-		} catch (Throwable $t) {
-			$message = empty($msg) ? $t->getMessage() : $msg;
-			throw new TrunkErr($message);
-		}
+		Fluent::usePDO($pdo);
+		return self::updateData($table, $cols, $values, true, $where, $whereValues,  $msg);
 	}
 
 	/**
@@ -455,13 +414,8 @@ class Fluent {
 	 **@throws RuntimeException It throws run time exception when number of  where-whereValue pair don't match
 	 */
 	public static function delete(string $table, string $where = '', array $whereValues = [], string $msg = ''): int {
-		try {
-			Fluent::use(self::defaultProfileId());
-			return self::deleteDate($table, $where, $whereValues, false, $msg);
-		} catch (Throwable $t) {
-			$message = empty($msg) ? $t->getMessage() : $msg;
-			throw new TrunkErr($message);
-		}
+		Fluent::use(self::defaultProfileId());
+		return self::deleteData($table, $where, $whereValues, false, $msg);
 	}
 
 	/**
@@ -479,13 +433,8 @@ class Fluent {
 	 **@throws RuntimeException It throws run time exception when number of  where-whereValue pair don't match
 	 */
 	public static function deleteWith(PDO $pdo, string $table, string $where = '', array $whereValues = [], string $msg = ''): int {
-		try {
-			Fluent::usePDO($pdo);
-			return self::deleteDate($table, $where, $whereValues, false, $msg);
-		} catch (Throwable $t) {
-			$message = empty($msg) ? $t->getMessage() : $msg;
-			throw new TrunkErr($message);
-		}
+		Fluent::usePDO($pdo);
+		return self::deleteData($table, $where, $whereValues, false, $msg);
 	}
 
 	/**
@@ -501,13 +450,8 @@ class Fluent {
 	 * @return int The number of raws were deleted by the query
 	 **/
 	public static function deletePrepare(string $table, string $where = '', array $whereValues = [], string $msg = ''): int {
-		try {
-			Fluent::use(self::defaultProfileId());
-			return self::deleteDate($table, $where, $whereValues, true, $msg);
-		} catch (Throwable $t) {
-			$message = empty($msg) ? $t->getMessage() : $msg;
-			throw new TrunkErr($message);
-		}
+		Fluent::use(self::defaultProfileId());
+		return self::deleteData($table, $where, $whereValues, true, $msg);
 	}
 
 	/**
@@ -525,13 +469,8 @@ class Fluent {
 	 * @return int The number of raws were deleted by the query
 	 **/
 	public static function deletePrepareWith(PDO $pdo, string $table, string $where = '', array $whereValues = [], string $msg = ''): int {
-		try {
-			Fluent::usePDO($pdo);
-			return self::deleteDate($table, $where, $whereValues, true, $msg);
-		} catch (Throwable $t) {
-			$message = empty($msg) ? $t->getMessage() : $msg;
-			throw new TrunkErr($message);
-		}
+		Fluent::usePDO($pdo);
+		return self::deleteData($table, $where, $whereValues, true, $msg);
 	}
 
 	/**
@@ -583,7 +522,7 @@ class Fluent {
 	public static function sqlCount(): int{
 		$count = 0;
 		$array = Fluent::datumArr();
-		foreach ($array as  $value)  {
+		foreach ($array as $value)  {
 			$count = $value;
 			break;
 		}
@@ -815,7 +754,7 @@ class Fluent {
 		$cols = substr($cols, 0, strlen($cols) - 2);
 		$val = substr($val, 0, strlen($val) - 2);
 
-		$val = self::bind($usePrepare, $val, $values, 'The number of values for columns missing values do not match');
+		$val = self::bind($usePrepare, $val, $values, 'The number of values for columns that are missing values did not match');
 
 		return [$cols, $val];
 	}
@@ -875,7 +814,7 @@ class Fluent {
 	 * @throws RuntimeException When the number of values doesn't with the number of question mark for binding
 	 * @return int The number of rows were affected by this query
 	 **/
-	private static function deleteDate(string $table, string $where, array $whereValues, bool $usePrepare, string $msg): int {
+	private static function deleteData(string $table, string $where, array $whereValues, bool $usePrepare, string $msg): int {
 		$q = "DELETE FROM $table";
 
 		if (!empty($where)) {
@@ -948,6 +887,16 @@ class Fluent {
 		$ins -> db = $pdo;
 
 		return $ins;
+	}
+
+	private static function buildErrMsg(string $customMsg, string $query, Fluent $fluent, Throwable $t): string {
+		if ($fluent -> debugSql) {
+			$message = "{$t -> getMessage()}: $query";
+		} else {
+			$message = empty($customMsg) ? $t -> getMessage() : $customMsg;
+		}
+
+		return $message;
 	}
 
 }

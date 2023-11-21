@@ -18,9 +18,11 @@
 # php_value auto_prepend_file "hati/init.php"
 
 
-## PROTECT HATI FOLDER
-RewriteEngine On
-RewriteRule ^hati/ - [F]
+## PROTECT HATI FOLDERS
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule (^|/)hati(/|$) - [F]
+</IfModule>
 
 
 ## DIRECTORY LISTING OPTION; CAN BE DISABLED.

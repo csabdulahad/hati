@@ -22,9 +22,8 @@
 ---------------------------------------------------------------------
 Hati installation successfully. See config folder & consider doing:
 ➡️ Modify the db & hati json configuration files as per requirements
-➡️ Move the .htaccess file to root directory from the hati folder
-➡️ Delete .htaccess if you don't need
+➡️ Adjust the .htaccess file on root directory, placed by Hati
 
-MAKE SURE YOU HAVE PROTECTED ACCESS TO THE HATI FOLDER BY USING SERVER
-CONFIGURATION OR .htaccess FILE WHICH IS ALREADY PROVIDED AS AN EXAMPLE
-IN THE HATI FOLDER.
+MAKE SURE YOU HAVE PROTECTED ACCESS TO ALL THE HATI FOLDERS BY USING
+SERVER CONFIGURATION OR .htaccess FILE WHICH IS ALREADY PROVIDED AS
+AN EXAMPLE ON THE ROOT DIRECTORY.

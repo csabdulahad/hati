@@ -98,14 +98,14 @@ class Log {
 			};
 		} else {
 			$color = match ($type) {
-				'error' => '#DC3545',
-				'success' => '#198754',
-				'warn' => '#FFC107',
-				'info' => '#0D6EFD',
-				default => 'black'
+				'error' => 'style="color: #DC3545"',
+				'success' => 'style="color: #198754"',
+				'warn' => 'style="color: #FFC107"',
+				'info' => 'style="color: #0D6EFD"',
+				default => ''
 			};
 
-			printf('<pre style="color: %s">%s</pre>', $color, $value);
+			printf('<pre %s>%s</pre>', $color, $value);
 			echo $break;
 		}
 	}

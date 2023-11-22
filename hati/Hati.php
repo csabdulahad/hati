@@ -18,7 +18,7 @@
 
 namespace hati;
 
-use hati\hati_config\Key;
+use hati\config\Key;
 use RuntimeException;
 use Throwable;
 
@@ -37,8 +37,14 @@ class Hati {
 	// The config directory
 	private static ?string $DIR_PROJECT = null;
 
-	// The hati configuration file is cached as json decoded array
-	private static ?array $CONFIG = null;
+	// The global hati json configuration
+	private static ?array $CONFIG_GLOBAL = null;
+
+	// The sub-project hati json configuration
+	private static ?array $CONFIG_LOCAL = null;
+
+	// Indicates if the global config in use
+	private static bool $GLOBAL_CONFIG_IN_USE;
 
 	// The db configuration file is cached as json decoded array
 	private static ?array $DB_CONFIG = [];
@@ -78,6 +84,14 @@ class Hati {
 			set_include_path(get_include_path() . PATH_SEPARATOR . self::root());
 		}
 
+		/*
+		 * Auto include the DBPro class if exists
+		 * */
+		$dbProPath = self::root('hati/DBPro.php');
+		if (file_exists($dbProPath)) {
+			require_once $dbProPath;
+		}
+
 		if (self::config(Key::SESSION_AUTO_START, 'bool')) {
 			// Cookies will only be sent in a first-party context and not be sent along with
 			// requests initiated by third party websites.
@@ -87,8 +101,8 @@ class Hati {
 
 		// Load the global functions file
 		if (self::config(Key::USE_GLOBAL_FUNC, 'bool')) {
-			$path = self::root('hati/global_func.php');
-			if (file_exists($path)) require $path;
+			$path = self::fixSeparator(__DIR__ . '/global_func.php');
+			require_once $path;
 		}
 
 		// include global php code files for project
@@ -100,16 +114,27 @@ class Hati {
 		}
 	}
 
-	private static function loadConfig(): void {
+	/**
+	 * Based on location, where the hati is being used, it tries to find the config path.
+	 * This helps Hati to figure out whether it is used for sub-project & load configuration
+	 * appropriately.
+	 *
+	 * It tries for 15 times, from current working directory to see if there is any folder called
+	 * hati and there is a hati.json file exists. If so then Hati loads that as sub-project config
+	 * file. However, on failure, Hati falls back to root project config file.
+	 * */
+	private static function getConfigPath(): void {
 		/*
 		 * Calculate the config path by going a directory up each iteration to find
 		 * any local hati/hati.json file to use
 		 * */
 		$cwd = getcwd();
 
+		$counter = 0;
 		while ($cwd !== false) {
-			$hatiJson = $cwd . DIRECTORY_SEPARATOR . 'hati' . DIRECTORY_SEPARATOR . 'hati.json';
+			if ($counter <= 15) break;
 
+			$hatiJson = $cwd . DIRECTORY_SEPARATOR . 'hati' . DIRECTORY_SEPARATOR . 'hati.json';
 			if (file_exists($hatiJson)) {
 				self::$DIR_PROJECT = $cwd . DIRECTORY_SEPARATOR;
 				break;
@@ -117,6 +142,8 @@ class Hati {
 
 			// go one directory up
 			$cwd = realpath($cwd . '/..');
+
+			$counter ++;
 		}
 
 		/*
@@ -126,38 +153,42 @@ class Hati {
 			self::$DIR_PROJECT = self::$DIR_ROOT;
 		}
 
-		/*
-		 * Load hati configuration json object
-		 * */
-		$configFile = self::projectRoot('hati/hati.json');
-		if (!file_exists($configFile)) {
-			// Fallback to default one
-			$configFile = self::root('hati/hati.json');
-		}
+		self::$GLOBAL_CONFIG_IN_USE = self::$DIR_ROOT === self::$DIR_PROJECT;
+	}
 
-		if (!file_exists($configFile))
-			throw new RuntimeException("hati.json file is missing in $configFile");
+	/**
+	 * Parse a specific json file as associative array and assigns it to the specified variable.
+	 * @throws RuntimeException If the file doesn't exist or the json is not properly formatted.
+	 * */
+	private static function parseConfigFile(string $fileName, string $path, &$assignTo): void {
+		if (!file_exists($path))
+			throw new RuntimeException("$fileName file is missing at: $path");
 
-		$config = file_get_contents($configFile);
+		$config = file_get_contents($path);
 		$config = json_decode($config, true);
 		if (json_last_error() != JSON_ERROR_NONE)
-			throw new RuntimeException("hati.json seems to be corrupted in $configFile");
+			throw new RuntimeException("$fileName couldn't not be parsed: $path");
 
-		self::$CONFIG = $config;
+		$assignTo= $config;
+	}
 
-		/*
-		 * Load db configuration json object from root
-		 * */
+	/**
+	 * Loads configuration files to setup Hati as defined by various json files
+	 * */
+	private static function loadConfig(): void {
+		self::getConfigPath();
+
+		// Load hati configuration json object
+		$configFile =
+			self::$GLOBAL_CONFIG_IN_USE ?
+			self::root('hati/hati.json') :
+			self::projectRoot('hati/hati.json');
+
+		self::parseConfigFile('hati.json', $configFile, self::$CONFIG_LOCAL);
+
+		// Load db configuration json object from root
 		$configFile = self::root('hati/db.json');
-		if (!file_exists($configFile))
-			throw new RuntimeException("db.json file is missing in $configFile");
-
-		$dbConfig = file_get_contents($configFile);
-		$dbConfig = json_decode($dbConfig, true);
-		if (json_last_error() != JSON_ERROR_NONE)
-			throw new RuntimeException("db.json seems to be corrupted in $configFile");
-
-		self::$DB_CONFIG = $dbConfig;
+		self::parseConfigFile('db.json', $configFile, self::$DB_CONFIG);
 	}
 
 	/**
@@ -223,6 +254,11 @@ class Hati {
 		return str_replace('\\', '/', $path);
 	}
 
+	/**
+	 * Tells about which version of the Hati is running.
+	 *
+	 * @return string version of the Hati in use
+	 * */
 	public static function version(): string {
 		return self::$version;
 	}
@@ -231,11 +267,41 @@ class Hati {
 		return self::$BENCHMARK_START;
 	}
 
+	/**
+	 * Fetches the config value. It tries to get the value from the local hati configuration. If not
+	 * found then it goes to global hati configuration.
+	 *
+	 * @param string $key The config key defined in the hati.json either in local/global configuration
+	 * @param string $as How to cast the return value. Supported types are:<br>
+	 * - str: cast as string<br>
+	 * - arr: cast as array<br>
+	 * - bool: cast as boolean<br>
+	 * - int: cast as integer<br>
+	 * - float: cast as float
+	 * @return string|array|int|bool|float The value in required type
+	 * */
 	public static function config(string $key, string $as = 'str') : string|array|int|bool|float {
-		if (!isset(self::$CONFIG))
-			throw new RuntimeException("Hati config file is missing $key. Please reinstall hati.");
+		if (!isset(self::$CONFIG_LOCAL[$key])) {
 
-		$data = self::$CONFIG[$key];
+			// Global config is in-use and the value is missing; throw exception!
+			if (self::$GLOBAL_CONFIG_IN_USE) {
+				throw new RuntimeException("Config $key is missing in global hati.json");
+			}
+
+			// Parse the global config if needed
+			if(is_null(self::$CONFIG_GLOBAL)) {
+				self::parseConfigFile('hati.json', self::root('hati/hati.json'), self::$CONFIG_GLOBAL);
+			}
+
+			// Global config is in-use and the value is missing; throw exception!
+			if (!isset(self::$CONFIG_GLOBAL[$key])) {
+				throw new RuntimeException("Global config \"$key\" is missing for local");
+			}
+
+			$data = self::$CONFIG_GLOBAL[$key];
+		} else {
+			$data = self::$CONFIG_LOCAL[$key];
+		}
 
 		if ($as == 'int') return (int) $data;
 		else if ($as == 'bool') return (bool) $data;
@@ -248,7 +314,7 @@ class Hati {
 
 try {
 	// Fetch the user configuration for this Hati
-	require __DIR__ . DIRECTORY_SEPARATOR . 'hati_config' .  DIRECTORY_SEPARATOR . 'Key.php';
+	require __DIR__ . DIRECTORY_SEPARATOR . 'config' .  DIRECTORY_SEPARATOR . 'Key.php';
 
 	Hati::start();
 } catch (Throwable $t) {

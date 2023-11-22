@@ -1,6 +1,6 @@
 <?php
 
-namespace hati\hati_config;
+namespace hati\config;
 
 class Key {
 

@@ -2,7 +2,7 @@
 
 namespace hati;
 
-use hati\hati_config\Key;
+use hati\config\Key;
 use hati\trunk\TrunkErr;
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\PHPMailer;

@@ -4,8 +4,7 @@ use hati\Util;
 
 /**
  * The functions, this file contains are global. You can access them from anywhere within
- * the project. Hati has provided a few useful functions. Feel free to add any function
- * you need.
+ * the project.
  * */
 
 

@@ -14,7 +14,7 @@ namespace hati\uploader;
  *
  * */
 
-use hati\hati_config\Key;
+use hati\config\Key;
 use hati\Hati;
 use hati\trunk\TrunkErr;
 use hati\Util;

@@ -6,7 +6,7 @@ use DateInterval;
 use DateTime;
 use DateTimeZone;
 use Exception;
-use hati\hati_config\Key;
+use hati\config\Key;
 use hati\trunk\TrunkErr;
 use Throwable;
 

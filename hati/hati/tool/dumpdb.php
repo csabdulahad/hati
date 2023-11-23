@@ -30,9 +30,7 @@
 
 	$class = <<<FILE
 	<?php
-	
-	namespace hati;
-	
+		
 	/**
 	 * AUTO-GENERATED CLASS FILE BY HATI.
 	 * FOR EVERY CHANGE TO db.json FILE, USE "hati/tool/dumpdb.php" 

@@ -132,7 +132,7 @@ class Hati {
 
 		$counter = 0;
 		while ($cwd !== false) {
-			if ($counter <= 15) break;
+			if ($counter >= 15) break;
 
 			$hatiJson = $cwd . DIRECTORY_SEPARATOR . 'hati' . DIRECTORY_SEPARATOR . 'hati.json';
 			if (file_exists($hatiJson)) {

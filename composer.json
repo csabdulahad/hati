@@ -22,10 +22,11 @@
     ],
 
     "require": {
-        "php": ">=8.0",
+        "php": ">=8.1",
         "phpmailer/phpmailer": "^6.5",
         "rootdata21/hati-installer": "v3.0.0-rc1",
-        "ext-pdo": "*"
+        "ext-pdo": "*",
+        "ext-zip": "*"
     },
 
     "autoload": {

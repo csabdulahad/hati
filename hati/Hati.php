@@ -22,7 +22,7 @@ use hati\config\Key;
 use RuntimeException;
 use Throwable;
 
-class Hati {
+abstract class Hati {
 
 	// version
 	private static string $version = '5.0.0';

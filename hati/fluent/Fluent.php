@@ -3,8 +3,9 @@
 namespace hati\fluent;
 
 use hati\Hati;
-use hati\trunk\TrunkErr;
-use hati\Util;
+use hati\Trunk;
+use hati\util\Util;
+use InvalidArgumentException;
 use PDO;
 use PDOStatement;
 use RuntimeException;
@@ -198,7 +199,7 @@ class Fluent {
 			return $ins -> stmtBuffer -> rowCount();
 		} catch (Throwable $t) {
 			$message = self::buildErrMsg($msg, $query, $ins -> debugSql, $t -> getMessage());
-			throw new TrunkErr($message);
+			throw new Trunk($message);
 		}
 	}
 
@@ -246,7 +247,7 @@ class Fluent {
 			return $ins -> stmtBuffer -> rowCount();
 		} catch (Throwable $t) {
 			$message = self::buildErrMsg($msg, $query, $ins -> debugSql, $t -> getMessage());
-			throw new TrunkErr($message);
+			throw new Trunk($message);
 		}
 	}
 
@@ -568,7 +569,7 @@ class Fluent {
 	public static function stmtBuffer(): PDOStatement {
 		$ins = self::get();
 		if (!$ins -> stmtBuffer)
-			throw new TrunkErr('PDOStatement was failed to be obtained as encountered error in query preparation.');
+			throw new Trunk('PDOStatement was failed to be obtained as encountered error in query preparation.');
 		return $ins -> stmtBuffer;
 	}
 
@@ -592,7 +593,7 @@ class Fluent {
 	 */
 	public static function rowCount(): int {
 		$ins = self::get();
-		if (!$ins -> executed) throw new TrunkErr('Failed to count as no query has been executed.');
+		if (!$ins -> executed) throw new Trunk('Failed to count as no query has been executed.');
 		return $ins -> stmtBuffer -> rowCount();
 	}
 
@@ -659,13 +660,13 @@ class Fluent {
 	public static function datumArr(bool $throwErr = false): array {
 		$dataArr = self::get() -> dataArr();
 		if (count($dataArr) == 0) {
-			if ($throwErr) throw new TrunkErr("Data don't have any datum array.");
+			if ($throwErr) throw new Trunk("Data don't have any datum array.");
 			else return [];
 		}
 
 		$datumArr = $dataArr[0];
 		if ($datumArr == null || count($datumArr) == 0) {
-			if ($throwErr) throw new TrunkErr('Datum array is empty or null.');
+			if ($throwErr) throw new Trunk('Datum array is empty or null.');
 			else return [];
 		}
 
@@ -685,13 +686,13 @@ class Fluent {
 	public static function datumObj(bool $throwErr = false): stdClass {
 		$dataObj = self::get() -> dataObj();
 		if (count($dataObj) == 0) {
-			if ($throwErr) throw new TrunkErr('Data don\'t have any datum array.');
+			if ($throwErr) throw new Trunk('Data don\'t have any datum array.');
 			else return new stdClass();
 		}
 
 		$datumObj = $dataObj[0];
 		if ($datumObj == null) {
-			if ($throwErr) throw new TrunkErr('Datum object is empty or null.');
+			if ($throwErr) throw new Trunk('Datum object is empty or null.');
 			else return new stdClass();
 		}
 
@@ -708,7 +709,7 @@ class Fluent {
 	 */
 	public static function dataArr(): array {
 		$ins = self::get();
-		if (!$ins -> executed) throw new TrunkErr('No query has been executed.');
+		if (!$ins -> executed) throw new Trunk('No query has been executed.');
 		$buffer = $ins -> stmtBuffer;
 		if ($ins -> data == null) $ins -> data = $buffer -> fetchAll(PDO::FETCH_ASSOC);
 		return $ins -> data;
@@ -725,10 +726,55 @@ class Fluent {
 	 */
 	public static function dataObj(): array {
 		$ins = self::get();
-		if (!$ins -> executed) throw new TrunkErr('No query has been executed.');
+		if (!$ins -> executed) throw new Trunk('No query has been executed.');
 		$buffer = $ins -> stmtBuffer;
 		if ($ins -> data == null) $ins -> data = $buffer -> fetchAll(PDO::FETCH_OBJ);
 		return $ins -> data;
+	}
+
+	/**
+	 * A database query result set can be extracted by columns. It returns an associative
+	 * array of data by columns. For single column, it returns 1D array containing data in
+	 * the same order as the query. If more than single column are selected, then column
+	 * values are returned as array of vectors of columns values.
+	 *
+	 * @param string|array $column The columns to be extracted from the result set
+	 * @throws InvalidArgumentException when invalid column name was passed in
+	 * @returns array containing column values
+	 * */
+	public static function col(string|array ...$column): array {
+		$data = self::dataArr();
+
+		if (count($data) < 1) return [];
+
+		$bufferCol = [];
+		foreach ($column as $col) {
+			if (is_array($col)) {
+				$bufferCol = array_merge($bufferCol, $col);
+				continue;
+			}
+			$bufferCol[] = $col;
+		}
+
+		$singleCol = count($bufferCol) == 1;
+		$colArr = [];
+
+		foreach ($data as $datum) {
+			$arr = [];
+			foreach ($bufferCol as $col) {
+				$v = $datum[$col] ?? '-null';
+				if ($v == '-null') throw new InvalidArgumentException("No such column as $col");
+				$arr[] = $datum[$col];
+			}
+
+			if ($singleCol) {
+				$colArr[] = $arr[0];
+			} else {
+				$colArr[] = $arr;
+			}
+		}
+
+		return $colArr;
 	}
 
 	/**

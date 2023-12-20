@@ -3,7 +3,7 @@
 namespace hati\fluent;
 
 use hati\Hati;
-use hati\trunk\TrunkErr;
+use hati\Trunk;
 use PDO;
 use Throwable;
 
@@ -16,11 +16,16 @@ use Throwable;
  * Upon successful connection to a db, DBMan caches the connection as PDO object to
  * reuse it & the PDO object is identified by the db profile id which looks like:
  * DB_PROFILE:DB_NAME
+ *
+ * @since 5.0.0
  * */
 
 class DBMan {
 
+	// Loaded db configuration object
 	private array $dbConfig;
+
+	// Connection cache pool
 	private array $dbPool= [];
 
 	public function __construct() {
@@ -40,7 +45,7 @@ class DBMan {
 	 * */
 	public function connect(?string $id): ?PDO {
 		if (empty($id))
-			throw new TrunkErr("DB profile with id $id was not found in the config");
+			throw new Trunk("DB profile with id $id was not found in the config");
 
 		/*
 		 * Extract profile name & db name
@@ -54,14 +59,14 @@ class DBMan {
 		 * */
 		$profile = $this -> dbConfig['db_profiles'][$proId] ?? null;
 		if (empty($profile))
-			throw new TrunkErr("Unknown db profile $id");
+			throw new Trunk("Unknown db profile $id");
 
 		if (!in_array($dbName, $profile['db'])) {
 			$msg = empty($dbName) ?
 				"Database name is not specified in the id $id followed by a colon"
 				: "Database $dbName is not defined for in the config for $id";
 
-			throw new TrunkErr($msg);
+			throw new Trunk($msg);
 		}
 
 		/*
@@ -96,7 +101,7 @@ class DBMan {
 
 			return $db;
 		} catch (Throwable $t) {
-			throw new TrunkErr("Connection to database was failed: {$t -> getMessage()}");
+			throw new Trunk("Connection to database was failed: {$t -> getMessage()}");
 		}
 	}
 

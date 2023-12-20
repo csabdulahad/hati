@@ -1,19 +1,19 @@
 <?php
 
-namespace hati;
+namespace hati\util;
 
 /**
  * A cool class help printing log messages with minimal effort. This class
  * checks the type output console and formats message accordingly with lines
  * break & colors. Currently there are 5 methods it supports:<br>
- * - {@link Log::log()} : Logs normal message with no color
- * - {@link Log::info} : Logs info message with blue color
- * - {@link Log::success()} : Logs success message with green color
- * - {@link Log::warn()} : Logs warning message with no color
- * - {@link Log::error()} : Logs error message with red color
+ * - {@link Console::log()} : Logs normal message with no color
+ * - {@link Console::info} : Logs info message with blue color
+ * - {@link Console::success()} : Logs success message with green color
+ * - {@link Console::warn()} : Logs warning message with no color
+ * - {@link Console::error()} : Logs error message with red color
  * */
 
-class Log {
+abstract class Console {
 
 	/**
 	 * Logs any type of variable into console/page with nice formatting.

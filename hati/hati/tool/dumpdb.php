@@ -3,6 +3,8 @@
 	/**
 	 * A helper build tool to generate ids for database profiles of
 	 * the project.
+	 *
+	 * @since 5.0.0
 	 * */
 
 	$path = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'db.json';

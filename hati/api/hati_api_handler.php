@@ -1,7 +1,7 @@
 <?php
 
 /********************************************************************
- * 					!!! Hati API Handler !!!						*
+ *                     !!! Hati API Handler !!!						*
  * This file handles the API request coming to the '/api' folder on *
  * the server. Make sure that all the request to this folder is 	*
  * directed to this file using server configuration or .htaccess 	*

@@ -6,7 +6,6 @@ namespace hati\cli;
 
 use hati\util\Util;
 use InvalidArgumentException;
-use RuntimeException;
 use Throwable;
 
 /**
@@ -463,14 +462,6 @@ abstract class CLI {
 			return $text;
 		}
 
-		if (! array_key_exists($foreground, static::$foreground_colors)) {
-			throw new RuntimeException("Invalid foreground color");
-		}
-
-		if ($background !== null && ! array_key_exists($background, static::$background_colors)) {
-			throw new RuntimeException("Invalid background color ");
-		}
-
 		$newText = '';
 
 		// Detect if color method was already in use with this text
@@ -512,10 +503,10 @@ abstract class CLI {
 	}
 
 	private static function getColoredText(string $text, string $foreground, ?string $background, ?string $format): string {
-		$string = "\033[" . static::$foreground_colors[$foreground] . 'm';
+		$string = "\033[" . (static::$foreground_colors[$foreground] ?? $foreground) . 'm';
 
 		if ($background !== null) {
-			$string .= "\033[" . static::$background_colors[$background] . 'm';
+			$string .= "\033[" . (static::$background_colors[$background] ?? $background) . 'm';
 		}
 
 		if ($format === 'underline') {
@@ -986,6 +977,45 @@ abstract class CLI {
 
 		echo $text;
 		return mb_strlen($text);
+	}
+
+	/**
+	 * Asks for user confirmation. '[y/n] : ' will be appended to the prompt
+	 * message. Use {@link \hati\cli\Color} class constants for setting
+	 * prompt text background/foreground color.
+	 *
+	 * @param string $prompt Confirmation message to be shown before input
+	 * @param int $attempt The number of attempt user needs to confirm by
+	 * @param ?string $promptColor Background/foreground for the prompot text
+	 * @return true when user confirms positive. Returns false user doesn't
+	 * confirm with yes or number of attempts tried.
+	 * */
+	public static function confirm(string $prompt = 'Are you sure?', int $attempt = 3, ?string $promptColor = null): bool {
+
+		$confirmation = false;
+		$count = 0;
+
+		$prompt .= ' [y/n] : ';
+		if (!is_null($promptColor)) {
+			$prompt = self::color($prompt, $promptColor);
+		}
+
+		while (true) {
+			if ($count == $attempt) break;
+			$count++;
+
+			$input = self::input($prompt);
+			$input = trim($input);
+
+			if (!in_array($input, ['y', 'n'])) {
+				continue;
+			} else {
+				$confirmation = $input == 'y';
+				break;
+			}
+		}
+
+		return $confirmation;
 	}
 
 }

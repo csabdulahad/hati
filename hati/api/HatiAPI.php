@@ -2,8 +2,8 @@
 
 namespace hati\api;
 
+use hati\Trunk;
 use hati\util\Request;
-use RuntimeException;
 
 /**
  * An abstract implementation for APIs. Hati APIs must implement this class so that
@@ -28,7 +28,7 @@ abstract class HatiAPI {
 	protected final function requestBody(string $as = 'json'): string|array|null {
 
 		if (!in_array($as, ['json', 'raw'])) {
-			throw new RuntimeException('Request body can only be fetched either as json or as raw value');
+			throw Trunk::error400('Request body can only be fetched either as json or as raw value');
 		}
 
 		if (array_key_exists($as, $this -> reqBody)) {
@@ -49,7 +49,7 @@ abstract class HatiAPI {
 	 * @noinspection PhpUnusedParameterInspection
 	 * */
 	public function get(array $args, array $params): void {
-		throw new RuntimeException('API is not implemented yet');
+		throw Trunk::error501('API is not implemented yet');
 	}
 
 	/**
@@ -60,7 +60,7 @@ abstract class HatiAPI {
 	 * @noinspection PhpUnusedParameterInspection
 	 * */
 	public function post(array $args, array $params): void {
-		throw new RuntimeException('API is not implemented yet');
+		throw Trunk::error501('API is not implemented yet');
 	}
 
 	/**
@@ -71,7 +71,7 @@ abstract class HatiAPI {
 	 * @noinspection PhpUnusedParameterInspection
 	 * */
 	public function put(array $args, array $params): void {
-		throw new RuntimeException('API is not implemented yet');
+		throw Trunk::error501('API is not implemented yet');
 	}
 
 	/**
@@ -82,7 +82,7 @@ abstract class HatiAPI {
 	 * @noinspection PhpUnusedParameterInspection
 	 * */
 	public function patch(array $args, array $params): void {
-		throw new RuntimeException('API is not implemented yet');
+		throw Trunk::error501('API is not implemented yet');
 	}
 
 	/**
@@ -93,7 +93,7 @@ abstract class HatiAPI {
 	 * @noinspection PhpUnusedParameterInspection
 	 * */
 	public function delete(array $args, array $params): void {
-		throw new RuntimeException('API is not implemented yet');
+		throw Trunk::error501('API is not implemented yet');
 	}
 
 }

@@ -11,4 +11,5 @@
 	'method' => 'GET',
 	'path' => 'example/v1/greet',
 	'handler' => 'v1/GreetAPI.php',
+	'description' => 'An example API'
 ]);

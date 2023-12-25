@@ -124,7 +124,7 @@ final class HatiAPIHandler {
 			}
 
 			// Invoke the right method
-			$functions = $arr['func'] ?? [];
+			$functions = $arr['extension'] ?? [];
 			$func = null;
 			foreach ($functions as $f) {
 				foreach ($arguments as $a) {
@@ -179,12 +179,12 @@ final class HatiAPIHandler {
 	 * 	// Relative folder path found in the api folder; here 'v1' is the version folder.
 	 * 	'handler' => 'v1/TestAPI.php',
 	 *
-	 * 	// Any function to be invoked via api.
-	 * 	// It can also be an array, for example: 'func' => ['method1', 'method2']
+	 * 	// Any php function can be invoked via api.
+	 * 	// It can also be an array functions. For example: 'extension' => ['method1', 'method2']
 	 * 	// e.g: http://example.com/api/v1/test/testFun/arg1?param1=value1 will invoke
 	 * 	// 'testFun' public method in v1/TestAPI.php with argument array ['arg1'], and
 	 * 	// query parameters array ['param1' => 'value1'].
-	 * 	'func' => 'testFun'
+	 * 	'extension' => 'testFun'
 	 * ]);
 	 * </code>
 	 *
@@ -193,7 +193,7 @@ final class HatiAPIHandler {
 	 * the API url.
 	 *
 	 * The handler class file (for example TestAPI.php) must be an implementation of {@link HatiAPI} with the methods
-	 * defined by that 'func' field.
+	 * defined by that 'extension' field.
 	 *
 	 * For any error while registering an API, this method throws error like an API response with 'API-Registry'
 	 * appended to error message and 500 as HTTP status code to indicate that the api registration failed to the
@@ -229,7 +229,7 @@ final class HatiAPIHandler {
 				throw Trunk::error500("API-Registry: Handler is missing for: $method $path");
 			}
 
-			$func = $api['func'] ?? null;
+			$func = $api['extension'] ?? null;
 			if (!empty($func)) {
 				$func = is_string($func) ? [$func] : $func;
 			}
@@ -238,7 +238,7 @@ final class HatiAPIHandler {
 			$handler->apis[$method] = [
 				$path => [
 					'handler' => $filePath,
-					'func' => $func
+					'extension' => $func
 				]
 			];
 		} catch (Trunk $e) {

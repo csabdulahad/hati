@@ -4,6 +4,7 @@ namespace hati\api;
 
 use hati\config\Key;
 use hati\Hati;
+use hati\util\Arr;
 use hati\util\Util;
 use InvalidArgumentException;
 use JetBrains\PhpStorm\NoReturn;
@@ -18,8 +19,7 @@ use JetBrains\PhpStorm\NoReturn;
  * It has two JSON output methods namely {@link report()} and {@link reply()}. These methods add
  * a <b>response</b> object at the end of the JSON output object to indicate response message and status.
  *
- * Both reply and report methods mark the response object at SYSTEM level with empty
- * message by default. Reply uses SUCCESS = 1 value and report uses ERROR = -1 as
+ * Reply uses SUCCESS = 1 value and report uses ERROR = -1 as
  * status flag in the response object by default.
  *
  * Within the various methods of this Response class, the <b>map</b> argument means that
@@ -80,7 +80,7 @@ class Response {
 		$this -> output[$key] = $this -> getTypedValue($value);
 	}
 
-	/** @noinspection PhpUnused **/
+	
 	public function addAll($keys, $values): void {
 		$keyCount = count($keys);
 		if ($keyCount != count($values)) throw new InvalidArgumentException('Keys and values are not of same length.');
@@ -205,30 +205,50 @@ class Response {
 		foreach ($mapArray as $map) $this -> addMapToMap($mapKey, $map);
 	}
 
+	/**
+	 * Returns the response data in JSON format as string
+	 *
+	 * @reutrn string JSON data as string
+	 * */
 	public function getJSON(): string {
 		return json_encode($this -> output);
 	}
 
+	/**
+	 * Write out the response in JSON format.
+	 *
+	 * @param mixed $msg The response message
+	 * @param int $status The response status
+	 * @param string|array $header HTTP headers to be set before sending JSON response
+	 * */
 	#[NoReturn]
-	public function reply($msg = '', $status = Response::SUCCESS): void {
+	public function reply(mixed $msg = '', int $status = Response::SUCCESS, string|array ...$header): void {
 		$resObj = self::addResponseObject($status, $msg);
 		$this -> add(self::$KEY_RESPONSE, $resObj);
 
-		if (!Util::cli() && Hati::config(Key::AS_JSON_OUTPUT, 'bool')) {
-			header('Content-Type: application/json');
-		}
+		$header = Arr::varargsAsArray($header);
+		self::setHTTPHeaders($header);
 
 		echo $this -> getJSON();
 		exit;
 	}
 
+	/**
+	 * Static helper method to report with a json response object containing 'msg' & 'status'
+	 * field with optional HTTP headers.
+	 *
+	 * @param mixed $msg The response message
+	 * @param int $status The response status
+	 * @param string|array $header HTTP headers
+	 * */
 	#[NoReturn]
-	public static function report($msg, $stat): void {
-		if (!Util::cli() && Hati::config(Key::AS_JSON_OUTPUT, 'bool')) {
-			header('Content-Type: application/json');
+	public static function report(mixed $msg, int $status, string|array ...$header): void {
+		if (!Util::cli()) {
+			$header = Arr::varargsAsArray($header);
+			self::setHTTPHeaders($header);
 		}
 
-		echo self::reportJSON($msg, $stat);
+		echo self::buildResponse($msg, $status);
 		exit;
 	}
 
@@ -244,51 +264,60 @@ class Response {
 		if ($apiDelay) $buffer['delay_time'] = $apiDelay;
 	}
 
-	/** @noinspection PhpUnused **/
-	#[NoReturn]
-	public static function reportOk(string $msg = ''): void {
-		self::report($msg, Response::SUCCESS);
+	/**
+	 * Sets HTTP headers
+	 *
+	 * @param array $headers containing HTTP headers
+	 * */
+	private static function setHTTPHeaders(array $headers): void {
+		if (Util::cli()) return;
+
+		$contentTypeJSON = 'Content-Type: application/json';
+		if (!in_array($contentTypeJSON, $headers)) {
+			$headers[] = $contentTypeJSON;
+		}
+
+		foreach ($headers as $h) {
+			header($h);
+		}
 	}
 
-	/** @noinspection PhpUnused **/
 	#[NoReturn]
-	public static function reportInfo(string $msg = ''): void {
-		self::report($msg, Response::INFO);
+	public static function reportOk(string $msg = '', string|array ...$header): void {
+		self::report($msg, Response::SUCCESS, $header);
+	}
+	
+	#[NoReturn]
+	public static function reportInfo(string $msg = '', string|array ...$header): void {
+		self::report($msg, Response::INFO, $header);
+	}
+	
+	#[NoReturn]
+	public static function reportWarn(string $msg = '', string|array ...$header): void {
+		self::report($msg, Response::WARNING, $header);
 	}
 
-	/** @noinspection PhpUnused **/
 	#[NoReturn]
-	public static function reportWarn(string $msg = ''): void {
-		self::report($msg, Response::WARNING);
-	}
-
-	/** @noinspection PhpUnused **/
-	#[NoReturn]
-	public static function reportErr(string $msg = ''): void {
-		self::report($msg, Response::ERROR);
+	public static function reportErr(string $msg = '', string|array ...$header): void {
+		self::report($msg, Response::ERROR, $header);
 	}
 
 	/**
 	 * This method statically creates a JSON output object with response property including
-	 * response message, level and status.
+	 * response message and status.
 	 *
 	 * @param string $msg response message.
 	 * @param int $status the status of the response of execution.
 	 *
 	 * @return string JSON output object consisting of response object.
 	 */
-	public static function reportJSON(string $msg, int $status): string {
+	public static function buildResponse(string $msg, int $status): string {
 		$output[self::$KEY_RESPONSE] = self::addResponseObject($status, $msg);
-
-		if (!Util::cli() && Hati::config(Key::AS_JSON_OUTPUT, 'bool')) {
-			header('Content-Type: application/json');
-		}
-
 		return json_encode($output);
 	}
 
 	#[NoReturn]
-	public static function sendJSON(array $data = []): void {
+	public static function sendJSON(array $data = [], string|array ...$header): void {
 		$output = [];
 
 		if (is_array($data)) {
@@ -301,9 +330,8 @@ class Response {
 		if ($delay > 0) sleep($delay);
 		self::addDevProperties($output);
 
-		if (!Util::cli() && Hati::config(Key::AS_JSON_OUTPUT, 'bool')) {
-			header('Content-Type: application/json');
-		}
+		$header = Arr::varargsAsArray($header);
+		self::setHTTPHeaders($header);
 
 		echo count($output) == 0 ? '{}' : json_encode($output);
 		exit;

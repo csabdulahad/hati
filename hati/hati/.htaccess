@@ -1,59 +1,74 @@
-## THIS .HTACCESS FILE COMES WITH HATI - A SPEEDY PHP LIBRARY.
+## This .htaccess file comes with Hati - A Speedy PHP Library!
 
-## PLACHING THIS .HTACCESS FILE IN THE ROOT DIRECTORY OF THE PROJECT,
-## YOU WOULDN'T NEED TO USE 'require' FUNCTION TO LOAD COMPOSER AUTOLADER,
-## OR HATI INIT FILE.
+## Plaching this .htaccess file in the root directory of the project,
+## you wouldn't need to use 'require' function to load composer autolader,
+## or hati init file manually.
 
-## YOU ARE FREE TO MAKE CHANGES HERE AS PER YOUR REQUIREMENTS.
-## HOWEVER, MAKE SURE YOU AER POINTING THE HATI FILE CORRECTLY.
-## ALL THE CONFIGURATION IS GIVEN FOR REFERENCE OR MODIFICATION.
-## THEY WILL NOT FIT ALL PROJECTS STRUCTURE. CHANGE ACCORDINGLY.
+## You are free to make changes here as per your requirements.
+## however, make sure you aer pointing the hati file correctly.
+## all the configuration is given for reference or modification.
+## They will not fit all projects structure. Change accordingly.
 
 
-##-----------------------------------HATI LOADER --------------------------------------------
-## PREPEND HATI AS MASTER DEPENDENCY. FOR TESTING ENVIRONMENT SUCH AS XAMPP PATH CAN BE     |
-## SOMETHING LIKE C:/xampp/htdocs/project/hati/init.php                                     |
-## AS HATI COMES WITH COMPOSER, YOU ONLY NEED TO CHANGE 'PROJECT_DIR' WITH ACTUAL DIRECTORY.|
-##----------------------------------------------------------------------------------------- |
+##-----------------------------------------------------------------------------------------
+## 									!!! HATI LOADER!!!
+## Prepend hati as master dependency. For testing environment such as xampp path can be
+## Something like C:/xampp/htdocs/project/hati/init.php
+## As hati comes with composer, you only need to change 'project_dir' with actual directory.
+##-----------------------------------------------------------------------------------------
 # php_value auto_prepend_file "hati/init.php"
 
 
-## PROTECT HATI FOLDERS
+##-----------------------------------------------------------------------------------------
+## 								!!! PROTECT HATI FOLDERS !!!
+## The hati folder hosts various configuration files. These files contains very sensitive
+## information. This rule is recommeneded to safe-guard the hati folder.
+##-----------------------------------------------------------------------------------------
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteRule (^|/)hati(/|$) - [F]
 </IfModule>
 
 
-## DIRECTORY LISTING OPTION; CAN BE DISABLED.
+##--------------------------------------------------------------------------------------------
+##		 					!!! REDIRECTION RULES FOR API !!!
+## For a specified folder use the /folder/ as RewriteBase. The RewriteCond can be modidfied to
+## '-*' to disable direct access to any file in the api folder.
+##--------------------------------------------------------------------------------------------
+# RewriteBase /
+# RewriteCond %{REQUEST_FILENAME} !-f
+# RewriteRule ^api/(.+)$ api/hati_api_handler.php?api=$1 [QSA,L]
+
+
+## Directory listing option; can be disabled.
 # Options -Indexes
 
 
-## CHANGE DEFAULT INDEX PAGE AS DIRECTORY INDEX PAGE
+## Change default index page as directory index page
 # DirectoryIndex home.php
 
 
-## FORCE SERVER TO USE HTTPS.
+## Force server to use https.
 # RewriteEngine On
 # RewriteCond %{HTTPS} off
 # RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI}
 
 
-## ALLOWING CROSS SITE ORIGIN CONTROL FOR AJAX.
+## Allowing cross site origin control for ajax.
 # Header add Access-Control-Allow-Origin "*"
 
 
-## CONFIGURE THE PHPSESSID COOKIE NAME IF NEEDED.
+## Configure the phpsessid cookie name if needed.
 # php_value session.name 'HATI'
 
 
-## FORCE SESSION COOKIE TO BE HTTP ONLY UNLESS IT IS MENTIONED IN CODE OTHERWISE.
+## Force session cookie to be http only unless it is mentioned in code otherwise.
 # php_value session.cookie_httponly 1
 
 
-## DOCUMENT NOT FOUND DIRECTIVE
+## Document not found directive
 #ErrorDocument 404 http://YOUR_SITE.com/404_PAGE.php
 
 
-## FORBIDDEN ACCESS DIRECTIVE
+## Forbidden access directive
 # ErrorDocument 403 http://YOUR_SITE.com/404_PAGE.php

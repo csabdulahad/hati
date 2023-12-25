@@ -14,12 +14,16 @@ abstract class Arr {
 	 * Converts an array into comma separated string values.
 	 *
 	 * @param array $arr the array whose values to be converted
+	 * @param bool $addBrackets If set to ture, the string will be wrapped by [] brackets
 	 * @return string comma separated string of array values
 	 * */
-	public static function strList(array $arr): string {
+	public static function strList(array $arr, bool $addBrackets = false): string {
 		$str = '';
 		foreach ($arr as $a) $str .= "$a, ";
-		return rtrim($str, ', ');
+		$str = rtrim($str, ', ');
+
+		if (!$addBrackets) return $str;
+		return "[$str]";
 	}
 
 	/**

@@ -8,5 +8,8 @@
  * file provided with the Hati library								*
  ********************************************************************/
 
+// Define constant to prevent direct access to APIs handler files
+const HATI_API_CALL = true;
+
 // Invoke the Hati API handler!
 hati\api\HatiAPIHandler::boot();

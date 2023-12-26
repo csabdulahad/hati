@@ -19,6 +19,21 @@ abstract class HatiAPI {
 	private array $reqBody = [];
 
 	/**
+	 * Prevent direct access to the API handler file by checking whether
+	 * the HATI_API_CALL constant was defined by the hati_api_handler.php
+	 * file.
+	 *
+	 * This method should be the first call in the API handler files to
+	 * prevent direct access.
+	 * */
+	public static function noDirectAccess(): void {
+		if (!defined('HATI_API_CALL')) {
+			$trunk = Trunk::error403('No direct access');
+			$trunk -> report();
+		}
+	}
+
+	/**
 	 * Fetches the request body as either JSON or raw text.
 	 *
 	 * @param string $as The format the request body to be fetched in.

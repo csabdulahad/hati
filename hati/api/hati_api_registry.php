@@ -11,5 +11,6 @@
 	'method' => 'GET',
 	'path' => 'example/v1/greet',
 	'handler' => 'v1/GreetAPI.php',
+	'extension' => 'greetInBengali',
 	'description' => 'An example API'
 ]);

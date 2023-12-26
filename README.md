@@ -30,7 +30,10 @@ Hati comes with a few tools which are found on the project root's **hati/tool** 
 Library functions, class names are inspired by Bengali language. Many common words from Bengali language such **Kuli**, **Biscut**, **Shomoy** are found within this library.
 
 # Install
-Install the latest version using **composer require rootdata21/hati**
+Install the latest version using:
+```shell
+composer require rootdata21/hati
+```
 
 Or add to your composer.json file as a requirement:
 

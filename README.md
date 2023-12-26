@@ -1,10 +1,10 @@
 # Hati - A Speedy PHP Library
-                          .'``'.__
-                         /      \ `'"-,
-        .-''''--...__..-/ .     |      \
-      .'               ; :'     '.  a   |
-     /                 | :.       \     =\
-    ;                   \':.      /  ,-.__;.-;`
+                                                      .'``'.__
+                                                     /      \ `'"-,
+                                    .-''''--...__..-/ .     |      \
+                                  .'               ; :'     '.  a   |
+                                 /                 | :.       \     =\
+                                ;                   \':.      /  ,-.__;.-;`
 
 [![PHP Version Require](https://img.shields.io/badge/php-%3E%3D8.0-brightgreen?style=flat-square)](https://packagist.org/packages/rootdata21/hati)
 [![Latest Stable Version](https://img.shields.io/packagist/v/rootdata21/hati.svg?style=flat-square)](https://packagist.org/packages/rootdata21/hati) 
@@ -78,7 +78,7 @@ $response = new Response();
 $response -> add('name', $name);
 $response -> reply('Operation has been done', header: [
     'X-EXAMPLE-HEADER: SOMETHING',
-    'Content-Type: application/json
+    'Content-Type: application/json'
 ]);
 ```
 # Output

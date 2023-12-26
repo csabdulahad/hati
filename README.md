@@ -12,18 +12,22 @@
 [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square&color=important)](https://packagist.org/packages/rootdata21/hati) 
 
 
-Welcome to the Hati wiki! Hati is a simply powerful PHP library written in **PHP 8** which has various library functions and classes to make API or application development in PHP effortless. This library has great support for crafting:-
-* JSON output for APIs
-* Templete engine
-* Email functions
+Welcome to the Hati wiki! Hati is a powerful PHP library written in **PHP 8** which has various library functions and classes to make API or application development in PHP effortless. This library has great support for crafting:-
+* APIs development support
+* Form data & request validations
+* Basic Template engine
+* Email functions [using PHPMailer]
 * Easy file uploading
-* Form data processing
-* Server request validation
-* Single database quries
-* Time functions
-* Number calculations etc.
+* Multiple database operations
+* Simplistic Date-Timing functions
+* Number crunching utility functions etc.
+* Zip files creation
 
-Hati can be configured to use composer autoload. Basically Hati uses apache's dot htaccess file to include the Hati loader which seemlessly works with composer loader to resolve the loader dependencies. Many aspect of Hati can be configuared by using the configuration file called **HatiConfig**. Library functions, class names are inspired by Bengali language. Many common words from Bengali language such **Kuli**, **Biscut**, **Shomoy** are found within this library.
+Hati utilizes composer autoload. You can use apache's dot htaccess file to prepend the Hati init file which will require 'vendor/autoload.php' behind the scene to resolve the loader dependencies. Many aspect of Hati can be configured by using the configuration files found on project root **hati/hati.json** & **hati/db.json**. 
+
+Hati comes with a few tools which are found on the project root's **hati/tool** folder. These tools are used to help working with multiple database, API documentation etc.
+
+Library functions, class names are inspired by Bengali language. Many common words from Bengali language such **Kuli**, **Biscut**, **Shomoy** are found within this library.
 
 # Install
 Install the latest version using **composer require rootdata21/hati**
@@ -33,31 +37,34 @@ Or add to your composer.json file as a requirement:
 ```json
 {
     "require": {
-        "rootdata21/hati": "~2.0.0"
+        "rootdata21/hati": "~5.0.0"
     }
 }
 ```
 
 # Setup
-1. Hati can only be used in PHP 8 or above. In order to setup the Hati, the htaccess file provided with the library needs to be configured first. Along with other htaccess commands, the Hati Loader command should point to absoluate path of the **Hati** file. 
-2. The second configuration is that the root directory of project needs to be set in HatiConfig.
-
-**As long as the htaccess can point to the path of the Hati correctly, the hati library folder can be placed anywhere within the project. The .htaccess file must be on the project root directory.**
+1. Hati can only be used in PHP 8 or above. In order to set up the Hati, you can use the htaccess file provided with the library to prepend the "hati/init.php" file or manually require it using require function.
+2. Adjust the "hati/hati.json" file to configure the environment. 
 
 # Demo
-Below we have an API which uses Fluent class to perform database query where sql is prepared and binded behind the scene and the result is fetched using datum method. With traditional approach such task would take up to 10 lines. Hati really shrinks down the line of code you have to write over and over again. Finally, it return the output as JSON to requester.
+Below an API is written using Fluent class to perform database query where sql is prepared and behind the scene and the result is fetched using datum method. With traditional approach such task would take up to 10 lines. Hati really shrinks down the line of code you have to write over and over again. Finally, it return the output as JSON to requester.
 
 ```php
 <?php
 
 /*
-* A simple API developed using Hati library. This demonstrates
-* how Hati simplifies various tasks with powerful functions.
-*/
+ * Register the API in the "api/hati_api_registry.php" file using
+ * HatiAPIHandler::register method.
+ */
+\hati\api\HatiAPIHandler::register([
+	'method' => 'GET',
+	'path' => 'welcome/get',
+	'handler' => 'v1/ExRate.php',
+	'description' => 'A GET API'
+]);
 
-// imports
-use hati\Fluent;
-use hati\Response;
+// Use a specific database connection
+Fluent::use(DBPro::exampleDb); 
 
 // search the name by id from the database table using PDO extension
 $id = 5;
@@ -69,7 +76,10 @@ $name = Fluent::datum('name');
 // craft and reply JSON output
 $response = new Response();
 $response -> add('name', $name);
-$response -> reply(status: Response::SUCCESS);
+$response -> reply('Operation has been done', header: [
+    'X-EXAMPLE-HEADER: SOMETHING',
+    'Content-Type: application/json
+]);
 ```
 # Output
 
@@ -78,8 +88,7 @@ $response -> reply(status: Response::SUCCESS);
     "name": "Abdul Ahad",
     "response": {
         "status": 1,
-        "level": 1,
-        "msg": ""
+        "msg": "Operation has been done"
     }
 }
 ```

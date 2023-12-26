@@ -19,7 +19,6 @@ return [
 	'project_dir_as_include_path'       =>          true,
 	'use_global_func'                   =>          true,
 
-	'as_JSON_output'                    =>          false,
 	'dev_API_benchmark'                 =>          false,
 	'dev_API_delay'                     =>          0, // sec in integer
 

@@ -1,9 +1,12 @@
 <?php
 
+namespace hati;
+
+use hati\config\Key;
+use RuntimeException;
+use Throwable;
+
 /**
- *
- * WARNING : DON'T MODIFY THIS CLASS ANY POINT BELOW THIS COMMENT.
- *
  * Hati, a speedy PHP library. This class does all the magic under the
  * hood. It gets the very first call from the server, before any code
  * can execute. This prepares dependencies by setting a class loader.
@@ -11,16 +14,7 @@
  * It uses the configuration object to prepare the working environment
  * properly. Please use hati.json file in order to customize your
  * great HATI.
- *
- * WARNING : DON'T MODIFY THIS CLASS ANY POINT BELOW THIS COMMENT.
- *
  * */
-
-namespace hati;
-
-use hati\config\Key;
-use RuntimeException;
-use Throwable;
 
 abstract class Hati {
 

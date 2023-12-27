@@ -55,7 +55,8 @@
 
 
 ## Allowing cross site origin control for ajax.
-# Header add Access-Control-Allow-Origin "*"
+# Header add Access-Control-Allow-Origin *
+# Header add Access-Control-Allow-Headers *
 
 
 ## Configure the phpsessid cookie name if needed.

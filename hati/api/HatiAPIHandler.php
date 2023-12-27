@@ -46,6 +46,19 @@ final class HatiAPIHandler {
 	 * */
 	public static function boot(): void {
 		try {
+			$method = strtoupper(Request::method());
+
+			// Handle the preflight request, respond with the appropriate headers
+			if ($method == 'OPTIONS') {
+				header('Access-Control-Allow-Origin: *');
+				header('Access-Control-Allow-Headers: *');
+				header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
+
+				// No content for OPTIONS request
+				http_response_code(200);
+				exit;
+			}
+
 			$handler = self::get();
 
 			/*
@@ -69,7 +82,6 @@ final class HatiAPIHandler {
 			}
 
 			// Check the request method
-			$method = strtoupper(Request::method());
 			if (!in_array($method, ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])) {
 				throw Trunk::error405('Unacceptable request method');
 			}

@@ -85,7 +85,7 @@ $response -> reply('Operation has been done', header: [
 ]);
 ```
 # Output
-
+Hitting the API at: https://example.com/api/welcome/get
 ```json
 {
     "name": "Abdul Ahad",

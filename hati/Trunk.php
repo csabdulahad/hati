@@ -67,83 +67,94 @@ class Trunk extends RuntimeException {
 	}
 
 	/**
+	 * 200 Success
+	 * A helper method which allows sending 200 response with message as API
+	 * output
+	 * */
+	public static function send200(string $msg = 'Success', string|array ...$header): Trunk {
+		$trunk = self::buildTrunkWithHeaders($msg, 'HTTP/1.0 200 OK', $header);
+		$trunk -> status = Response::SUCCESS;
+		throw $trunk;
+	}
+
+	/**
 	 * 400 Client Error
 	 * */
 	public static function error400(string $msg = 'Client Error', string|array ...$header): Trunk {
-		return self::buildErrorTrunk($msg, 'HTTP/1.0 400 Bad Request', $header);
+		return self::buildTrunkWithHeaders($msg, 'HTTP/1.0 400 Bad Request', $header);
 	}
 
 	/**
 	 * 401 Unauthorized
 	 * */
 	public static function error401(string $msg = 'Unauthorized', string|array ...$header): Trunk {
-		return self::buildErrorTrunk($msg, 'HTTP/1.0 401 Unauthorized', $header);
+		return self::buildTrunkWithHeaders($msg, 'HTTP/1.0 401 Unauthorized', $header);
 	}
 
 	/**
 	 * 403 Forbidden Access
 	 * */
 	public static function error403(string $msg = 'Forbidden Access', string|array ...$header): Trunk {
-		return self::buildErrorTrunk($msg, 'HTTP/1.0 403 Forbidden', $header);
+		return self::buildTrunkWithHeaders($msg, 'HTTP/1.0 403 Forbidden', $header);
 	}
 
 	/**
 	 * 404 Not Found
 	 * */
 	public static function error404(string $msg = 'Not Found', string|array ...$header): Trunk {
-		return self::buildErrorTrunk($msg, 'HTTP/1.0 404 Not Found', $header);
+		return self::buildTrunkWithHeaders($msg, 'HTTP/1.0 404 Not Found', $header);
 	}
 
 	/**
 	 * 405 Method Not Allowed
 	 * */
 	public static function error405(string $msg = 'Method Not Allowed', string|array ...$header): Trunk {
-		return self::buildErrorTrunk($msg, 'HTTP/1.0 405 Method Not Allowed', $header);
+		return self::buildTrunkWithHeaders($msg, 'HTTP/1.0 405 Method Not Allowed', $header);
 	}
 
 	/**
 	 * 408 Request Timeout
 	 * */
 	public static function error408(string $msg = 'Request Timeout', string|array ...$header): Trunk {
-		return self::buildErrorTrunk($msg, 'HTTP/1.0 408 Request Timeout', $header);
+		return self::buildTrunkWithHeaders($msg, 'HTTP/1.0 408 Request Timeout', $header);
 	}
 
 	/**
 	 * 429 Too Many Requests
 	 * */
 	public static function error429(string $msg = 'Too Many Requests', string|array ...$header): Trunk {
-		return self::buildErrorTrunk($msg, 'HTTP/1.0 429 Too Many Requests', $header);
+		return self::buildTrunkWithHeaders($msg, 'HTTP/1.0 429 Too Many Requests', $header);
 	}
 
 	/**
 	 * 500 Internal Server Error
 	 * */
 	public static function error500(string $msg = 'Internal Server Error', string|array ...$header): Trunk {
-		return self::buildErrorTrunk($msg, 'HTTP/1.0 500 Internal Server Error', $header);
+		return self::buildTrunkWithHeaders($msg, 'HTTP/1.0 500 Internal Server Error', $header);
 	}
 
 	/**
 	 * 501 Not Implemented
 	 * */
 	public static function error501(string $msg = 'Not Implemented', string|array ...$header): Trunk {
-		return self::buildErrorTrunk($msg, 'HTTP/1.0 503 Not Implemented', $header);
+		return self::buildTrunkWithHeaders($msg, 'HTTP/1.0 503 Not Implemented', $header);
 	}
 
 	/**
 	 * 503 Service Unavailable
 	 * */
 	public static function error503(string $msg = 'Service Unavailable', string|array ...$header): Trunk {
-		return self::buildErrorTrunk($msg, 'HTTP/1.0 503 Service Unavailable', $header);
+		return self::buildTrunkWithHeaders($msg, 'HTTP/1.0 503 Service Unavailable', $header);
 	}
 
 	/**
 	 * 504 Gateway Timeout
 	 * */
 	public static function error504(string $msg = 'Gateway Timeout', string|array ...$header): Trunk {
-		return self::buildErrorTrunk($msg, 'HTTP/1.0 504 Gateway Timeout', $header);
+		return self::buildTrunkWithHeaders($msg, 'HTTP/1.0 504 Gateway Timeout', $header);
 	}
 
-	private static function buildErrorTrunk(string $msg, string $errorHeader, string|array ...$header): Trunk {
+	private static function buildTrunkWithHeaders(string $msg, string $errorHeader, string|array ...$header): Trunk {
 		$trunk = new Trunk($msg);
 		$trunk -> headers = array_merge(['Content-Type: application/json'], Arr::varargsAsArray($header));
 		$trunk -> headers[] = $errorHeader;

@@ -2,6 +2,8 @@
 
 namespace hati\util;
 
+use InvalidArgumentException;
+
 /**
  * A class containing helper functions to manipulate arrays in PHP.
  *
@@ -9,6 +11,39 @@ namespace hati\util;
  * */
 
 abstract class Arr {
+
+	/**
+	 * Returns whether an array is sub or full set of another array.
+	 * Result can be returned various format.
+	 * - $return = bool, it indicates whether the needle array is sub/full
+	 * set of the haystack array.
+	 * - $return = array, it returns items of the needle array wasn't a member
+	 * of the haystack array. The items have unchanged keys as they are defined
+	 * in their original array.
+	 * - $return = int, it returns the number of items are not member of the haystack
+	 * array
+	 *
+	 * @param array $needle the input array to check against the haystack array
+	 * @param array $haystack the array containing valid options
+	 * @return bool|array|int returns as specified
+	 * */
+	public static function in_array(array $needle, array $haystack, string $return = 'bool'): bool|array|int {
+
+		if (!in_array($return, ['bool', 'array', 'int'])) {
+			throw new InvalidArgumentException('Return must be one of these: bool, array, int');
+		}
+
+		$arr = array_diff($needle, $haystack);
+
+		if ($return == 'bool') {
+			return empty($arr);
+		} elseif ($return == 'array') {
+			return $arr;
+		} else {
+			return count($arr);
+		}
+
+	}
 
 	/**
 	 * Converts an array into comma separated string values.

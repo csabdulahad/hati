@@ -4,7 +4,9 @@ namespace hati\api;
 
 use hati\filter\Filter;
 use hati\Trunk;
+use hati\util\Arr;
 use hati\util\Request;
+use Throwable;
 
 /**
  * Default handler implementation for API requests. This class makes it super simple
@@ -16,6 +18,13 @@ use hati\util\Request;
  * */
 
 final class HatiAPIHandler {
+
+	/**
+	 * When set true, any php syntax/runtime error will be sent back
+	 * as API response message. Otherwise, simple error message will
+	 * be sent with 500 error code.
+	 * */
+	public static bool $DEBUG = false;
 
 	private static ?HatiAPIHandler $handler = null;
 
@@ -46,19 +55,6 @@ final class HatiAPIHandler {
 	 * */
 	public static function boot(): void {
 		try {
-			$method = strtoupper(Request::method());
-
-			// Handle the preflight request, respond with the appropriate headers
-			if ($method == 'OPTIONS') {
-				header('Access-Control-Allow-Origin: *');
-				header('Access-Control-Allow-Headers: *');
-				header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
-
-				// No content for OPTIONS request
-				http_response_code(200);
-				exit;
-			}
-
 			$handler = self::get();
 
 			/*
@@ -82,6 +78,8 @@ final class HatiAPIHandler {
 			}
 
 			// Check the request method
+			$method = strtoupper(Request::method());
+
 			if (!in_array($method, ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])) {
 				throw Trunk::error405('Unacceptable request method');
 			}
@@ -162,16 +160,50 @@ final class HatiAPIHandler {
 					throw Trunk::error501('Unimplemented API');
 				}
 
-				$class -> $func($arguments, $queryParams);
+				$method = $func;
 			} else {
 
 				if (!method_exists($class, $method)) {
 					throw Trunk::error405('Unacceptable request method');
 				}
 
-				$class -> $method($arguments, $queryParams);
 			}
-		} catch (Trunk $e) {
+
+			// Adjust empty segments
+			if (count($arguments) == 1 && empty($arguments[0])) {
+				$arguments = [];
+			}
+
+			// #1 Set various properties
+			$class -> setArgs($arguments);
+			$class -> setParams($queryParams);
+
+			// #1.1 Set the handler as working directory
+			chdir(dirname($arr['handler']));
+
+			// #2 Initialize the API
+			$class -> init();
+
+			// #2.2 Prepare public methods
+			$class -> publicMethod();
+
+			// #3 Check authentication
+			$privateMethod = $class -> isPrivateMethod($method);
+
+			if ($privateMethod) {
+				$class -> authenticate($method);
+			}
+
+			// #4 Ready to call the API serving method!
+			$class -> $method();
+
+		} catch (Throwable $e) {
+
+			if (!$e instanceof Trunk) {
+				$msg = self::$DEBUG ?  self::getFullErrorMsg($e) : 'Error in API implementation';
+				$e = Trunk::error500($msg);
+			}
+
 			$e -> report();
 		}
 	}
@@ -182,7 +214,8 @@ final class HatiAPIHandler {
 	 * See below as an example:
 	 * <code>
 	 * HatiAPIHandler::register([
-	 * 	// HTTP verb the API wants the request method of
+	 * 	// HTTP verb the API wants the request method of.
+	 * 	// This can be an array of method such as: 'method' => ['GET', 'POST', 'PUT']
 	 * 	'method' => 'GET',
 	 *
 	 * 	// API endpoint path which can be called as: http://example.com/api/v1/test
@@ -222,7 +255,11 @@ final class HatiAPIHandler {
 				throw Trunk::error500('API-Registry: API must define a request method');
 			}
 
-			if (!in_array($method, ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])) {
+			if (is_string($method)) {
+				$method = [$method];
+			}
+
+			if (!Arr::in_array($method, ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])) {
 				throw Trunk::error500('API-Registry: API request method must be of: GET, POST, PUT, PATCH, DELETE');
 			}
 
@@ -247,15 +284,30 @@ final class HatiAPIHandler {
 			}
 
 			// Register the API!
-			$handler->apis[$method] = [
-				$path => [
+			foreach ($method as $m) {
+				$handler -> apis[$m][$path] = [
 					'handler' => $filePath,
 					'extension' => $func
-				]
-			];
-		} catch (Trunk $e) {
+				];
+			}
+
+		} catch (Throwable $e) {
+
+			if (!$e instanceof Trunk) {
+				$msg = self::$DEBUG ? self::getFullErrorMsg($e) : 'Error in API implementation';
+				$e = Trunk::error500($msg);
+			}
+
 			$e -> report();
 		}
+	}
+
+	private static function getFullErrorMsg(Throwable $e): string {
+		return sprintf("%s in %s at line %s",
+			ucfirst($e ->getMessage()),
+			$e -> getFile(),
+			$e -> getLine()
+		);
 	}
 
 }

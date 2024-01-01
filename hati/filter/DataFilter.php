@@ -359,7 +359,7 @@ class DataFilter {
 		else return FilterOut::NOT_IN_OPTION;
 	}
 
-	private function inRange(int $data, array $rule): FilterOut {
+	private function inRange(mixed $data, array $rule): FilterOut {
 		if (empty($rule['minValue']) && empty($rule['maxValue']))
 			return FilterOut::OK;
 

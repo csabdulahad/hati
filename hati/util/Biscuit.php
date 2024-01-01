@@ -38,16 +38,19 @@ abstract class Biscuit {
 	 * @param int $expire Number of seconds to expire the cookie.
 	 * @param bool $secure Whether to cookie transmission occurs over SSL layer.
 	 * @param bool $httpOnly Whether the cookie is accessible to http only or not.
+	 * @param string $path The cookie path
+	 * @param string $domain The domain the cookie will be used by
+	 * @param string $sameSite The cookie sending policy
 	 *
 	 * @return bool If output exists prior to calling this function, setcookie will
 	 * fail and return false. If setcookie successfully runs, it will return true.
 	 * This does not indicate whether the user accepted the cookie.
 	 */
-	public static function giveAway(string $name, string $value, int $expire = 0, bool $secure = true, bool $httpOnly = true, string $sameSite = 'Strict'): bool {
+	public static function giveAway(string $name, string $value, int $expire = 0, bool $secure = true, bool $httpOnly = true, string $path = '/', string $domain = '', string $sameSite = 'Strict'): bool {
 		return setcookie($name, $value, [
 			'expires' => $expire,
-			'path' => '/',
-			'domain' => self::getDomain(),
+			'path' => $path,
+			'domain' => empty($domain) ? self::getDomain() : $domain,
 			'secure' => $secure,
 			'httponly' => $httpOnly,
 			'samesite' => $sameSite
@@ -62,13 +65,23 @@ abstract class Biscuit {
 	 * @param string $name The cookie name is to be removed.
 	 * @param bool $secure Whether to cookie transmission occurs over SSL layer.
 	 * @param bool $httpOnly Whether the cookie is accessible to http only or not.
+	 * @param string $path The cookie path
+	 * @param string $domain The domain the cookie will be used by
 	 *
 	 * @return bool If output exists prior to calling this function, setcookie will
 	 * fail and return false. If setcookie successfully runs, it will return true.
 	 * This does not indicate whether the user accepted the cookie.
 	 * */
-	public static function delete(string $name, bool $secure = true, bool $httpOnly = true): bool {
-		return setcookie($name, '', 1, '/', self::getDomain(), $secure, $httpOnly);
+	public static function delete(string $name, bool $secure = true, bool $httpOnly = true, string $path = '/', string $domain = ''): bool {
+		return setcookie(
+			$name,
+			'',
+			1,
+			$path,
+			empty($domain) ? self::getDomain() : $domain,
+			$secure,
+			$httpOnly
+		);
 	}
 
 	private static function getDomain(): string {

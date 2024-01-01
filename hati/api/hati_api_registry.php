@@ -1,8 +1,8 @@
 <?php
 
 /************************************************************************************
- *                        !!! Hati API Registry !!!									*
- * Register API endpoints here using the {@link HatiAPIHandler::register()} method.	*
+ *                        !!! Hati API Registry !!!
+ * Register API endpoints here using the {@link HatiAPIHandler::register()} method.
  ************************************************************************************/
 
 // An example API:

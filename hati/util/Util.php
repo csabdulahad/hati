@@ -133,7 +133,7 @@ class Util {
 	 * @param bool $return Whether to return the session message data
 	 * @param bool $unsetMsg Whether to unset the session message data
 	 * */
-	public static function displayMsg(string $cssClass = '',  bool $return = false, bool $unsetMsg = true): void {
+	public static function displayMsg(string $cssClass = '',  bool $return = false, bool $unsetMsg = true) {
 		if (!isset($_SESSION[Hati::config(Key::SESSION_MSG_KEY)])) return;
 
 		$msg = self::sessVar(Hati::config(Key::SESSION_MSG_KEY));

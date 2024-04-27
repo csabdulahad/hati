@@ -88,10 +88,15 @@
 		/*
 		 * Build up the in-memory API
 		 * */
-		$class = basename($api['handler']);
-		$class = substr($class, 0, strpos($class, '.'));
-
-		require $root . $api['handler'];
+		$class = $api['handler'];
+		
+		if (str_ends_with($class, '.php')) {
+			$class = basename($api['handler']);
+			$class = substr($class, 0, strpos($class, '.'));
+			
+			require $root . $api['handler'];
+		}
+		
 		$instance = new $class;
 		$instance -> publicMethod();
 
@@ -255,7 +260,7 @@
 	fflush($file);
 	fclose($file);
 
-	echo "API doc was saved at: $root" . DIRECTORY_SEPARATOR . "hati_api_doc.html";
+	\hati\util\Console::success("\nAPI doc was saved at: $root" . "hati_api_doc.html");
 
 	/**
 	 * @noinspection PhpMissingReturnTypeInspection

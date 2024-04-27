@@ -1,0 +1,11 @@
+v5.1.0
+
++ Shomoy has got new functions such as: changeTime, changeDate, dateISO, datetimeISO, timeISO(), datetimeISO8601
++ New global function fuse
+
+* Hati supports 'src' as app folder like other framework requirement
+* HatiCLI input trims line break or white spaces from input
+* HatiCLI error & documentation bug fixed
+* Auto importing DBPro class has been removed
+
+- Loading 'db.json' config doesn't throw error as it can be an optional requirement for projects

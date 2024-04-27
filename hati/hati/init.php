@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * By default, composer prepares 'src' as root folder for projects.
+ * However, Hati can also work without 'src' folder. Adjust as per
+ * your project requirement.
+ * */
+$HATI_USE_SRC_AS_ROOT = true;
+
 
 /*
  * Initialize Hati!
@@ -8,5 +15,6 @@
  * load it which will setup Hati as defined by configurations.
  * */
 if (!class_exists(\hati\Hati::class)) {
-	require dirname(__DIR__) . '/vendor/rootdata21/hati/hati/Hati.php';
+	$level = $HATI_USE_SRC_AS_ROOT ? 2 : 1;
+	require dirname(__DIR__, $level) . '/vendor/rootdata21/hati/hati/Hati.php';
 }

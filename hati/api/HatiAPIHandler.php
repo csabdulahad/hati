@@ -122,11 +122,16 @@ final class HatiAPIHandler {
 			}
 
 			// Load the API class file!
-			$class = basename($arr['handler']);
-			$class = substr($class, 0, strpos($class, '.'));
+			$class = $arr['handler'];
 
-			// Import the class & test it exists
-			require $arr['handler'];
+			if (str_ends_with($class, '.php')) {
+				$class = basename($arr['handler']);
+				$class = substr($class, 0, strpos($class, '.'));
+
+				// Import the class file
+				require $arr['handler'];
+			}
+
 			$class = new $class;
 
 			if (!$class instanceof HatiAPI) {
@@ -175,6 +180,7 @@ final class HatiAPIHandler {
 			}
 
 			// #1 Set various properties
+			$class -> setHeaders(getallheaders());
 			$class -> setArgs($arguments);
 			$class -> setParams($queryParams);
 
@@ -224,6 +230,9 @@ final class HatiAPIHandler {
 	 * 	// Relative folder path found in the api folder; here 'v1' is the version folder.
 	 * 	'handler' => 'v1/TestAPI.php',
 	 *
+	 *  // Or it can be a fully qualified class name
+	 * 	'handler' => \YOUR\APP\SRC\TestAPI::class,
+	 *
 	 * 	// Any php function can be invoked via api.
 	 * 	// It can also be an array functions. For example: 'extension' => ['method1', 'method2']
 	 * 	// e.g: http://example.com/api/v1/test/testFun/arg1?param1=value1 will invoke
@@ -233,9 +242,7 @@ final class HatiAPIHandler {
 	 * ]);
 	 * </code>
 	 *
-	 * Functions registered for the API and default methods for supported HTTP verb, will be invoked with two array
-	 * arguments. One for the segment array (anything after the API path), another for the query parameters found in
-	 * the API url.
+	 * Functions registered for the API and default methods for supported HTTP verb, will be invoked by HatiHandler.
 	 *
 	 * The handler class file (for example TestAPI.php) must be an implementation of {@link HatiAPI} with the methods
 	 * defined by that 'extension' field.
@@ -273,9 +280,19 @@ final class HatiAPIHandler {
 				throw Trunk::error500('API-Registry: API must have a handler file');
 			}
 
-			$filePath = getcwd() . DIRECTORY_SEPARATOR . $file;
-			if (!file_exists($filePath)) {
-				throw Trunk::error500("API-Registry: Handler is missing for: $method $path");
+			/*
+			 * Check if the handler class/file exists
+			 * */
+			if (str_ends_with($file, '.php')) {
+				$filePath = getcwd() . DIRECTORY_SEPARATOR . $file;
+				$exists = file_exists($filePath);
+			} else {
+				$filePath = $file;
+				$exists = class_exists($filePath);
+			}
+
+			if (!$exists) {
+				throw Trunk::error500("API-Registry: Handler is missing for: " . Arr::strList($method) . " $path");
 			}
 
 			$func = $api['extension'] ?? null;

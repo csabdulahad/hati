@@ -77,6 +77,91 @@ abstract class Number {
 		echo $output;
 		return null;
 	}
+	
+	/**
+	 * Converts numbers from English to Bangla notation.
+	 *
+	 * This function takes a number or a string that represents a number in English
+	 * notation and returns a string with each digit converted to Bangla. It's designed
+	 * to work with both integer and floating-point numbers represented as strings.
+	 * Non-numeric characters within the string are not converted but are preserved
+	 * in the output.
+	 *
+	 * @param mixed $englishNumber - The number or string representing a number
+	 *        to be converted from English to Bangla digits. This parameter can handle
+	 *        both numeric and string types. For string inputs, the function iterates
+	 *        through each character, converting numeric characters to Bangla while
+	 *        leaving non-numeric characters unchanged.
+	 *
+	 * @returns string A string representation of the input number where each English
+	 *         digit has been replaced with its corresponding Bangla digit. Non-numeric
+	 *         characters in the input are returned as is in the output string.
+	 *
+	 * @example
+	 * // Convert a numeric value
+	 * convertToBanglaNumber(2023); // Outputs: ২০২৩
+	 *
+	 * // Convert a string representing a numeric value
+	 * convertToBanglaNumber("4567"); // Outputs: ৪৫৬৭
+	 *
+	 * // Mixed input with non-numeric characters
+	 * convertToBanglaNumber("Flight 370"); // Outputs: Flight ৩৭০
+	 */
+	public static function bdNum(mixed $englishNumber): string {
+		// Mapping of English digits to Bangla digits
+		$banglaDigits = [
+			'0' => '০', '1' => '১', '2' => '২', '3' => '৩',
+			'4' => '৪', '5' => '৫', '6' => '৬', '7' => '৭',
+			'8' => '৮', '9' => '৯'
+		];
+		
+		// Convert the number to a string to iterate over each digit
+		$englishNumberStr = (string) $englishNumber;
+		
+		// Replace each English digit with its Bangla counterpart
+		$banglaNumberStr = '';
+		foreach (str_split($englishNumberStr) as $char) {
+			$banglaNumberStr .= $banglaDigits[$char] ?? $char; // Keep the character as is if not found in the map
+		}
+		
+		return $banglaNumberStr;
+	}
+	
+	/**
+	 * Returns the Bengali ordinal representation of a number.
+	 *
+	 * This function returns the Bengali ordinal representation of a given number.
+	 * Ordinal representations are defined for numbers 1 through 10 in Bengali.
+	 * For numbers greater than 10, it appends the Bengali numeral for the number
+	 * followed by the suffix 'তম' (th).
+	 * If the input is not within the predefined range (1 to 10), it returns '০' (zero).
+	 *
+	 * @param mixed $num The number for which the Bengali ordinal representation is to be determined.
+	 *                   If a string representation of a number is provided, it will be converted to an integer.
+	 *
+	 * @return string The Bengali ordinal representation of the given number.
+	 *                If the input is not within the predefined range, '০' (zero) is returned.
+	 */
+	public static function bdOrdinal(mixed $num): string {
+		// Ensure $num is treated as an integer
+		$num = is_string($num) ? intval($num) : $num;
+		
+		// Define ordinal representations for 1 through 10
+		$ordinals = [
+			1 => 'প্রথম', 2 => 'দ্বিতীয়', 3 => 'তৃতীয়', 4 => 'চতুর্থ',
+			5 => 'পঞ্চম', 6 => 'ষষ্ঠ', 7 => 'সপ্তম', 8 => 'অষ্টম',
+			9 => 'নবম', 10 => 'দশম'
+		];
+		
+		// Check if $num is in the predefined range
+		if (array_key_exists($num, $ordinals)) {
+			return $ordinals[$num];
+		} elseif ($num > 10) {
+			return self::bdNum($num) . 'তম';
+		} else {
+			return '০';
+		}
+	}
 
 	/**
 	 * This method takes in any money formatted value and converts it into

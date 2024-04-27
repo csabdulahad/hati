@@ -1,7 +1,10 @@
 <?php
 
+/** @noinspection PhpUnhandledExceptionInspection */
+
 namespace hati\cli;
 
+use Exception;
 use hati\filter\Filter;
 use hati\util\Arr;
 use hati\util\Text;
@@ -21,7 +24,18 @@ use RuntimeException;
  *
  * Options are inputted with double dash [--] and flags are marked with single dash [-]. Flags are
  * optional. Options can also be marked optional when adding the options. Use {@link addOption()} &
- * {@link addFlag()} to add options/flag.
+ * {@link addFlag()} to add options/flag.<br>
+ *
+ * As a fix to v5.1.0, HatiCLI implementation should not use built-in exit function directly. It is
+ * because any HatiCLI tool can be now called using {@link HatiCLI::call()} method. Any script
+ * calling an HatiCLI tool would like to continue executing even though the CLI terminates successfully
+ * or not. It is recommended to use {@link HatiCLI::error()} & {@link HatiCLI::exit()} instead.<br>
+ *
+ * Calling these functions, behind the scene {@link HatiCLIThrowing} runtime exception is thrown which is
+ * supposed to be picked by {@link HatiCLI::call()} method. Catching that exception will not report exit or
+ * error to HatCLI thus not getting unexpected behaviour. If you need to catch exception, then make sure to
+ * make the first call to the {@link HatiCLI::escalate()} in catch block so that HatiCLI can handle the
+ * exception to simulate the error/exit scenarios intended.
  *
  * @since 5.0.0
  * */
@@ -38,11 +52,17 @@ abstract class HatiCLI {
 	private array $optional = [];
 
 	private array $allowedOptions = [];
+	
 	private array $allowedFlags = [];
 
 	private array $userInputMap = [];
 	private array $flags = [];
 	private array $options = [];
+	
+	private bool $callMode = false;
+	
+	// Indicates whether the CLI is being loaded so that we shouldn't invoke the start method!
+	private static bool $loading = false;
 
 	/**
 	 * For an argument value, it can calculate whether it is a flag.
@@ -56,14 +76,69 @@ abstract class HatiCLI {
 	}
 
 	/**
+	 * HatiCLI can be called from within any php script. This method should only be called
+	 * from catch block to allow HatiCLI handle the CLI output in a consistent way so that
+	 * an CLI tool implemented using HatiCLI can be terminated as expecting by the calling
+	 * script.
+	 *
+	 * @since 5.1.0
+	 * */
+	public static function escalate(Exception $e): void {
+		if ($e instanceof HatiCLIThrowing)
+			throw $e;
+	}
+	
+	/**
 	 * Internal helper method, to show error and exit with error code.
 	 *
 	 * @param string $msg The error message
 	 * @param int $code The error exit code
-	 * */
+	 *
+	 * @throws HatiCLIThrowing
+	 */
 	#[NoReturn]
-	private static function error(string $msg, int $code = 1): void {
+	private static function err(string $msg, int $code, bool $callMode): void {
+		if ($callMode) {
+			throw new HatiCLIThrowing($msg, $code);
+		}
+		
 		CLI::error($msg);
+		exit($code);
+	}
+	
+	/**
+	 * HatiCLI implementation should call this method to report error to the user.
+	 * This method takes care of the CLI termination properly if called by another
+	 * script.<br>
+	 * It exits the CLI on invocation. Remember to call {@link HatiCLI::escalate()}
+	 * in catch block, if error is being reported from within tht try block.
+	 *
+	 * @since 5.1.0
+	 * */
+	public function error(string $msg, int $code = 1): void {
+		if ($this -> callMode) {
+			throw new HatiCLIThrowing($msg, $code);
+		}
+		
+		CLI::error($msg);
+		exit($code);
+	}
+	
+	/**
+	 * Any HatiCLI implementation should call this method to exit. Exiting using this
+	 * method will make sure that the CLI doesn't exit the caller script which would
+	 * be unexpected.<br>
+	 *
+	 * Remember to call {@link HatiCLI::escalate()} in catch block, if exit is being
+	 * done from within tht try block.
+	 *
+	 * @since 5.1.0
+	 * */
+	public function exit($code = 0): void {
+		if ($this -> callMode) {
+			throw new HatiCLIThrowing('', $code);
+		}
+		
 		exit($code);
 	}
 
@@ -214,7 +289,9 @@ abstract class HatiCLI {
 	 * @param string $type Error found for the type of option/flag
 	 * @param string $value The value user got wrong
 	 * @param array $arr The short-to-long name map array
-	 * */
+	 *
+	 * @throws HatiCLIThrowing
+	 */
 	#[NoReturn]
 	private function errInvalidIndicator(string $type, string $value, array $arr): void {
 		CLI::error("Invalid $type: $value");
@@ -223,11 +300,17 @@ abstract class HatiCLI {
 
 		array_unshift($short, 'Short form');
 		array_unshift($long, 'Long form');
+		
+		if (empty($arr)) {
+			CLI::write('No flag suggestions found');
+			$this -> exit(2);
+		}
 
-		$str = Text::table2D($short, $long, return: true);
-		CLI::write("List of valid {$type}s:");
+		$str = "List of valid {$type}s:\n";
+		$str .= Text::table2D($short, $long, return: true);
 		CLI::write($str);
-		exit(2);
+		
+		$this -> exit(2);
 	}
 
 	/**
@@ -254,7 +337,9 @@ abstract class HatiCLI {
 	 * For a flag value in the user input, it checks if it is a legitimate flag.
 	 *
 	 * @param string $value The flag value starts with a single dash
-	 * */
+	 *
+	 * @throws HatiCLIThrowing
+	 */
 	private function validateFlag(string $value): void {
 		$valid = array_key_exists($value, $this -> shortLongFlag);
 
@@ -276,7 +361,9 @@ abstract class HatiCLI {
 	 * message.
 	 *
 	 * @param string $value The key is to be checked
-	 * */
+	 *
+	 * @throws HatiCLIThrowing
+	 */
 	private function validateArgument(string $value): void {
 		$valid = array_key_exists($value, $this -> shortLongArg);
 
@@ -292,8 +379,10 @@ abstract class HatiCLI {
 	 * argument name, whether the argument name is allowed etc.
 	 *
 	 * @param array $args The input array
-	 * */
-	private function namedArgs(array $args): void {
+	 *
+	 * @throws HatiCLIThrowing
+	 */
+	private function namedArgs(array $args, bool $callMode): void {
 		$count = count($args);
 		$i = 0;
 		while(true) {
@@ -302,7 +391,7 @@ abstract class HatiCLI {
 			$x = $args[$i];
 
 			if (!str_starts_with($x, '--')) {
-				self::error("Argument name with -- was expected", 2);
+				self::err("Argument name with -- was expected", 2, $callMode);
 			}
 
 			// Is argument valid?
@@ -310,7 +399,7 @@ abstract class HatiCLI {
 
 			$v = $args[++$i] ?? null;
 			if (empty($v) || str_starts_with($v, '-')) {
-				self::error("Value missing for argument $x", 2);
+				self::err("Value missing for argument $x", 2, $callMode);
 			}
 
 			// Translate the name
@@ -329,16 +418,21 @@ abstract class HatiCLI {
 	 * any unnecessary argument value was passed in with the command.
 	 *
 	 * @param array $args The input array
-	 * */
+	 *
+	 * @throws HatiCLIThrowing
+	 */
 	private function positionalArgs(array $args): void {
 		$keys = array_keys($this -> allowedOptions);
 		$argCount = count($args);
 		for ($i = 0; $i < $argCount; $i++) {
 			$v = $args[$i];
 
+			/*
+			 * TODO - can we allow extra args? so that we can have those as as $extraParam?
+			 *  this will help us to handle cases when we may want variadic?
+			 * */
 			if (empty($keys[$i])) {
-				CLI::error("Unnecessary value $v was passed");
-				exit(2);
+				$this -> error("Unnecessary value $v was passed", 2);
 			}
 
 			$shortName = $keys[$i];
@@ -362,19 +456,19 @@ abstract class HatiCLI {
 	 * option or flag, or all the options [as option], or all the flags [as flags]
 	 * @returns ?array 2d array, first one for titles, and second one for the
 	 * description. If the $key is null, then complete help documentation is returned.
-	 * */
+	 *
+	 * @throws HatiCLIThrowing
+	 */
 	private function getHelp(string $type, ?string $key): ?array {
 
 		$array = $type == 'option' ? $this -> allowedOptions : $this -> allowedFlags;
 		$shortArr = $type == 'option' ? $this -> shortLongArg : $this -> shortLongFlag;
 
+		/*
+		 * If there is no option/flag for the CLI then returns empty array
+		 * to indicate that.
+		 * */
 		if (empty($array)) {
-
-			if (empty($key)) {
-				echo CLI::color("This CLI tool doesn't take in any $type", 'yellow');
-				exit(0);
-			}
-
 			return [[], []];
 		}
 
@@ -385,8 +479,7 @@ abstract class HatiCLI {
 			$shortName = $this -> getShortname($key, $shortArr);
 
 			if (is_null($shortName)) {
-				CLI::error("Unknown $type: $key");
-				exit(2);
+				$this -> error("Unknown $type: $key", 2);
 			}
 
 			$opt = $array[$shortName];
@@ -406,7 +499,7 @@ abstract class HatiCLI {
 				$longName = empty($longName) ? '' :  "| $longName";
 				$star = $v['required'] ? '* ' : '  ';
 				$titles[] = "$star  $opt $longName";
-				$des[] = $v['description'];
+				$des[] = $v['description'] ?? '';
 
 				if (!empty($v['options'])) {
 					$str = "Options: " . Arr::strList($v['options']);
@@ -424,7 +517,9 @@ abstract class HatiCLI {
 	 * shows information as the user wants.
 	 *
 	 * @param array $args The help argument input from the user
-	 * */
+	 *
+	 * @throws HatiCLIThrowing
+	 */
 	#[NoReturn]
 	private function showHelp(array $args): void {
 
@@ -434,40 +529,59 @@ abstract class HatiCLI {
 				$data = $this -> getHelp('option', $what);
 			} elseif (str_starts_with($what, '-')) {
 				$data = $this -> getHelp('flag', $what);
+				if (count($data[0]) == 0) {
+					echo CLI::color("This CLI tool doesn't take in any flag", 'yellow');
+					$this -> exit();
+				}
 			} elseif (str_starts_with($what, 'flag')) {
 				$data = $this -> getHelp('flag', null);
+				if (count($data[0]) == 0) {
+					echo CLI::color("This CLI tool doesn't take in any flag", 'yellow');
+					$this -> exit();
+				}
 			} elseif (str_starts_with($what, 'option')) {
 				$data = $this -> getHelp('option', null);
 			} else {
-				CLI::error("Invalid help argument: $what");
-				exit(2);
+				$this -> error("Invalid help argument: $what", 2);
 			}
 
 			Text::table2D($data[0], $data[1], 4, 100);
-			exit(0);
+			$this -> exit();
 		}
 
 		echo CLI::color(CLI::bold($this -> name . " v" . $this -> version, true), 'yellow');
-		echo CLI::wrap("$this->description\n", 80);
-
-		$titles[] = '';
-		$des[] = '';
+		echo CLI::wrap("$this->description", 80);
+		
+		$titles = [];
+		$des = [];
 
 		// show option
 		$data = $this -> getHelp('option', null);
-		$titles = array_merge($titles, $data[0]);
-		$des = array_merge($des, $data[1]);
-
-		$titles[] = '';
-		$des[] = '';
+		
+		$hasOption = !empty($data[0]);
+		if ($hasOption) {
+			echo "\n";
+			$titles = array_merge([''], $data[0]);
+			$des = array_merge([''], $data[1]);
+		}
 
 		// show flags
 		$data = $this -> getHelp('flag', null);
-		$titles = array_merge($titles, $data[0]);
-		$des = array_merge($des, $data[1]);
-
-		Text::table2D($titles, $des, 4, 100);
-		exit(0);
+		
+		if (!empty($data[0])) {
+			if (!$hasOption) {
+				echo "\n\n";
+			}
+			
+			$titles = array_merge($titles, $data[0]);
+			$des = array_merge($des, $data[1]);
+		}
+		
+		if (!empty($titles)) {
+			Text::table2D($titles, $des, 4, 100);
+		}
+		
+		$this -> exit();
 	}
 
 	/**
@@ -483,7 +597,9 @@ abstract class HatiCLI {
 	 *
 	 * @param array $args The arguments to the CLI
 	 * @param HatiCLI $cli An implementation of HatiCLI
-	 * */
+	 *
+	 * @throws HatiCLIThrowing
+	 */
 	private static function validate(array $args, HatiCLI $cli): void {
 		$count = count($args);
 
@@ -507,14 +623,14 @@ abstract class HatiCLI {
 		// Figure out what type of CLI arguments were passed
 		$namedCLI = self::namedCLI($args);
 
-		if ($namedCLI) $cli -> namedArgs($args);
+		if ($namedCLI) $cli -> namedArgs($args, $cli -> callMode);
 		else $cli -> positionalArgs($args);
 
 		// Have we got all required ones?
 		$userInputKeys = array_keys($cli -> userInputMap);
 		foreach ($cli -> required as $req) {
 			if (!in_array($req, $userInputKeys)) {
-				self::error("Missing required argument: $req ", 2);
+				self::err("Missing required argument: $req ", 2, $cli -> callMode);
 			}
 		}
 
@@ -523,27 +639,58 @@ abstract class HatiCLI {
 			$option = $cli -> allowedOptions[$key];
 			$usrKey = $cli -> userInputMap[$key];
 			$type = $option['type'];
+			
+			$msgByKey = str_starts_with($usrKey, '--');
 
 			if ($type == 'int') {
 				$output = Filter::int($v);
 				if(!Filter::ok($output)) {
-					self::error("$usrKey must be an integer number");
+					if ($msgByKey) {
+						self::err("$usrKey must be an integer number", 1, $cli -> callMode);
+					} else {
+						$str = CLI::color("Invalid value: $usrKey\n", 'red');
+						$str .= CLI::color('It must be an integer.', 'yellow');
+						
+						self::err($str, 1, $cli -> callMode);
+					}
 				}
 			} elseif ($type == 'float') {
 				$output = Filter::float($v);
 				if(!Filter::ok($output)) {
-					self::error("$usrKey must be of type float");
+					if ($msgByKey) {
+						self::err("$usrKey must be a float", 1, $cli -> callMode);
+					} else {
+						$str = CLI::color("Invalid value: $usrKey\n", 'red');
+						$str .= CLI::color('It must be a float.', 'yellow');
+						
+						self::err($str, 1, $cli -> callMode);
+					}
 				}
 			} else {
 				$output = Filter::string($v);
 				if(!Filter::ok($output)) {
-					self::error("$usrKey must be of type string");
+					if ($msgByKey) {
+						self::err("$usrKey must a string", 1, $cli -> callMode);
+					} else {
+						$str = CLI::color("Invalid value: $usrKey\n", 'red');
+						$str .= CLI::color('It must be a string.', 'yellow');
+						
+						self::err($str, 1, $cli -> callMode);
+					}
 				}
 			}
 
 			// Check if it is one of valid options
 			if (!empty($option['options']) && !in_array($output,  $option['options'])) {
-				self::error("$usrKey must be of: " . Arr::strList($option['options']));
+				$errMsg = $msgByKey ? "Invalid value given for $usrKey" : "Invalid value: $usrKey";
+				$errMsg .= "\n";
+				
+				$guideMsg = "Allowed options: " . Arr::strList($option['options']);
+				
+				$str = CLI::color($errMsg, 'red');
+				$str .= CLI::color($guideMsg, 'yellow');
+				
+				self::err($str, 1, $cli -> callMode);
 			}
 
 			$cli -> options[$key] = $output;
@@ -562,7 +709,8 @@ abstract class HatiCLI {
 	 * @param string $key The flag
 	 * @return bool true if the flag was set; false otherwise
 	 * */
-	protected function flagSet(string $key): bool {		return in_array($key, $this -> flags);
+	protected function flagSet(string $key): bool {
+		return in_array($key, $this -> flags);
 	}
 
 	/**
@@ -614,21 +762,138 @@ abstract class HatiCLI {
 	 * method on the implementation class with the validated user inputs to
 	 * allow the tool execution.
 	 *
-	 * @param HatiCLI $cli Instance of HatiCLi implementation
-	 * */
-	public static function start(HatiCLI $cli): void {
-		global $argv;
-
+	 * @param string $cliCls A class which is an instance of HatiCLI
+	 * @param string|array ...$args Any predefined argument to be passed in to the CIL.
+	 * If none provided then any arguments from terminal while invoking CLI will be
+	 * passed in which is global variable $argv. The first item of $argv representing
+	 * the script path will be removed before passing the array as arguments to the CLI.
+	 */
+	public static function start(string $cliCls, string|array ...$args): void {
+		
+		if (self::$loading) {
+			self::$loading = false;
+			return;
+		}
+		
+		if (!class_exists($cliCls)) {
+			CLI::error("Class $cliCls doesn't exists");
+		}
+		
+		if (!is_subclass_of($cliCls, HatiCLI::class)) {
+			CLI::error("$cliCls is an implementation of HatiCLI");
+		}
+		
 		// Initialize the cli
+		$cli = new $cliCls;
 		$cli -> describeCLI();
 		$cli -> setup();
-
+		
 		// validate the cli arguments & flags
-		array_shift($argv);
-		self::validate($argv, $cli);
-
+		$args = Arr::varargsAsArray($args);
+		if (empty($args) && !$cli -> callMode) {
+			global $argv;
+			array_shift($argv);
+			$args = $argv;
+		}
+		
+		self::validate($args, $cli);
+		
 		// Fire the CLI
 		$cli -> run($cli -> options);
 	}
+	
+	/*
+	 * Fires up the HatiCLI
+	 * */
+	private static function kickOff(HatiCLI $cli, $args): void {
+		$cli -> describeCLI();
+		$cli -> setup();
+		
+		// Validate & fire the CLI
+		self::validate($args, $cli);
+		$cli -> run($cli -> options);
+	}
+	
+	/**
+	 * Any HatiCLI can be called using this method from anywhere.
+	 * Just make sure that you don't make it run in an infinite loop!
+	 *
+	 * @param string $cliClass A FQC CLI class implemented HatiCLI
+	 * @param string|array ...$args Any arguments to be passed in to the CLI
+	 * @return int The exit code returned by the CLI
+	 *
+	 * @since 5.1.0
+	 * */
+	public static function call(string $cliClass, string|array ...$args): int {
+		self::$loading = true;
+		
+		$errReporting = null;
+		try {
+			if (!class_exists($cliClass)) {
+				/*
+				 * Turn off error reporting, try to load the class
+				 * */
+				$errReporting = error_reporting();
+				error_reporting($errReporting & ~E_WARNING);
+				include $cliClass;
+				error_reporting($errReporting);
+				
+				/*
+				 * Make sure the class is resolved and an implementation of HatiCLI
+				 * */
+				if (!class_exists($cliClass)) {
+					throw new Exception("Could resolve the class: $cliClass");
+				}
+				
+				if (!is_subclass_of($cliClass, HatiCLI::class)) {
+					throw new Exception("$cliClass is an implementation of HatiCLI");
+				}
+			}
+			
+			// We have done loading the class!
+			self::$loading = false;
+			
+			/*
+			 * Process the arguments
+			 * */
+			$args = Arr::varargsAsArray($args);
+			
+			/*
+			 * Execute the CLI and return the output
+			 * */
+			$cli = new $cliClass;
+			$cli -> callMode = true;
+			
+			self::kickOff($cli, $args);
+			
+			return 0;
+		} catch (Exception $e) {
+			echo $e -> getMessage();
+			
+			if ($e instanceof HatiCLIThrowing)
+				return $e -> code;
+			
+			return 1;
+		} finally {
+			if (!is_null($errReporting)) {
+				error_reporting($errReporting);
+			}
+		}
+	}
 
+}
+
+/**
+ * Internal exception used by HatiCLI to handle error/exit
+ * function properly for cases when CLI is called from within
+ * another script.
+ *
+ * @since 5.1.0
+ * */
+class HatiCLIThrowing extends RuntimeException {
+	public $code = 1;
+	public function __construct(string $msg, int $code) {
+		parent::__construct($msg);
+		$this -> code = $code;
+	}
 }

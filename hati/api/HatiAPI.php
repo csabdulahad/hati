@@ -22,6 +22,9 @@ abstract class HatiAPI {
 	/** Catches the request body for JSON & raw */
 	private array $reqBody = [];
 
+	/** Array containing headers came with the request */
+	protected array $headers = [];
+
 	/** Array containing segments after the API path */
 	protected array $args = [];
 
@@ -83,7 +86,7 @@ abstract class HatiAPI {
 	 *
 	 * @param string $path the file path
 	 * @param bool $root when set true, resource is loaded relative to root
-	 * directory where the vendor folder is found. Otherwise it is realtive
+	 * directory where the vendor folder is found. Otherwise it is relative
 	 * to API handler file.
 	 *
 	 * @return mixed resource
@@ -183,6 +186,27 @@ abstract class HatiAPI {
 	}
 
 	/**
+	 * Returns the header value specified by the key.
+	 *
+	 * @param string $key the header key
+	 * @param mixed $default if the header wasn't set in the request
+	 * @return mixed the header value
+	 * */
+	public function header(string $key, mixed $default = null): mixed {
+		return $this -> headers[$key] ?? $default;
+	}
+
+	/**
+	 * Returns whether a specified header was set in the request.
+	 *
+	 * @param string $key the header key
+	 * @return bool true if the header key exists in the request, false otherwise.
+	 * */
+	public function headerSet(string $key): bool {
+		return key_exists($key, $this -> headers);
+	}
+
+	/**
 	 * Returns an array containing any segments found after the API path.
 	 *
 	 * @reutrn array containing segments after in the API path
@@ -209,7 +233,7 @@ abstract class HatiAPI {
 	 *
 	 * @return mixed The value by the key from the query parameter
 	 * */
-	protected function param(string $key, mixed $default): mixed {
+	protected function param(string $key, mixed $default = null): mixed {
 		return $this -> queryParams()[$key] ?? $default;
 	}
 
@@ -221,8 +245,12 @@ abstract class HatiAPI {
 	 * @param mixed $default The default value to return if the position is not set.
 	 * @return mixed The value at the specified position in the arguments array, or the default value.
 	 */
-	protected function arg(int $pos, mixed $default): mixed {
+	protected function arg(int $pos, mixed $default = null): mixed {
 		return $this -> args()[$pos] ?? $default;
+	}
+
+	public function setHeaders(array $headers): void {
+		$this -> headers = $headers;
 	}
 
 	public function setArgs(array $args): void {

@@ -130,13 +130,19 @@ class Util {
 	 * css classes can be passed in as argument. The error message is kept inside a p(paragraph) tag.
 	 *
 	 * @param string $cssClass Optional css classes for decorating the UI.
+	 * @param bool $return Whether to return the session message data
+	 * @param bool $unsetMsg Whether to unset the session message data
 	 * */
-	public static function displayMsg(string $cssClass = ''): void {
-		if (!isset($_SESSION[Hati::config(Key::SESSION_MSG_KEY, 'bool')])) return;
+	public static function displayMsg(string $cssClass = '',  bool $return = false, bool $unsetMsg = true): void {
+		if (!isset($_SESSION[Hati::config(Key::SESSION_MSG_KEY)])) return;
 
-		$msg = self::sessVar(Hati::config(Key::SESSION_MSG_KEY, 'bool'));
-		echo "<div class='$cssClass'><p>$msg</p></div>";
-		self::unsetSess(Hati::config(Key::SESSION_MSG_KEY, 'bool'));
+		$msg = self::sessVar(Hati::config(Key::SESSION_MSG_KEY));
+		$txt =  "<div class='$cssClass'><p>$msg</p></div>";
+		
+		if ($unsetMsg) self::unsetSess(Hati::config(Key::SESSION_MSG_KEY));
+		
+		if ($return) return $txt;
+		echo $txt;
 	}
 
 	/**

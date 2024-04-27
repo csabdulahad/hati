@@ -85,10 +85,13 @@ abstract class CLI {
 	 * php index.php user -v --v -name=John --name=John
 	 *
 	 * @param string|null $prefix You may specify a string with which to prompt the user.
+	 * @param bool $trim when set true, it will remove whitespace/line break fro the input.
+	 * @return string the input enter by the user
 	 */
-	public static function input(?string $prefix = null): string {
+	public static function input(?string $prefix = null, bool $trim = true): string {
 		echo $prefix;
-		return fgets(fopen('php://stdin', 'rb'));
+		$input = fgets(fopen('php://stdin', 'rb'));
+		return $trim ? trim($input) : $input;
 	}
 
 	/**

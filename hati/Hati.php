@@ -19,7 +19,7 @@ use Throwable;
 abstract class Hati {
 
 	// version
-	private static string $version = '5.0.0';
+	private static string $version = '5.1.0';
 
 	private static float $BENCHMARK_START = 0;
 
@@ -50,11 +50,21 @@ abstract class Hati {
 	 * @throws Throwable
 	 */
 	public static function start(): void {
+		global $HATI_USE_SRC_AS_ROOT;
+
 		// calculate the project root folder
 		self::$DIR_ROOT = realpath(dirname(__DIR__, 4)) . DIRECTORY_SEPARATOR;
 
 		// register autoloader function
 		Hati::$loader = require self::$DIR_ROOT . 'vendor/autoload.php';
+
+		/*
+		 * Adjust root dir if there is a src folder!
+		 * */
+		if ($HATI_USE_SRC_AS_ROOT) {
+			$root = self::$DIR_ROOT . 'src' . DIRECTORY_SEPARATOR;
+			self::$DIR_ROOT = $root;
+		}
 
 		// load the correct config json file
 		self::loadConfig();
@@ -76,14 +86,6 @@ abstract class Hati {
 		// See if root is already added
 		if (!str_ends_with(get_include_path(), self::root())) {
 			set_include_path(get_include_path() . PATH_SEPARATOR . self::root());
-		}
-
-		/*
-		 * Auto include the DBPro class if exists
-		 * */
-		$dbProPath = self::root('hati/DBPro.php');
-		if (file_exists($dbProPath)) {
-			require_once $dbProPath;
 		}
 
 		if (self::config(Key::SESSION_AUTO_START, 'bool')) {
@@ -163,7 +165,7 @@ abstract class Hati {
 		if (json_last_error() != JSON_ERROR_NONE)
 			throw new RuntimeException("$fileName couldn't not be parsed: $path");
 
-		$assignTo= $config;
+		$assignTo = $config;
 	}
 
 	/**
@@ -181,8 +183,10 @@ abstract class Hati {
 		self::parseConfigFile('hati.json', $configFile, self::$CONFIG_LOCAL);
 
 		// Load db configuration json object from root
-		$configFile = self::root('hati/db.json');
-		self::parseConfigFile('db.json', $configFile, self::$DB_CONFIG);
+		try {
+			$configFile = self::root('hati/db.json');
+			self::parseConfigFile('db.json', $configFile, self::$DB_CONFIG);
+		} catch (Throwable) {}
 	}
 
 	/**

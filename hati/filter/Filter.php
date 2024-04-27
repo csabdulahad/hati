@@ -221,7 +221,7 @@ abstract class Filter {
 		}
 
 		// check whether we have empty input
-		if (empty($input)) {
+		if (empty($input) && $input != 0) {
 			return FilterOut::EMPTY;
 		}
 

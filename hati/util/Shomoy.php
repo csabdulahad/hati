@@ -338,6 +338,56 @@ class Shomoy {
 	public function setTimezone(string $timeZone): void {
 		$this -> dateTime -> setTimezone(new DateTimeZone($timeZone));
 	}
+	
+	/**
+	 * Allows to change different component of the date.
+	 * All arguments are optional. It only changes the associate
+	 * value if it is non-zero. It changes the underlying timestamp.
+	 *
+	 * @param int $day 1-31 day of the month
+	 * @param int $month 1-12 month number
+	 * @param int $year 4 digit year number
+	 * */
+	public function changeDate(int $day = 0, int $month = 0, int $year = 0): void {
+		$dateTime = $this -> dateTime;
+		
+		$cYear  = $dateTime -> format('Y');
+		$cMonth = $dateTime -> format('m');
+		$cDay   = $dateTime -> format('d');
+		
+		$year = $year > 0 ? $year : $cYear;
+		$month = $month > 0 ? $month : $cMonth;
+		$day = $day > 0 ? $day : $cDay;
+		
+		$dateTime -> setDate($year, $month, $day);
+	}
+	
+	/**
+	 * Any specific components of time can be changed.
+	 * Only non-zero argument is considered. The time components are considered
+	 * ISO compliant meaning hours are always 12Hour format.
+	 * It changed the internal timestamp of the datetime object wrapped by Shomoy.
+	 *
+	 * @param int $hour hour
+	 * @param int $min minute
+	 * @param int $sec second
+	 * @param int $ms microsecond
+	 * */
+	public function changeTime(int $hour = -1, int $min = -1, int $sec = -1, int $ms = -1): void {
+		$dateTime = $this -> dateTime;
+		
+		$cHour = $dateTime->format('H');
+		$cMin  = $dateTime->format('i');
+		$cSec  = $dateTime->format('s');
+		$cMs   = $dateTime->format('u');
+		
+		$ms = $ms >= 0 ? $ms : $cMs;
+		$sec = $sec >= 0 ? $sec : $cSec;
+		$min = $min >= 0 ? $min : $cMin;
+		$hour = $hour >= 0 ? $hour : $cHour;
+		
+		$dateTime -> setTime($hour, $min, $sec, $ms);
+	}
 
 	public function __toString(): string {
 		return $this -> iso();
@@ -670,7 +720,7 @@ class Shomoy {
 
 		$str = $shomoy -> format($format);
 
-		if ($print) return $str;
+		if (!$print) return $str;
 
 		echo $str;
 		return null;
@@ -700,5 +750,41 @@ class Shomoy {
 		echo $str;
 		return null;
 	}
+	
+	/**
+	 * Helper method, returns the current datetime in ISO format
+	 * @return string
+	 * */
+	public static function datetimeISO(): string {
+		$shomoy = new Shomoy();
+		return $shomoy -> iso();
+	}
+	
+	/**
+	 * Helper method, returns current date in ISO format
+	 * @return string
+	 * */
+	public static function dateISO(): string {
+		$shomoy = new Shomoy();
+		return $shomoy -> isoDate();
+	}
+	
+	/**
+	 * Helper method, returns current time in ISO format
+	 * @return string
+	 * */
+	public static function timeISO(): string {
+		$shomoy = new Shomoy();
+		return $shomoy -> isoTime();
+	}
 
+	/**
+	 * Helper method, returns current datetime in ISO 8601 format
+	 * @return string
+	 * */
+	public static function datetimeISO8601(): string {
+		$shomoy = new Shomoy();
+		return $shomoy -> iso8601();
+	}
+	
 }

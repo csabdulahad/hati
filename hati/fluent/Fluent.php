@@ -776,6 +776,42 @@ class Fluent {
 
 		return $colArr;
 	}
+	
+	/**
+	 * Rearranges dataset by grouping it based on a specified key.
+	 *
+	 * This function processes an array of associative arrays, rearranging the data
+	 * by grouping it based on a specified key within each associative array.
+	 *
+	 * @param string $key The key based on which the data will be grouped.
+	 * @param bool $keepKeyInDataset (Optional) Indicates whether to keep the key in each dataset after grouping. Default is true.
+	 *
+	 * @return array An associative array where the keys are the values extracted from the dataset based on the specified key,
+	 *               and the values are the corresponding datasets with optional key removal.
+	 *
+	 * @throws Trunk If the dataset is empty or null, or if the specified key doesn't exist in the dataset's first element.
+	 */
+	public static function dataByKey(string $key, bool $keepKeyInDataset = true): array {
+		$data = Fluent::dataArr();
+		
+		if (empty($data))
+			throw new Trunk('The query result is either null or empty');
+		
+		if (!array_key_exists($key, $data[0]))
+			throw new Trunk("The query result dataset doesn't have key $key");
+		
+		$returnArr = [];
+		foreach ($data as $d) {
+			$k = $d[$key];
+			
+			if (!$keepKeyInDataset)
+				unset($d[$key]);
+			
+			$returnArr[$k] = $d;
+		}
+		
+		return $returnArr;
+	}
 
 	/**
 	 * This method initiates a transaction for the database query. This prevents

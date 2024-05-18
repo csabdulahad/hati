@@ -6,6 +6,7 @@ use hati\filter\Filter;
 use hati\Trunk;
 use hati\util\Arr;
 use hati\util\Request;
+use ReflectionClass;
 use Throwable;
 
 /**
@@ -185,7 +186,9 @@ final class HatiAPIHandler {
 			$class -> setParams($queryParams);
 
 			// #1.1 Set the handler as working directory
-			chdir(dirname($arr['handler']));
+			$reflection = new ReflectionClass($class);
+			$directory  = pathinfo($reflection->getFileName(), PATHINFO_DIRNAME);
+			chdir($directory);
 
 			// #2 Initialize the API
 			$class -> init();
@@ -200,8 +203,9 @@ final class HatiAPIHandler {
 				$class -> authenticate($method);
 			}
 
-			// #4 Ready to call the API serving method!
-			$class -> $method();
+			// #4 Ready to call the API serving method with a ready response object!
+			$res = new Response();
+			$class -> $method($res);
 
 		} catch (Throwable $e) {
 

@@ -132,9 +132,10 @@ class Util {
 	 * @param string $cssClass Optional css classes for decorating the UI.
 	 * @param bool $return Whether to return the session message data
 	 * @param bool $unsetMsg Whether to unset the session message data
+	 * @return ?string returns message data when return argument is set, otherwise, null is returned
 	 * */
-	public static function displayMsg(string $cssClass = '',  bool $return = false, bool $unsetMsg = true) {
-		if (!isset($_SESSION[Hati::config(Key::SESSION_MSG_KEY)])) return;
+	public static function displayMsg(string $cssClass = '',  bool $return = false, bool $unsetMsg = true): ?string {
+		if (!isset($_SESSION[Hati::config(Key::SESSION_MSG_KEY)])) return null;
 
 		$msg = self::sessVar(Hati::config(Key::SESSION_MSG_KEY));
 		$txt =  "<div class='$cssClass'><p>$msg</p></div>";
@@ -142,7 +143,9 @@ class Util {
 		if ($unsetMsg) self::unsetSess(Hati::config(Key::SESSION_MSG_KEY));
 		
 		if ($return) return $txt;
+		
 		echo $txt;
+		return null;
 	}
 
 	/**

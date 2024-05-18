@@ -71,12 +71,111 @@ class Trunk extends RuntimeException {
 	 * A helper method which allows sending 200 response with message as API
 	 * output
 	 * */
-	public static function send200(string $msg = 'Success', string|array ...$header): Trunk {
+	public static function send200(string $msg = 'Success', string|array ...$header): void {
 		$trunk = self::buildTrunkWithHeaders($msg, 'HTTP/1.0 200 OK', $header);
 		$trunk -> status = Response::SUCCESS;
 		throw $trunk;
 	}
-
+	
+	/**
+	 * 400 Client Error
+	 * */
+	public static function send400(string $msg = 'Client Error', string|array ...$header): void {
+		$trunk = self::buildTrunkWithHeaders($msg, 'HTTP/1.0 400 Bad Request', $header);
+		$trunk->status = Response::ERROR;
+		throw $trunk;
+	}
+	
+	/**
+	 * 401 Unauthorized
+	 * */
+	public static function send401(string $msg = 'Unauthorized', string|array ...$header): void {
+		$trunk = self::buildTrunkWithHeaders($msg, 'HTTP/1.0 401 Unauthorized', $header);
+		$trunk->status = Response::ERROR;
+		throw $trunk;
+	}
+	
+	/**
+	 * 403 Forbidden Access
+	 * */
+	public static function send403(string $msg = 'Forbidden Access', string|array ...$header): void {
+		$trunk = self::buildTrunkWithHeaders($msg, 'HTTP/1.0 403 Forbidden', $header);
+		$trunk->status = Response::ERROR;
+		throw $trunk;
+	}
+	
+	/**
+	 * 404 Not Found
+	 * */
+	public static function send404(string $msg = 'Not Found', string|array ...$header): void {
+		$trunk = self::buildTrunkWithHeaders($msg, 'HTTP/1.0 404 Not Found', $header);
+		$trunk->status = Response::ERROR;
+		throw $trunk;
+	}
+	
+	/**
+	 * 405 Method Not Allowed
+	 * */
+	public static function send405(string $msg = 'Method Not Allowed', string|array ...$header): void {
+		$trunk = self::buildTrunkWithHeaders($msg, 'HTTP/1.0 405 Method Not Allowed', $header);
+		$trunk->status = Response::ERROR;
+		throw $trunk;
+	}
+	
+	/**
+	 * 408 Request Timeout
+	 * */
+	public static function send408(string $msg = 'Request Timeout', string|array ...$header): void {
+		$trunk = self::buildTrunkWithHeaders($msg, 'HTTP/1.0 408 Request Timeout', $header);
+		$trunk->status = Response::ERROR;
+		throw $trunk;
+	}
+	
+	/**
+	 * 429 Too Many Requests
+	 * */
+	public static function send429(string $msg = 'Too Many Requests', string|array ...$header): void {
+		$trunk = self::buildTrunkWithHeaders($msg, 'HTTP/1.0 429 Too Many Requests', $header);
+		$trunk->status = Response::ERROR;
+		throw $trunk;
+	}
+	
+	/**
+	 * 500 Internal Server Error
+	 * */
+	public static function send500(string $msg = 'Internal Server Error', string|array ...$header): void {
+		$trunk = self::buildTrunkWithHeaders($msg, 'HTTP/1.0 500 Internal Server Error', $header);
+		$trunk->status = Response::ERROR;
+		throw $trunk;
+	}
+	
+	/**
+	 * 501 Not Implemented
+	 * */
+	public static function send501(string $msg = 'Not Implemented', string|array ...$header): void {
+		$trunk = self::buildTrunkWithHeaders($msg, 'HTTP/1.0 503 Not Implemented', $header);
+		$trunk->status = Response::ERROR;
+		throw $trunk;
+	}
+	
+	/**
+	 * 503 Service Unavailable
+	 * */
+	public static function send503(string $msg = 'Service Unavailable', string|array ...$header): void {
+		$trunk = self::buildTrunkWithHeaders($msg, 'HTTP/1.0 503 Service Unavailable', $header);
+		$trunk->status = Response::ERROR;
+		throw $trunk;
+	}
+	
+	/**
+	 * 504 Gateway Timeout
+	 * */
+	public static function send504(string $msg = 'Gateway Timeout', string|array ...$header): void {
+		$trunk = self::buildTrunkWithHeaders($msg, 'HTTP/1.0 504 Gateway Timeout', $header);
+		$trunk->status = Response::ERROR;
+		throw $trunk;
+	}
+	
 	/**
 	 * 400 Client Error
 	 * */

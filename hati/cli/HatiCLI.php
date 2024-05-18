@@ -1,7 +1,5 @@
 <?php
 
-/** @noinspection PhpUnhandledExceptionInspection */
-
 namespace hati\cli;
 
 use Exception;
@@ -52,12 +50,14 @@ abstract class HatiCLI {
 	private array $optional = [];
 
 	private array $allowedOptions = [];
-	
 	private array $allowedFlags = [];
+	private array $allowedExtra = [];
 
 	private array $userInputMap = [];
 	private array $flags = [];
+	
 	private array $options = [];
+	private array $extra = [];
 	
 	private bool $callMode = false;
 	
@@ -81,6 +81,7 @@ abstract class HatiCLI {
 	 * an CLI tool implemented using HatiCLI can be terminated as expecting by the calling
 	 * script.
 	 *
+	 * @throws HatiCLIThrowing|Exception rethrows the {@link HatiCLIThrowing} exception up the stack
 	 * @since 5.1.0
 	 * */
 	public static function escalate(Exception $e): void {
@@ -130,7 +131,7 @@ abstract class HatiCLI {
 	 * be unexpected.<br>
 	 *
 	 * Remember to call {@link HatiCLI::escalate()} in catch block, if exit is being
-	 * done from within tht try block.
+	 * done from within any try-catch block.
 	 *
 	 * @since 5.1.0
 	 * */
@@ -177,10 +178,13 @@ abstract class HatiCLI {
 	}
 
 	/**
-	 * Adds the option specified by the array to the CLI. An option can have
-	 * various fields. By default an options is mandatory, however it can be
-	 * marked optional using required field. Short name is the mandatory field.
-	 * Marking short/long name with double dashes is not necessary. <br>
+	 * Adds the option specified by the array to the CLI. Options can be built
+	 * and added using {@link optionBuilder()} method which eases the process.
+	 *
+	 * An option can have various fields. By default an options is mandatory,
+	 * however it can be marked optional using required field. Short name is the
+	 * mandatory field.Marking short/long name with double dashes is not necessary.
+	 * <br>
 	 * An option can be validated
 	 * - string : use str as type. It is default type for option.
 	 * - integer : use int as type
@@ -201,7 +205,7 @@ abstract class HatiCLI {
 	 * @param array $option The option
 	 * @throws RuntimeException if the short name is missing
 	 * */
-	protected function addOption(array $option): void {
+	public function addOption(array $option): void {
 		// Extract names [short & long names]
 		$names = $this -> extractNames($option);
 		$shortName = "--$names[0]";
@@ -225,6 +229,10 @@ abstract class HatiCLI {
 		if (!isset($option['type']))
 			$option['type'] = 'str';
 
+		// Is it allowed to take in extra values?
+		if (isset($option['allow_extra']))
+			$this->allowedExtra[$shortName] = $option['allow_extra'];
+		
 		// Save this option
 		$option['value'] = null;
 		$this -> allowedOptions[$shortName] = $option;
@@ -246,7 +254,7 @@ abstract class HatiCLI {
 	 * @param array $flag The flag
 	 * @throws RuntimeException if the short name is missing
 	 * */
-	protected function addFlag(array $flag): void {
+	public function addFlag(array $flag): void {
 		$names = $this -> extractNames($flag);
 		$shortName = "-$names[0]";
 
@@ -261,6 +269,27 @@ abstract class HatiCLI {
 		$this -> allowedFlags[$shortName] = $flag;
 	}
 
+	/**
+	 * Helper method to add options to CLI more easily.
+	 *
+	 * @param string $shortName short name for the option
+	 * @param string $longName long name for the option. Default is empty string
+	 * @return CLIOptionBuilder builder object to configure the option further
+	 * */
+	protected function optionBuilder(string $shortName, string $longName = ''): CLIOptionBuilder {
+		return new CLIOptionBuilder($this, $shortName, $longName);
+	}
+	
+	/**
+	 * Helper method to add flags to CLI more easily
+	 * @param string $shortName short name for the flag
+	 * @param string $longName long name for the flag. Default is empty string.
+	 * @return CLIFlagBuilder builder object to configure the flag further
+	 * */
+	protected function flagBuilder(string $shortName, string $longName = ''): CLIFlagBuilder {
+		return new CLIFlagBuilder($this, $shortName, $longName);
+	}
+	
 	/**
 	 * For arguments, this method figures out whether it was name-value
 	 * arguments styled or not
@@ -383,33 +412,55 @@ abstract class HatiCLI {
 	 * @throws HatiCLIThrowing
 	 */
 	private function namedArgs(array $args, bool $callMode): void {
-		$count = count($args);
-		$i = 0;
-		while(true) {
-			if ($i >= $count) break;
+		if (empty($args)) return;
 
-			$x = $args[$i];
+		$value = false;
+		$shortName = '';
 
-			if (!str_starts_with($x, '--')) {
+		for ($j = 0; $j < count($args); $j++) {
+			$var = $args[$j];
+
+			if (!$value && str_starts_with($var, '--')) {
+				if (!isset($args[$j+1]) || empty($args[$j+1]) || str_starts_with($args[$j+1], '--')) {
+					self::err("Value missing for argument $var", 2, $callMode);
+				}
+
+				// Translate the name
+				$shortName = $this->getShortname($var, $this->shortLongArg);
+
+				// Store what key user used for this arg!
+				$this->userInputMap[$shortName] = $var;
+				
+				// Go to next iteration for collecting its value!
+				$value = true;
+				continue;
+			}
+			
+			if (!$value && !str_starts_with($var, '--')) {
 				self::err("Argument name with -- was expected", 2, $callMode);
 			}
+			
+			// Named argument's value
+			$this->options[$shortName] = $var;
+			
+			// Check if this option is allowed to take extras
+			$allowedExtra = $this->allowedExtra[$shortName] ?? true;
 
-			// Is argument valid?
-			$this -> validateArgument($x);
-
-			$v = $args[++$i] ?? null;
-			if (empty($v) || str_starts_with($v, '-')) {
-				self::err("Value missing for argument $x", 2, $callMode);
+			if (!$allowedExtra) {
+				if (isset($args[$j+1]) && !empty($args[$j+1]) && !str_starts_with($args[$j+1], '--')) {
+					self::err("Option $shortName doesn't take more than one value", 2, $callMode);
+				}
 			}
-
-			// Translate the name
-			$shortName = $this -> getShortname($x, $this -> shortLongArg);
-			$this -> options[$shortName] = $v;
-
-			// Store what key user used for this arg!
-			$this -> userInputMap[$shortName] = $x;
-
-			$i++;
+			
+			// Collect additional extras values for this arg!
+			$skip = 1;
+			while (isset($args[$j+$skip]) && !empty($args[$j+$skip]) && !str_starts_with($args[$j+$skip], '--')) {
+				$this->extra[$shortName][] = $args[$j+$skip];
+				$skip ++;
+			}
+			
+			$j += $skip - 1;
+			$value = false;
 		}
 	}
 
@@ -426,11 +477,7 @@ abstract class HatiCLI {
 		$argCount = count($args);
 		for ($i = 0; $i < $argCount; $i++) {
 			$v = $args[$i];
-
-			/*
-			 * TODO - can we allow extra args? so that we can have those as as $extraParam?
-			 *  this will help us to handle cases when we may want variadic?
-			 * */
+			
 			if (empty($keys[$i])) {
 				$this -> error("Unnecessary value $v was passed", 2);
 			}
@@ -685,7 +732,7 @@ abstract class HatiCLI {
 				$errMsg = $msgByKey ? "Invalid value given for $usrKey" : "Invalid value: $usrKey";
 				$errMsg .= "\n";
 				
-				$guideMsg = "Allowed options: " . Arr::strList($option['options']);
+				$guideMsg = "Allowed values: " . Arr::strList($option['options']);
 				
 				$str = CLI::color($errMsg, 'red');
 				$str .= CLI::color($guideMsg, 'yellow');
@@ -706,13 +753,67 @@ abstract class HatiCLI {
 	/**
 	 * It tell whether a specified flag was set by the user in the command.
 	 *
-	 * @param string $key The flag
+	 * @param string $key The flag. It can be short or long name with/without '-' prepended.
 	 * @return bool true if the flag was set; false otherwise
 	 * */
 	protected function flagSet(string $key): bool {
+		if (!str_starts_with($key, '-')) $key = "-$key";
+		
 		return in_array($key, $this -> flags);
 	}
 
+	/**
+	 * Returns whether an option was set by the user in the command.
+	 *
+	 * @param string $key The option. It can be short or long name with/without '--' prepended.
+	 * @return bool true if the flag was set; false otherwise
+	 * */
+	protected function optionSet(string $key): bool {
+		if (!str_starts_with($key, '--')) $key = "--$key";
+		
+		$key = $this->getShortname($key, $this->shortLongArg);
+		return isset($this->options[$key]);
+	}
+	
+	/**
+	 * Returns the value entered by user for specified option.
+	 *
+	 * @param string $key. Either short/long name with/without '--' prepended.
+	 * @param mixed $default default value to be returned if the option value wasn't found in user input
+	 * @return mixed value for the option provided by the user
+	 * */
+	protected function getOptionVal(string $key, mixed $default = null): mixed {
+		if (!str_starts_with($key, '--')) $key = "--$key";
+		$key = $this->getShortname($key, $this->shortLongArg);
+		
+		return $this->options[$key] ?? $default;
+	}
+	
+	/**
+	 * Returns the extra values entered by user for a specified option. If more than one
+	 * values were passed in by the user then extra is returned as array.
+	 *
+	 * @param string $key. either short/long name with/without '--' prepended.
+	 * @param mixed $default default value to be returned if the extra value wasn't set in user input
+	 * @return mixed extra value for the option provided by the user
+	 * */
+	protected function getExtra(string $key, mixed $default = null): mixed {
+		if (!str_starts_with($key, '--')) $key = "--$key";
+		
+		$key = $this->getShortname($key, $this->shortLongArg);
+		
+		return $this->extra[$key] ?? $default;
+	}
+	
+	/**
+	 * Make the thread sleep
+	 *
+	 * @param float $sec The number of seconds to sleep
+	 * */
+	public function sleep(float $sec): void {
+		usleep($sec * 1000000);
+	}
+	
 	/**
 	 * Any HatiCLI implementation should override this method to set various
 	 * helpful information to describe itself as a CLI tool. It should set
@@ -734,20 +835,20 @@ abstract class HatiCLI {
 	 * */
 	public abstract function setup(): void;
 
-	 /**
-	  * The starting point of the CLI tool derived from {@link HatiCLI}. When a user
-	  * invokes the CLI tool, HatiCLI performs various arguments & flags validation
-	  * as defined in the {@link HatiCLI::setup()} method.
-	  *
-	  * On passing the validation phase successfully, HatiCLI calls this method with
-	  * the argument list the user passed-in as an associative array. Required options
-	  * are always guaranteed to be in the array.
-	  *
-	  * To check if a particular flag was set in the invocation, use {@link HatiCLI::flagSet()}
-	  * method.
-	  *
-	  * @param array $args The associative array containing argument name & value pair
-	  * */
+	/**
+	 * The starting point of the CLI tool derived from {@link HatiCLI}. When a user
+	 * invokes the CLI tool, HatiCLI performs various arguments & flags validation
+	 * as defined in the {@link HatiCLI::setup()} method.
+	 *
+	 * On passing the validation phase successfully, HatiCLI calls this method with
+	 * the argument list the user passed-in as an associative array. Required options
+	 * are always guaranteed to be in the array.
+	 *
+	 * To check if a particular flag was set in the invocation, use {@link HatiCLI::flagSet()}
+	 * method.
+	 *
+	 * @param array $args The associative array containing argument name & value pair
+	 * */
 	public abstract function run(array $args): void;
 
 	/**

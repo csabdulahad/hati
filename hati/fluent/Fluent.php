@@ -395,7 +395,7 @@ class Fluent {
 	 * @param string $msg Any custom message to replace SQL error message
 	 *
 	 * @return int The number of raws were updated by the query
-	 **@throws RuntimeException It throws run time exception when number cols-values or where-whereValue pair don't
+	 * @throws RuntimeException It throws run time exception when number cols-values or where-whereValue pair don't
 	 * match
 	 */
 	public static function update(string $table, array $cols, array $values = [], string $where = '', array $whereValues = [], string $msg = ''): int {
@@ -859,31 +859,58 @@ class Fluent {
 	 * as part of the query, otherwise left out with ? mark so that it can be uses as prepare statement.
 	 *
 	 * @param bool $usePrepare Indicates whether the calculated returned query be used for prepare statement
-	 * @param string $query The query where this binding operation to be performed
+	 * @param array $columns The query where this binding operation to be performed
 	 * @param array $values Values for those ? mark
 	 * @param string $errMsg Any message in case there is mismatch between number of values and ? marks
 	 *
-	 * @throws RuntimeException If there is a mismatch between number of values and ? marks
 	 * @return string Completed query where ? are either replaced with values or left out as is based on $usePrepare
 	 * flag
-	 **/
-	public static function bind(bool $usePrepare, string $query, array $values, string $errMsg): string {
-		if (substr_count($query, '?') !== count($values)) {
+	 **@throws RuntimeException If there is a mismatch between number of values and ? marks
+	 */
+	public static function bind(bool $usePrepare, array $columns, array $values, string $errMsg): string {
+		
+		
+		
+		$foundQ = 0;
+		foreach ($columns as $v) {
+			if (!is_array($v)) continue;
+			$foundQ++;
+		}
+		
+		if ($foundQ !== count($values)) {
 			throw new RuntimeException($errMsg);
 		}
 
-		$i = 0;
-		return preg_replace_callback('/\?/', function () use ($usePrepare, $values, &$i) {
-			return $usePrepare ? '?' : self::typedValue($values[$i++]);
-		}, $query);
+		$value = '';
+		
+		foreach ($columns as $i) {
+			if (!is_array($i)) {
+				// Here $i represents like column=value already!
+				$value .= "$i, ";
+				continue;
+			}
+			
+			$value .= $i[0];
+			
+			if ($usePrepare) {
+				$value .= '?, ';
+			} else {
+				$value .= self::typedValue(array_shift($values));
+				$value .= ', ';
+			}
+		}
+		
+		return rtrim($value, ', ');
 	}
 
 	/**
 	 * For a column value, it adds appropriate single quotes to be query friendly
 	 * */
-	private static function typedValue($val): int|string {
-		if (is_string($val)) return "'$val'";
-		else if (is_object($val)) return "'{$val->__toSting()}'";
+	private static function typedValue($val): mixed {
+		$pdo = self::getPDO();
+		
+		if (is_string($val)) return $pdo->quote($val);
+		else if (is_object($val)) return $pdo->quote((string) $val);
 		return $val;
 	}
 
@@ -902,27 +929,59 @@ class Fluent {
 	 * any specified sign in front such as = ?, = 'X_VALUE'
 	 * */
 	private static function toQueryStruct(array $columns, array $values, string $sign, bool $usePrepare): array {
-		$cols = '';
-		$val = '';
+		/*
+		 * Normalize columns array
+		 * */
+		$qCount = 0;
+		
+		$cols = [];
+		$vals = [];
+		
+		foreach ($columns as $i => $v) {
+			
+			if (!is_integer($i)) {
+				$cols[] = $i;
 
-		foreach ($columns as $c => $v) {
-			if (is_integer($c)) {
-				$cols .= "$v, ";
-				$val .= "$sign?, ";
+				$typedV = self::typedValue($v);
+				$vals[] = "$sign{$typedV}";
 			} else {
-				$cols .= "$c, ";
-				$v = self::typedValue($v);
-				$val .= "$sign$v, ";
+				$cols[] = $v;
+				$vals[] = [];
+				
+				$qCount ++;
+			}
+		}
+		
+		if ($qCount !== count($values)) {
+			throw new RuntimeException('The number columns that are missing values did not match the number of values provided');
+		}
+		
+		foreach ($vals as $i => $v) {
+			if (!is_array($v)) continue;
+			
+			if ($usePrepare) {
+				$vals[$i] = "$sign?";
+			} else {
+				$typedV = self::typedValue(array_shift($values));
+				$vals[$i] = "$sign{$typedV}";
 			}
 		}
 
-		// Remove the extra ', ' from the end of both cols, values
-		$cols = substr($cols, 0, strlen($cols) - 2);
-		$val = substr($val, 0, strlen($val) - 2);
+		return [$cols, $vals];
+	}
 
-		$val = self::bind($usePrepare, $val, $values, 'The number of values for columns that are missing values did not match');
-
-		return [$cols, $val];
+	/**
+	 * This method is used particularly for DELETE & UPDATE SQL statements. It substitutes values of the WHERE
+	 * clause with with  ? sign or the value meant to be provided as part param binding.
+	 *
+	 * @param bool $usePrepare Indicates whether the values needs to be marked resolved after the sign directly
+	 * @param string $query The WHERE part of query, where this binding operation to be performed
+	 * @param array $values Values for those ? mark
+	 * */
+	private static function bindWhere(bool $usePrepare, string $query, array $values): string {
+		return preg_replace_callback('/\s*=\s*\?/', function () use ($usePrepare, &$values) {
+			return $usePrepare ? ' = ? ' : ' = ' . self::typedValue(array_shift($values));
+		}, $query);
 	}
 
 	/**
@@ -943,9 +1002,7 @@ class Fluent {
 	 * @return int Number of raw were updated by this query
 	 **/
 	private static function updateData(PDO $pdo, string $table, array $columns, array $values, bool $usePrepare, string $where, array $whereVal, string $msg): int {
-		list($cols, $val) = self::toQueryStruct($columns, $values, ' = ', $usePrepare);
-		$cols = explode(',', $cols);
-		$val = explode(',', $val);
+		[$cols, $val] = self::toQueryStruct($columns, $values, ' = ', $usePrepare);
 
 		$sets = '';
 		foreach ($cols as $i => $v) {
@@ -956,7 +1013,7 @@ class Fluent {
 		$q = "UPDATE $table SET $sets";
 
 		if (!empty($where)) {
-			$w = self::bind($usePrepare, $where, $whereVal, 'The number of values and where clause columns requiring values do not match');
+			$w = self::bindWhere($usePrepare, $where, $whereVal);
 			$q .= " WHERE $w";
 		}
 
@@ -984,7 +1041,7 @@ class Fluent {
 		$q = "DELETE FROM $table";
 
 		if (!empty($where)) {
-			$w = self::bind($usePrepare, $where, $whereValues, "Number of values passed for where clause don't match");
+			$w = self::bindWhere($usePrepare, $where, $whereValues);
 			$q .= " WHERE $w";
 		}
 
@@ -1006,10 +1063,14 @@ class Fluent {
 	 * @return int indicates how many rows were affected by the query execution.
 	 **/
 	private static function insertData(PDO $pdo, string $table, array $columns, array $values = [], bool $usePrepare = false, string $msg = ''): int {
-		[$cols, $val] = self::toQueryStruct($columns, $values, '', $usePrepare);
-
+		[$cols, $vals] = self::toQueryStruct($columns, $values, '', $usePrepare);
+		
+		$cols = join(',', $cols);
+		$vals = join(',', $vals);
+		
 		// build up the query string & execute as per request
-		$q = "INSERT INTO $table($cols) VALUES($val)";
+		$q = "INSERT INTO $table($cols) VALUES($vals)";
+		
 		return $usePrepare ? self::exePrepareWith($pdo, $q, $values, $msg) : self::exeStaticWith($pdo, $q, $msg);
 	}
 

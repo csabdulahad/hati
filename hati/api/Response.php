@@ -72,20 +72,25 @@ class Response {
 	// buffer for json output
 	private array $output = [];
 
-	public function addKey(string $key): void {
+	public function addKey(string $key): Response {
 		if (!array_key_exists($key, $this -> output)) $this -> output[$key] = null;
+		
+		return $this;
 	}
 
-	public function add(string $key, $value): void {
+	public function add(string $key, $value): Response {
 		$this -> output[$key] = $this -> getTypedValue($value);
+		
+		return $this;
 	}
-
 	
-	public function addAll($keys, $values): void {
+	public function addAll($keys, $values): Response {
 		$keyCount = count($keys);
 		if ($keyCount != count($values)) throw new InvalidArgumentException('Keys and values are not of same length.');
 
 		for ($i = 0; $i < $keyCount; $i++) $this -> add($keys[$i], $values[$i]);
+		
+		return $this;
 	}
 
 	/**
@@ -96,11 +101,11 @@ class Response {
 	 * @param string $arrKey <p>the name of the array</p>
 	 * @param mixed $val <p>any value you want to add to the array. passed value will be parsed
 	 * to obtain the right type.</p>
-	 * @return void
+	 * @return Response returns this object for further method chaining
 	 *
 	 * @noinspection PhpUnused
 	 * */
-	public function addToArr(string $arrKey, mixed $val): void {
+	public function addToArr(string $arrKey, mixed $val): Response {
 		// first define the array with given key if we don't have already
 		$this -> addKey($arrKey);
 		if (!is_array($this -> output[$arrKey])) $this -> output[$arrKey] = [];
@@ -110,6 +115,8 @@ class Response {
 
 		// otherwise add the value normally
 		else $this -> addToArray($arrKey, $val);
+		
+		return $this;
 	}
 
 	private function addToArray(string $arrKey, $val): void {
@@ -123,11 +130,13 @@ class Response {
 	 * will be overridden by latest property value.
 	 *
 	 * @param $map <p>The map(array/object) you want to add directly to the JSON output object.</p>
-	 * @return void
+	 * @return Response returns this object for further method chaining
 	 */
-	public function addFromMap($map): void {
+	public function addFromMap($map): Response {
 		$this -> checkMap($map);
 		foreach ($map as $key => $value) $this -> add($key, $value);
+		
+		return $this;
 	}
 
 	/**
@@ -135,13 +144,15 @@ class Response {
 	 * will override the existing property value if any presents already in the JSON output object.
 	 *
 	 * @param $maps <p>It must be an array containing maps(array/object).</p>
-	 * @return void
+	 * @return Response returns this object for further method chaining
 	 *
 	 * @noinspection PhpUnused
 	 * */
-	public function addFromMaps($maps): void {
+	public function addFromMaps($maps): Response {
 		if (!is_array($maps)) throw new InvalidArgumentException('The value has to be an array of maps');
 		foreach ($maps as $map) $this -> addFromMap($map);
+		
+		return $this;
 	}
 
 	/**
@@ -166,12 +177,14 @@ class Response {
 	 * @param string $key The name of the property.
 	 * @param mixed $val The value of the property
 	 *
-	 * @return void
+	 * @return Response returns this object for further method chaining
 	 */
-	public function addToMap(string $mapKey, string $key, mixed $val): void {
+	public function addToMap(string $mapKey, string $key, mixed $val): Response {
 		$this -> addKey($mapKey);
 		if ($this -> output[$mapKey] == null) $this -> output[$mapKey] = [];
 		$this -> output[$mapKey][$key] = $this -> getTypedValue($val);
+		
+		return $this;
 	}
 
 	/**
@@ -184,11 +197,13 @@ class Response {
 	 * map.
 	 * @param array $map The map(array/object) whose properties will be copied to the property-object of
 	 * JSON output object.
-	 * @return void
+	 * @return Response returns this object for further method chaining
 	 */
-	public function addMapToMap(string $mapKey, array $map): void {
+	public function addMapToMap(string $mapKey, array $map): Response {
 		$this -> checkMap($map);
 		foreach ($map as $key => $value) $this -> addToMap($mapKey, $key, $value);
+		
+		return $this;
 	}
 
 	/**
@@ -196,13 +211,15 @@ class Response {
 	 * @param string $mapKey The property of JSON output object which will hold each property of given
 	 * map.
 	 * @param mixed $mapArray The array which contains the maps of arrays or objects
-	 * @return void
+	 * @return Response returns this object for further method chaining
 	 *
 	 * @noinspection PhpUnused
 	 */
-	public function addMapsToMap(string $mapKey, mixed $mapArray): void {
+	public function addMapsToMap(string $mapKey, mixed $mapArray): Response {
 		if (!is_array($mapArray)) throw new InvalidArgumentException('an array of maps is required.');
 		foreach ($mapArray as $map) $this -> addMapToMap($mapKey, $map);
+		
+		return $this;
 	}
 
 	/**

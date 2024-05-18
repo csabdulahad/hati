@@ -150,7 +150,7 @@ abstract class HatiAPI {
 	/**
 	 * Default handler method for GET request for the API.
 	 * */
-	public function get(): void {
+	public function get(Response $res): void {
 		throw Trunk::error501('API is not implemented yet');
 	}
 
@@ -158,7 +158,7 @@ abstract class HatiAPI {
 	 * Default handler method for GET request for the API.
 
 	 * */
-	public function post(): void {
+	public function post(Response $res): void {
 		throw Trunk::error501('API is not implemented yet');
 	}
 
@@ -166,14 +166,14 @@ abstract class HatiAPI {
 	 * Default handler method for POST request for the API.
 
 	 * */
-	public function put(): void {
+	public function put(Response $res): void {
 		throw Trunk::error501('API is not implemented yet');
 	}
 
 	/**
 	 * Default handler method for PATCH request for the API.
 	 * */
-	public function patch(): void {
+	public function patch(Response $res): void {
 		throw Trunk::error501('API is not implemented yet');
 	}
 
@@ -181,7 +181,7 @@ abstract class HatiAPI {
 	 * Default handler method for DELETE request for the API.
 
 	 * */
-	public function delete(): void {
+	public function delete(Response $res): void {
 		throw Trunk::error501('API is not implemented yet');
 	}
 

@@ -86,7 +86,7 @@ abstract class HatiAPI {
 	 *
 	 * @param string $path the file path
 	 * @param bool $root when set true, resource is loaded relative to root
-	 * directory where the vendor folder is found. Otherwise it is relative
+	 * directory where the vendor folder is found. Otherwise, it is relative
 	 * to API handler file.
 	 *
 	 * @return mixed resource
@@ -100,7 +100,7 @@ abstract class HatiAPI {
 	}
 
 	/**
-	 * Indicate whether an API method is private or public.
+	 * Indicates whether an API method is private or public.
 	 *
 	 * @param string $method The method to be checked whether it is private API method.
 	 * @return true if the API method is private, needing no authentication; false otherwise.
@@ -129,7 +129,7 @@ abstract class HatiAPI {
 	 *
 	 * @param string $as The format the request body to be fetched in.
 	 * @return string|array|null array for JSON type, string for raw type.
-	 * Otherwise null is returned.
+	 * Otherwise, null is returned.
 	 * */
 	protected final function requestBody(string $as = 'json'): string|array|null {
 
@@ -156,7 +156,6 @@ abstract class HatiAPI {
 
 	/**
 	 * Default handler method for GET request for the API.
-
 	 * */
 	public function post(Response $res): void {
 		throw Trunk::error501('API is not implemented yet');
@@ -259,6 +258,49 @@ abstract class HatiAPI {
 
 	public function setParams(array $params): void {
 		$this -> params = $params;
+	}
+	
+	/**
+	 * Any HatiApi can be invoked using this function as if it was invoked by an actual API request.
+	 *
+	 * @param string $method HTTP verb in upper case, one of these: GET, POST, PUT, PATCH, DELETE
+	 * @param string $path API endpoint path
+	 * @param array $params Query parameters required by the API
+	 * @param array $headers Headers required by the API. It should be an associative array.
+	 *
+	 * @return array Returns the api response as an associative array. Contains headers, body keys.
+	 * */
+	public static function call(string $method, string $path, array $params = [], array $headers = []): array {
+		return HatiAPIHandler::boot([
+			'method' => $method,
+			'api' => $path,
+			'params' => $params,
+			'headers' => $headers
+		]);
+	}
+	
+	/**
+	 * Any HatiApi can be invoked using this function as if it was invoked by an actual API request. Internally,
+	 * it calls {@link call()} method. However, API response body is returned as JSON decoded associative
+	 * array, not as plain JSON.
+	 *
+	 * @param string $method HTTP verb in upper case, one of these: GET, POST, PUT, PATCH, DELETE
+	 * @param string $path API endpoint path
+	 * @param array $params Query parameters required by the API
+	 * @param array $headers Headers required by the API. It should be an associative array.
+	 *
+	 * @return array Returns the api response as an associative array. Contains headers, body keys.
+	 * Body will be an empty array if there was problem parsing the API response body as JSON.
+	 * */
+	public static function callJSON(string $method, string $path, array $params = [], array $headers = []): array {
+		$output = self::call($method, $path, $params, $headers);
+		
+		$response = json_decode($output['body'], true) ?? [];
+		
+		return [
+			'headers' => $output['headers'],
+			'body' => $response
+		];
 	}
 
 }

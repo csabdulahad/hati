@@ -2,7 +2,9 @@
 
 namespace hati\api;
 
+use hati\config\Key;
 use hati\filter\Filter;
+use hati\Hati;
 use hati\Trunk;
 use hati\util\Arr;
 use hati\util\Request;
@@ -52,16 +54,27 @@ final class HatiAPIHandler {
 	 * For any error while booting up, error message is written out as standard API response with
 	 * proper HTTP status code.
 	 *
-	 * <br> This method should only be called from the 'api/hati_api_handler.php' file.
+	 * <br> This method should only be called from the 'api/hati_api_handler.php' file or by the
+	 * Hati library internally for example HatiAPI class.
+	 *
+	 * @param ?array $augment Array contains augmented values to call API by code.
 	 * */
-	public static function boot(): void {
+	public static function boot(?array $augment = null): ?array {
+		$res = new Response();
+		
 		try {
 			$handler = self::get();
+			
+			/*
+			 * Figure out the registry location
+			 * */
+			$registry = is_null($augment) ? getcwd() : Hati::root(Hati::config(Key::API_REGISTRY_FOLDER));
 
 			/*
 			 * Register all the API endpoints path
 			 * */
-			$registry = getcwd() . DIRECTORY_SEPARATOR . 'hati_api_registry.php';
+			$registry .= DIRECTORY_SEPARATOR . 'hati_api_registry.php';
+			
 			if (!file_exists($registry)) {
 				throw Trunk::error500('API registry is missing');
 			}
@@ -69,17 +82,17 @@ final class HatiAPIHandler {
 			require_once $registry;
 
 			// Is it an API thing?
-			if (empty($_GET['api'])) {
+			if (empty($augment['api']) && empty($_GET['api'])) {
 				throw Trunk::error400('Bad request');
 			}
 
-			$path = Filter::string($_GET['api']);
+			$path = Filter::string($augment['api'] ?? $_GET['api']);
 			if (!Filter::ok($path)) {
 				throw Trunk::error400('Bad request');
 			}
 
 			// Check the request method
-			$method = strtoupper(Request::method());
+			$method = strtoupper($augment['method'] ?? Request::method());
 
 			if (!in_array($method, ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])) {
 				throw Trunk::error405('Unacceptable request method');
@@ -113,7 +126,7 @@ final class HatiAPIHandler {
 			$arguments = explode('/', $arguments);
 
 			// Build up the query params
-			$queryParams = $_REQUEST;
+			$queryParams = $augment['params'] ?? $_REQUEST;
 			unset($queryParams['api']);
 
 			// Get the API endpoint details
@@ -181,7 +194,9 @@ final class HatiAPIHandler {
 			}
 
 			// #1 Set various properties
-			$class -> setHeaders(getallheaders());
+			$headers = array_merge(getallheaders(), $augment['headers'] ?? []);
+			
+			$class -> setHeaders($headers);
 			$class -> setArgs($arguments);
 			$class -> setParams($queryParams);
 
@@ -204,7 +219,8 @@ final class HatiAPIHandler {
 			}
 
 			// #4 Ready to call the API serving method with a ready response object!
-			$res = new Response();
+			if (!is_null($augment)) $res -> disableReply();
+
 			$class -> $method($res);
 
 		} catch (Throwable $e) {
@@ -214,8 +230,24 @@ final class HatiAPIHandler {
 				$e = Trunk::error500($msg);
 			}
 
-			$e -> report();
+			if (is_null($augment)) {
+				$e -> report();
+			}
+			
+			if ($e->getMessage() == 'HATI_API_CALL') {
+				return [
+					'headers' => $res -> getHeaders(),
+					'body' => $res -> getJSON()
+				];
+			}
+			
+			return [
+				'headers' => $e -> getHeaders(),
+				'body' => $e -> __toString()
+			];
 		}
+
+		return null;
 	}
 
 	/**

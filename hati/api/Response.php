@@ -4,6 +4,7 @@ namespace hati\api;
 
 use hati\config\Key;
 use hati\Hati;
+use hati\Trunk;
 use hati\util\Arr;
 use hati\util\Util;
 use InvalidArgumentException;
@@ -71,6 +72,15 @@ class Response {
 
 	// buffer for json output
 	private array $output = [];
+	
+	// buffer response headers
+	private array $headers = [];
+	
+	/**
+	 * Indicates if the response is supposed to be returned and be handled by HatiAPIHandler.
+	 * By default, response is outputted on {@link reply()} method invocation.
+	 * */
+	private bool $directReply = true;
 
 	public function addKey(string $key): Response {
 		if (!array_key_exists($key, $this -> output)) $this -> output[$key] = null;
@@ -221,6 +231,18 @@ class Response {
 		
 		return $this;
 	}
+	
+	public function addHeader(string $header): void {
+		$this -> headers[] = $header;
+	}
+	
+	public function getHeaders(): array {
+		return $this -> headers;
+	}
+	
+	public function disableReply(): void {
+		$this -> directReply = false;
+	}
 
 	/**
 	 * Returns the response data in JSON format as string
@@ -243,7 +265,12 @@ class Response {
 		$resObj = self::addResponseObject($status, $msg);
 		$this -> add(self::$KEY_RESPONSE, $resObj);
 
-		$header = Arr::varargsAsArray($header);
+		$this -> headers = array_merge($this -> headers, Arr::varargsAsArray($header));
+		
+		if (!$this -> directReply) {
+			throw new Trunk('HATI_API_CALL');
+		}
+		
 		self::setHTTPHeaders($header);
 
 		echo $this -> getJSON();

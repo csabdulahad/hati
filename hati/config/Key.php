@@ -9,6 +9,8 @@ class Key {
 	const PROJECT_DIR_AS_INCLUDE_PATH = 'project_dir_as_include_path';
 	const USE_GLOBAL_FUNC = 'use_global_func';
 
+	const API_REGISTRY_FOLDER = 'api_registry_folder';
+
 	const DEV_API_BENCHMARK = 'dev_API_benchmark';
 	const DEV_API_DELAY = 'dev_API_delay';
 

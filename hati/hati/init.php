@@ -12,7 +12,7 @@ $HATI_USE_SRC_AS_ROOT = true;
  * Initialize Hati!
  *
  * First check if Hati has already been loaded. If not, then only
- * load it which will setup Hati as defined by configurations.
+ * load it which will set up Hati as defined by configurations.
  * */
 if (!class_exists(\hati\Hati::class)) {
 	$level = $HATI_USE_SRC_AS_ROOT ? 2 : 1;

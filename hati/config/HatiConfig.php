@@ -15,6 +15,8 @@
 return [
 
 	'favicon'                           =>          '',
+	
+	'api_registry_folder'				=>			'',
 
 	'project_dir_as_include_path'       =>          true,
 	'use_global_func'                   =>          true,

@@ -61,6 +61,7 @@ final class HatiAPIHandler {
 	 * */
 	public static function boot(?array $augment = null): ?array {
 		$res = new Response();
+		$cwd = getcwd();
 		
 		try {
 			$handler = self::get();
@@ -222,8 +223,13 @@ final class HatiAPIHandler {
 			if (!is_null($augment)) $res -> disableReply();
 
 			$class -> $method($res);
+			
+			// #5 Restore the CWD
+			chdir($cwd);
 
 		} catch (Throwable $e) {
+			// If it was an API implementation error then restore CWD
+			chdir($cwd);
 
 			if (!$e instanceof Trunk) {
 				$msg = self::$DEBUG ?  self::getFullErrorMsg($e) : 'Error in API implementation';

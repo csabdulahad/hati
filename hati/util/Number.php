@@ -66,7 +66,7 @@ abstract class Number {
 		$symbol .= strlen($sign) != 0 ? $sign : '';
 
 		// add decimal places
-		$num = !$integer ? number_format($num, $place) : $num;
+		$num = !$integer ? number_format($num, $place) : number_format($num);
 
 		// add leading zero if asked
 		$num = $leadZero ? self::leadingZero($num) : $num;

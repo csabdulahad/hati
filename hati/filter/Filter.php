@@ -301,7 +301,7 @@ abstract class Filter {
 	 *
 	 * @param mixed $input string to be escaped
 	 *
-	 * @return string|FilterOut returns the escaped string. On failure it can return one of these:
+	 * @return string|FilterOut returns the escaped string. On failure, it can return one of these:
 	 * {@link FilterOutput::NULL}, {@link FilterOutput::EMPTY}
 	 * */
 	public static function string(mixed $input): string|FilterOut {
@@ -322,7 +322,7 @@ abstract class Filter {
 	 *
 	 * @param mixed $input the url string for checking.
 	 *
-	 * @return string|FilterOut the sanitized url string. On failure it can return one of these:
+	 * @return string|FilterOut the sanitized url string. On failure, it can return one of these:
 	 * {@link FilterOutput::NULL}, {@link FilterOutput::EMPTY}, {@link FilterOutput::INVALID}
 	 */
 	public static function url(mixed $input): string|FilterOut {

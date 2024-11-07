@@ -83,11 +83,12 @@ class DBMan {
 			$host = $profile['address'];
 			$user = $profile['username'];
 			$pass = $profile['password'];
+			$charset = $profile['charset'] ?? 'utf-8';
 
 			// get the timezone offset
 			$timeZone = date('P');
 
-			$arg = "mysql:host=$host;dbname=$dbName;charset=utf8";
+			$arg = "mysql:host=$host;dbname=$dbName;charset=$charset";
 			$db = new PDO($arg, $user, $pass);
 			$db -> setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 

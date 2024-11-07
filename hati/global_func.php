@@ -30,6 +30,8 @@ function vd(mixed $var, bool $exit = true): void {
 		$var = print_r($var, true);
 	} else if (is_bool($var)) {
 		$var = $var ? 'true' : 'false';
+	} else if (is_null($var)) {
+		$var = 'null';
 	}
 
 	if (Util::cli()) echo $var;
@@ -67,6 +69,8 @@ function println(mixed $value, int $numOfBreak = 1, bool $pretty = true): void {
 		$value = print_r($value, true);
 	} elseif (is_bool($value)) {
 		$value = $value ? 'true' : 'false';
+	} else if (is_null($value)) {
+		$value = 'null';
 	}
 
 	if ($pretty && !Util::cli()) echo "<pre>";

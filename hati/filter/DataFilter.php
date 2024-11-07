@@ -131,7 +131,7 @@ class DataFilter {
 	 * - key: the key which identifies the input in the input array source
 	 * - name: optional name. It is used to in the friendly error reporting to user
 	 * - type: input data type. It could be one of the following: str, int, float, bool, email, iso-date, iso-datetime
-	 * - required: indicates whether the input is mandatory or not. By default every input is.
+	 * - required: indicates whether the input is mandatory or not. By default, every input is.
 	 * - minLen: minimum length of the input to be considered valid
 	 * - maxLen: maximum length(inclusive) of the input to be considered valid
 	 * - minValue: applicable to number type. Minimum value the number can be(inclusive)
@@ -244,9 +244,9 @@ class DataFilter {
 		foreach ($this -> rules as $rule) {
 			$required = $rule['required'] ?? true;
 			$key = $rule['key'];
-			$data = $source[$key] ?? null;
+			$data = $source[$key] ?? $rule['default'] ?? null;
 
-			if (!$required && !isset($data)) {
+			if (!$required && empty($data)) {
 				$this -> data[$key] = null;
 				continue;
 			} else {

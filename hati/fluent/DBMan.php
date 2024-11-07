@@ -83,7 +83,7 @@ class DBMan {
 			$host = $profile['address'];
 			$user = $profile['username'];
 			$pass = $profile['password'];
-			$charset = $profile['charset'] ?? 'utf-8';
+			$charset = $profile['charset'] ?? 'utf8';
 
 			// get the timezone offset
 			$timeZone = date('P');

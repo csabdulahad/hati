@@ -4,14 +4,14 @@ namespace hati\config;
 
 class ConfigWriter {
 
-	//Add extra line break before these json keys
+	// Add extra line break before these json keys
 	private static array $group = [
 		'project_dir_as_include_path', 'dev_API_benchmark', 'time_zone',
 		'global_php', 'mailer_host', 'doc_config','img_config',
-		'video_config', 'audio_config', 'jquery',
+		'video_config', 'audio_config'
 	];
 
-	private static function writeConfig(array $config, string $path): bool {
+	private static function writeToConfigFile(array $config, string $path): bool {
 		$json = self::beautifyAsJSON($config);
 		$hl = fopen("{$path}hati.json", 'w');
 
@@ -24,7 +24,6 @@ class ConfigWriter {
 	}
 
 	public static function write(string $rootPath, bool $createNew = false): array {
-
 		/*
 		 * Get both the configuration files & decode it
 		 */
@@ -32,7 +31,7 @@ class ConfigWriter {
 
 		$filePath = "{$rootPath}hati.json";
 		if ($createNew || !file_exists($filePath)) {
-			$result = self::writeConfig($newConfig, $rootPath);
+			$result = self::writeToConfigFile($newConfig, $rootPath);
 			$msg = $result ? 'hati.json file was created successfully' : 'Failed to write configuration as hati.json';
 
 			return [
@@ -59,7 +58,7 @@ class ConfigWriter {
 		/*
 		 * Write merged configuration to the hati.json file in the root directory
 		 */
-		$result = self::writeConfig($newConfig, $rootPath);
+		$result = self::writeToConfigFile($newConfig, $rootPath);
 		$msg = $result ? 'New configuration has been merged with existing hati.json'
 			: 'Failed to merge the new configuration with existing hati.json';
 

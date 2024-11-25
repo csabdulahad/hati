@@ -21,7 +21,7 @@ use Throwable;
  *
  *
  * Any data returning method assumes that a successful connection has made to
- * the database and a query has already been executed. Currently it has three
+ * the database and a query has already been executed. Currently, it has three
  * data returning methods such as:<br>
  * - {@link Fluent::dataArr()}   : returns the array containing array of the result/rows
  * - {@link Fluent::datumArr()}  : returns first array of the data
@@ -138,27 +138,8 @@ class Fluent {
 	}
 
 	/**
-	 * Using datum method on Fluent object, any single piece of information or
-	 * in other words, any property of the result set array of query execution
-	 * can be obtained.
-	 *
-	 * This methods checks whether the key is present in the result set array
-	 * before returning.
-	 *
-	 * @param $key string the key for the value
-	 * @param $defVal mixed the value to be returned when the key is
-	 * not set in the result set.
-	 *
-	 * @return mixed the value defined by the key
-	 */
-	public static function datum(string $key, mixed $defVal = null): mixed {
-		$datum = Fluent::datumArr();
-		return $datum[$key] ?? $defVal;
-	}
-
-	/**
 	 * This method prints the column value defined by the key in the first row
-	 * of the query result set. Optional default value is printed when the it
+	 * of the query result set. Optional default value is printed when it
 	 * can't find the column name in the result set.
 	 *
 	 * @param $key string the key for the value
@@ -225,7 +206,7 @@ class Fluent {
 	}
 
 	/**
-	 * This methods works similarly as {@link Fluent::exePrepare} works. The only difference
+	 * This method works similarly as {@link Fluent::exePrepare} works. The only difference
 	 * between them is that this method doesn't prepare the query. You should use
 	 * this for static query which doesn't embed any value to the query as this
 	 * can greatly improve the execution performance.
@@ -586,8 +567,8 @@ class Fluent {
 
 	/**
 	 * This method can count the number of row/result returned by the execution
-	 * of a query. Before counting it assesses whether there has been any query
-	 * executed. If not, then throws runtime exception of HatiError.
+	 * of a query. Before, counting it assesses whether there has been any query
+	 * executed. If not, then throws a runtime exception of type HatiError.
 	 *
 	 * @return int number of rows/result was affected by the query.
 	 */
@@ -646,6 +627,25 @@ class Fluent {
 	public static function getPDO(): ?PDO {
 		return self::get() -> db;
 	}
+	
+	/**
+	 * Using datum method on Fluent object, any single piece of information or
+	 * in other words, any property of the result set array of query execution
+	 * can be obtained.
+	 *
+	 * This method checks whether the key is present in the result set array
+	 * before returning.
+	 *
+	 * @param $key string the key for the value
+	 * @param $defVal mixed the value to be returned when the key is
+	 * not set in the result set.
+	 *
+	 * @return mixed the value defined by the key
+	 */
+	public static function datum(string $key, mixed $defVal = null): mixed {
+		$datum = Fluent::datumArr();
+		return $datum[$key] ?? $defVal;
+	}
 
 	/**
 	 * this method firstly use the @link dataArrr method to get the data as
@@ -702,7 +702,7 @@ class Fluent {
 	/**
 	 * dataArr method will first get the Fluent instance by call get() method
 	 * then it checks for the flag whether any query has already been executed.
-	 * if not, then it throws a runtime exception of HatiError. otherwise it fetch
+	 * if not, then it throws a runtime exception of type HatiError. otherwise it fetch
 	 * the data as associative array from the result set using PDO fetchAll method.
 	 *
 	 * @return array the array containing the data
@@ -718,7 +718,7 @@ class Fluent {
 	/**
 	 * dataObj method will first get the Fluent instance by call get() method
 	 * then it checks for the flag whether any query has already been executed.
-	 * if not, then it throws a runtime exception of HatiError. otherwise it fetch
+	 * if not, then it throws a runtime exception of type HatiError. otherwise it fetch
 	 * the data inside an array as php object from the result set using PDO fetchAll
 	 * method.
 	 *
@@ -867,11 +867,9 @@ class Fluent {
 	 * flag
 	 **@throws RuntimeException If there is a mismatch between number of values and ? marks
 	 */
-	public static function bind(bool $usePrepare, array $columns, array $values, string $errMsg): string {
-		
-		
-		
+	private static function bind(bool $usePrepare, array $columns, array $values, string $errMsg): string {
 		$foundQ = 0;
+		
 		foreach ($columns as $v) {
 			if (!is_array($v)) continue;
 			$foundQ++;
@@ -921,7 +919,7 @@ class Fluent {
 	 * @param array $columns The list of columns
 	 * @param array $values The values for those columns
 	 * @param string $sign any extra separator between column-value such as = for update query
-	 * @param bool $usePrepare Indicates whether the values needs to be marked resolved after the sign directly
+	 * @param bool $usePrepare Indicates whether the values need to be marked resolved after the sign directly
 	 * or be left with ? mark so that it can easily be plugged into exePrepare method.
 	 *
 	 * @throws RuntimeException When there is a mismatch between number of column-values pair combination
@@ -972,9 +970,9 @@ class Fluent {
 
 	/**
 	 * This method is used particularly for DELETE & UPDATE SQL statements. It substitutes values of the WHERE
-	 * clause with with  ? sign or the value meant to be provided as part param binding.
+	 * clause with  ? sign or the value meant to be provided as part param binding.
 	 *
-	 * @param bool $usePrepare Indicates whether the values needs to be marked resolved after the sign directly
+	 * @param bool $usePrepare Indicates whether the values need to be marked resolved after the sign directly
 	 * @param string $query The WHERE part of query, where this binding operation to be performed
 	 * @param array $values Values for those ? mark
 	 * */
@@ -991,7 +989,7 @@ class Fluent {
 	 * @param array $columns Array containing column-values pari. Values can be left out. Missing values will be picked
 	 * up from the values array.
 	 * @param array $values Values for the columns.
-	 * @param bool $usePrepare Indicates to whether use the prepare statement for the query. This method does all the
+	 * @param bool $usePrepare Indicates whether to use the prepare statement for the query. This method does all the
 	 * tricks for marking values with ? and binding them before query execution.
 	 * @param string $where Where clauses to control the update operation. Values can be left out by ? mark be picked
 	 * up from the whereValues array.
@@ -1029,7 +1027,7 @@ class Fluent {
 	 *
 	 * @param string $table The table name
 	 * @param string $where The where clause of the query. This can have column with values as regular queries have. But
-	 * can also be left out with ? mark so that the values can fetched from the whereValues.
+	 * can also be left out with ? mark so that the values can be fetched from the whereValues.
 	 * @param array $whereValues Array containing values for the ? marked columns
 	 * @param bool $usePrepare Indicates whether the value should use prepare statement or regular query
 	 * @param string $msg Any message to replace SQL query error

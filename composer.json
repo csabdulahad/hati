@@ -24,14 +24,14 @@
     "require": {
         "php": ">=8.1",
         "phpmailer/phpmailer": "^6.5",
-        "rootdata21/hati-installer": "v4.0.0",
+        "rootdata21/hati-installer": "v5.0.0-beta",
         "ext-pdo": "*",
         "ext-zip": "*"
     },
 
     "autoload": {
         "psr-4": {
-            "hati\\": "hati"
+            "hati\\": "src"
         }
     }
 

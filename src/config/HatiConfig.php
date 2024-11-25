@@ -61,12 +61,6 @@ return [
 		'ext'    => ['mp3', 'wav'],
 		'size'   => 5, // MB
 		'folder' => 'upload/audio'
-	],
-
-	'jquery'                            =>          '3.6.0',
-	'jst'                               =>          '4.0.0',
-	'bootstrap'                         =>          '5.1.3',
-	'jquery_ui'                         =>          '1.13.0',
-	'highlight_js'                      =>          'intellij-light', // css file name for theme
+	]
 
 ];

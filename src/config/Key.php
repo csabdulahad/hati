@@ -37,10 +37,4 @@ class Key {
 	const MEDIA_CONFIG_SIZE = 'size';
 	const MEDIA_CONFIG_FOLDER = 'folder';
 
-	const JQUERY = 'jquery';
-	const JST = 'jst';
-	const BOOTSTRAP = 'bootstrap';
-	const JQUERY_UI = 'jquery_ui';
-	const HIGHLIGHT_JS = 'highlight_js';
-
 }

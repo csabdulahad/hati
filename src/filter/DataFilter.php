@@ -11,7 +11,7 @@ use JetBrains\PhpStorm\NoReturn;
 use RuntimeException;
 
 /**
- * A filter class which helps validating user inputs from multiple sources such form data,
+ * A filter class which helps validate user inputs from multiple sources such form data,
  * JSON data, or any array data easily. This could help sanitizing and reporting with error
  * messages to the user using this class which greatly minimizes the number of code required
  * to handle those cases. For validation, DataFilter can also check for request method. This
@@ -22,22 +22,22 @@ use RuntimeException;
  * <code>
  * // validate request body
  * $filter = new DataFilter(DataFilter::SOURCE_REQ_BODY);
- * $filter -> addFilter([
+ * $filter->addFilter([
  * 	['key' => 'username', 'name' => 'Username', 'type' => 'str', 'minLen' => 3],
  * 	['key' => 'email', 'name' => 'Email', 'type' => 'email']
  * ]);
  *
- * $filter -> validate();
+ * $filter->validate();
  * </code>
  * By default, on input error, DataFilter outputs JSON following the {@link Response} structure. To
  * handle the error with custom error handler, use {@link setErrHandler()} and pass-in a closure
- * accepting three arguments matching the following signature:
+ * accepting array containing the validation output and the filter instance:
  * <code>
- * $handler = function (FilterOut $type, string $key, string $errMsg) {
+ * $handler = function (array $result, DataFilter $filter) {
  * 	// handle the error
  * };
  *
- * $filter -> setErrHandler($handler);
+ * $filter->setErrHandler($handler);
  * </code>
  *
  * @since 5.0.0
@@ -87,8 +87,14 @@ class DataFilter {
 	// Tracks which method it is to check
 	private string $method;
 
+	// Whether to continue filtering if validation error happens
+	private bool $failFast;
+	
 	// The rules for validating input
 	private array $rules = [];
+	
+	// Contains validation output objects
+	private array $errList = [];
 
 	// Filtered data buffer
 	private array $data = [];
@@ -105,8 +111,9 @@ class DataFilter {
 	 * - {@link DataFilter::METHOD_DELETE}
 	 * - {@link DataFilter::METHOD_NONE} : when filtering custom data source.
 	 * */
-	public function __construct(string $method = DataFilter::METHOD_NONE) {
-		$this -> method = $method;
+	public function __construct(string $method = DataFilter::METHOD_NONE, bool $failFast = false) {
+		$this->method = $method;
+		$this->failFast = $failFast;
 	}
 
 	/**
@@ -122,7 +129,7 @@ class DataFilter {
 	 * @param callable $handler The closure function to handle the error
 	 * */
 	public function setErrHandler(callable $handler): void {
-		$this -> errorHandler = $handler;
+		$this->errorHandler = $handler;
 	}
 
 	/**
@@ -144,7 +151,7 @@ class DataFilter {
 	 */
 	public function addFilter(array ...$filter): void {
 		foreach ($filter as $rules) {
-			$this -> rules[] = $rules;
+			$this->rules[] = $rules;
 		}
 	}
 
@@ -156,11 +163,11 @@ class DataFilter {
 	 * @return mixed The filtered input data
 	 * */
 	public function get(string $key, mixed $default = null): mixed {
-		$v =  $this -> data[$key] ?? $default;
+		$v =  $this->data[$key] ?? $default;
 
 		if (is_null($v)) {
 			$rule = null;
-			foreach ($this -> rules as $r) {
+			foreach ($this->rules as $r) {
 				if ($r['key'] == $key) {
 					$rule = $r;
 				}
@@ -172,19 +179,31 @@ class DataFilter {
 
 		return $v;
 	}
+	
+	/**
+	 * Returns the filtered values by their keys. If the failFast param is true
+	 * then the key may/may not be present in the returned array since failFast
+	 * might have aborted the validation earlier before getting the change to validate
+	 * that particular value.
+	 *
+	 * @return array
+	 * */
+	public function getValues(): array {
+		return $this->data;
+	}
 
 	/**
 	 * A helper function which unpacks the validated input data as list
 	 * which can be used to use the modern php syntax such as:
 	 *
 	 * <code>
-	 *  [$name, $age] = $filter -> list();
+	 *  [$name, $age] = $filter->list();
 	 * </code>
 	 *
 	 * @return array The filtered input data
 	 * */
 	public function list(): array {
-		return array_values($this -> data);
+		return array_values($this->data);
 	}
 
 	/**
@@ -202,29 +221,29 @@ class DataFilter {
 	 * </code>
 	 *
 	 * @param array|string $source The input data source. This could be {@link DataFilter::SOURCE_REQ_BODY}
-	 * when you want to consider the request body to be parsed as JSON input. Otherwise it could be an
+	 * when you want to consider the request body to be parsed as JSON input. Otherwise, it could be an
 	 * array of data source.
 	 *
 	 * @param ?Closure $errHandler Custom error handler
 	 */
 	public function validate(array|string $source, ?Closure $errHandler = null): void {
 		if (!is_null($errHandler))
-			$this -> errorHandler = $errHandler;
+			$this->errorHandler = $errHandler;
 
 		/*
 		 * Check for valid request method
 		 * */
-		if ($this -> method != self::METHOD_NONE && ($_SERVER['REQUEST_METHOD'] ?? '') !== $this -> method) {
-			$this -> handleErr(FilterOut::BAD_REQUEST_METHOD);
+		if ($this->method != self::METHOD_NONE && ($_SERVER['REQUEST_METHOD'] ?? '') !== $this->method) {
+			$this->handleErr(FilterOut::BAD_REQUEST_METHOD);
 			return;
 		}
 
 		/*
 		 * Get the request body if the source is REQ
 		 * */
-		if ($this -> method != self::METHOD_NONE && $source === self::SOURCE_REQ_BODY) {
+		if ($this->method != self::METHOD_NONE && $source === self::SOURCE_REQ_BODY) {
 			if (!Request::contentTypeJSON()) {
-				$this -> handleErr(FilterOut::CONTENT_TYPE_INVALID);
+				$this->handleErr(FilterOut::CONTENT_TYPE_INVALID);
 				return;
 			}
 
@@ -235,71 +254,89 @@ class DataFilter {
 		 * Now the data source has to be an array!
 		 * */
 		if(!is_array($source)) {
-			$this -> handleErr(FilterOut::BAD_REQUEST_METHOD);
+			$this->handleErr(FilterOut::BAD_REQUEST_METHOD);
 			return;
 		}
 
 		if (empty($source)) return;
 
-		foreach ($this -> rules as $rule) {
+		foreach ($this->rules as $rule) {
 			$required = $rule['required'] ?? true;
 			$key = $rule['key'];
 			$data = $source[$key] ?? $rule['default'] ?? null;
 
 			if (!$required && empty($data)) {
-				$this -> data[$key] = null;
+				$this->data[$key] = null;
 				continue;
 			} else {
 				if (!isset($data)) {
-					$this -> handleErr(FilterOut::NULL, $rule);
-					break;
+					$this->handleErr(FilterOut::NULL, $rule);
+					
+					if ($this->failFast) break;
+					continue;
 				}
 			}
 
 			$type = $rule['type'];
 
 			if ($type == 'str') {
-				$result = $this -> checkString($data, $rule);
+				$result = $this->checkString($data, $rule);
+			} elseif ($type == 'str-raw') {
+				$result = $this->checkRawString($data, $rule);
 			} elseif ($type == 'int') {
-				$result = $this -> checkInteger($data, $rule);
+				$result = $this->checkInteger($data, $rule);
 			} elseif ($type == 'float') {
-				$result = $this -> checkFloat($data, $rule);
+				$result = $this->checkFloat($data, $rule);
 			} elseif ($type == 'bool') {
-				$result = $this -> checkBool($data);
+				$result = $this->checkBool($data);
 			} elseif ($type == 'email') {
-				$result = $this -> checkEmail($data);
+				$result = $this->checkEmail($data);
+			} elseif ($type == 'iso-time') {
+				$result = $this->checkISOTime($data);
 			} elseif ($type == 'iso-date') {
-				$result = $this -> checkISODate($data);
+				$result = $this->checkISODate($data);
 			} elseif($type == 'iso-datetime') {
-				$result = $this -> checkISODatetime($data);
+				$result = $this->checkISODatetime($data);
 			} else {
 				throw new RuntimeException("Filter type $type isn't supported");
 			}
 
-			if (!Filter::ok($result)) {
-				$this -> handleErr($result, $rule);
-				return;
+			if (!Filter::isOK($result)) {
+				$this->handleErr($result, $rule);
+				
+				if ($this->failFast) break;
+				continue;
 			}
 
 			// If it is optional, has a value but not of valid options!
 			// Check if it is in allowed options
-			$x = $this -> inOption($data, $rule);
-			if (!Filter::ok($x)) {
-				$this -> handleErr($x, $rule);
-				return;
+			$x = $this->inOption($data, $rule);
+			if (!Filter::isOK($x)) {
+				$this->handleErr($x, $rule);
+				
+				if ($this->failFast) break;
+				continue;
 			}
 
-			$ok = Filter::ok($result);
+			$ok = Filter::isOK($result);
 			if (!$ok) {
-				$this -> handleErr(FilterOut::INVALID, $rule);
-				return;
+				$this->handleErr(FilterOut::INVALID, $rule);
+				
+				if ($this->failFast) break;
+				continue;
 			}
 
-			$this -> data[$key] = $data;
+			$this->data[$key] = $data;
 		}
+		
+		if (empty($this->errList)) return;
+		
+		($this->errorHandler)($this->errList, $this);
 	}
 
 	private function handleErr(FilterOut $err, ?array $rule = null): void {
+		$name = '';
+		
 		if ($err == FilterOut::BAD_REQUEST_METHOD) {
 			$code = 405;
 			$key = $code;
@@ -321,10 +358,10 @@ class DataFilter {
 				FilterOut::EMPTY => "$name is empty",
 				FilterOut::ILLEGAL => "$name contains illegal character",
 				FilterOut::INVALID => "$name is invalid",
-				FilterOut::RANGE_FRACTION_ERROR => "$name can't have more than " . $this -> pluralMsg($rule['place'], 'digit') . " after decimal point",
+				FilterOut::RANGE_FRACTION_ERROR => "$name can't have more than " . $this->pluralMsg($rule['place'], 'digit') . " after decimal point",
 				FilterOut::VAL_LEN_ERROR => "$name can't be lower or higher than {$rule['minLen']}-{$rule['maxLen']} characters in length",
-				FilterOut::VAL_LEN_OVER_ERROR => "$name can't exceed " . $this -> pluralMsg($rule['maxLen'], 'character') . " in length",
-				FilterOut::VAL_LEN_UNDER_ERROR	=> "$name can't be less than " . $this -> pluralMsg($rule['minLen'], 'character') . " in length",
+				FilterOut::VAL_LEN_OVER_ERROR => "$name can't exceed " . $this->pluralMsg($rule['maxLen'], 'character') . " in length",
+				FilterOut::VAL_LEN_UNDER_ERROR	=> "$name can't be less than " . $this->pluralMsg($rule['minLen'], 'character') . " in length",
 				FilterOut::RANGE_ERROR => "$name must have limit of {$rule['minValue']}-{$rule['maxValue']}",
 				FilterOut::RANGE_OVER_ERROR => "$name can't be greater than {$rule['maxValue']}",
 				FilterOut::RANGE_UNDER_ERROR => "$name can't be lower than {$rule['minValue']}",
@@ -333,10 +370,21 @@ class DataFilter {
 			};
 		}
 
-		if (is_null($this -> errorHandler)) {
-			$this -> output($code, $msg);
-		} else {
-			($this -> errorHandler)($err, $key, $msg);
+		if (is_null($this->errorHandler)) {
+			$this->output($code, $msg);
+		} else{
+			$errInfo = [
+				'key' => $key,
+				'name' => $name,
+				'message' => $msg,
+				'type' => $err
+			];
+			
+			if ($this->failFast) {
+				($this->errorHandler)([$key => $errInfo], $this);
+			} else {
+				$this->errList[$key] = $errInfo;
+			}
 		}
 	}
 
@@ -347,7 +395,7 @@ class DataFilter {
 		$max = $rule['maxLen'] ?? null;
 		$min = $rule['minLen'] ?? null;
 
-		$v = Filter::strLen($data, $min, $max);
+		$v = Filter::checkStrLen($data, $min, $max);
 
 		return is_string($v) ? FilterOut::OK : $v;
 	}
@@ -373,33 +421,48 @@ class DataFilter {
 	}
 
 	private function checkString(mixed &$data, array $rule): FilterOut {
-		$v = Filter::string($data);
+		$v = Filter::checkString($data);
 
 		// Check if it is string
-		if (!Filter::ok($v)) return $v;
+		if (!Filter::isOK($v)) return $v;
 
 		// Check the length
-		$x = $this -> checkLen($v, $rule);
-		if (!Filter::ok($x)) return $x;
+		$x = $this->checkLen($v, $rule);
+		if (!Filter::isOK($x)) return $x;
 
+		// Data is all valid!
+		$data = $v;
+		return FilterOut::OK;
+	}
+	
+	private function checkRawString(mixed &$data, array $rule): FilterOut {
+		$v = Filter::checkString($data, null);
+		
+		// Check if it is string
+		if (!Filter::isOK($v)) return $v;
+		
+		// Check the length
+		$x = $this->checkLen($v, $rule);
+		if (!Filter::isOK($x)) return $x;
+		
 		// Data is all valid!
 		$data = $v;
 		return FilterOut::OK;
 	}
 
 	private function checkInteger(mixed &$data, array $rule): FilterOut {
-		$v = Filter::int($data);
+		$v = Filter::checkInt($data);
 
 		// Check if it is valid integer
-		if (!Filter::ok($v)) return $v;
+		if (!Filter::isOK($v)) return $v;
 
 		// Check the length
-		$x = $this -> checkLen($v, $rule);
-		if (!Filter::ok($x)) return $x;
+		$x = $this->checkLen($v, $rule);
+		if (!Filter::isOK($x)) return $x;
 
 		// Check the range
-		$x = $this -> inRange($v, $rule);
-		if (!Filter::ok($x)) return $x;
+		$x = $this->inRange($v, $rule);
+		if (!Filter::isOK($x)) return $x;
 
 		// Data is all valid!
 		$data = $v;
@@ -407,18 +470,18 @@ class DataFilter {
 	}
 
 	private function checkFloat(mixed &$data, array $rule): FilterOut {
-		$v = Filter::float($data);
+		$v = Filter::checkFloat($data);
 
 		// Check if it is valid float
-		if (!Filter::ok($v)) return $v;
+		if (!Filter::isOK($v)) return $v;
 
 		// Check the length
-		$x = $this -> checkLen($v, $rule);
-		if (!Filter::ok($x)) return $x;
+		$x = $this->checkLen($v, $rule);
+		if (!Filter::isOK($x)) return $x;
 
 		// Check the range
-		$x = $this -> inRange($v, $rule);
-		if (!Filter::ok($x)) return $x;
+		$x = $this->inRange($v, $rule);
+		if (!Filter::isOK($x)) return $x;
 
 		// Check the decimal place
 		if (!empty($rule['place'])) {
@@ -436,10 +499,10 @@ class DataFilter {
 	}
 
 	private function checkBool(mixed &$data): FilterOut {
-		$v = Filter::bool($data);
+		$v = Filter::checkBool($data);
 
 		// Check if it is valid float
-		if (!Filter::ok($v)) return $v;
+		if (!Filter::isOK($v)) return $v;
 
 		// Data is all valid!
 		$data = $v;
@@ -447,27 +510,36 @@ class DataFilter {
 	}
 
 	private function checkEmail(mixed &$data): FilterOut {
-		$v = Filter::email($data);
+		$v = Filter::checkEmail($data);
 
-		if (!Filter::ok($v)) return $v;
+		if (!Filter::isOK($v)) return $v;
 
 		$data = $v;
 		return FilterOut::OK;
 	}
-
+	
+	private function checkISOTime(mixed &$data): FilterOut {
+		$v = Filter::checkISOTime($data);
+		
+		if (!Filter::isOK($v)) return $v;
+		
+		$data = $v;
+		return FilterOut::OK;
+	}
+	
 	private function checkISODate(mixed &$data): FilterOut {
-		$v = Filter::isoDate($data);
-
-		if (!Filter::ok($v)) return $v;
-
+		$v = Filter::checkISODate($data);
+		
+		if (!Filter::isOK($v)) return $v;
+		
 		$data = $v;
 		return FilterOut::OK;
 	}
 
 	private function checkISODatetime(mixed &$data): FilterOut {
-		$v = Filter::isoDatetime($data);
+		$v = Filter::checkISODatetime($data);
 
-		if (!Filter::ok($v)) return $v;
+		if (!Filter::isOK($v)) return $v;
 
 		$data = $v;
 		return FilterOut::OK;

@@ -690,8 +690,8 @@ abstract class HatiCLI {
 			$msgByKey = str_starts_with($usrKey, '--');
 
 			if ($type == 'int') {
-				$output = Filter::int($v);
-				if(!Filter::ok($output)) {
+				$output = Filter::checkInt($v);
+				if(!Filter::isOK($output)) {
 					if ($msgByKey) {
 						self::err("$usrKey must be an integer number", 1, $cli -> callMode);
 					} else {
@@ -702,8 +702,8 @@ abstract class HatiCLI {
 					}
 				}
 			} elseif ($type == 'float') {
-				$output = Filter::float($v);
-				if(!Filter::ok($output)) {
+				$output = Filter::checkFloat($v);
+				if(!Filter::isOK($output)) {
 					if ($msgByKey) {
 						self::err("$usrKey must be a float", 1, $cli -> callMode);
 					} else {
@@ -714,8 +714,8 @@ abstract class HatiCLI {
 					}
 				}
 			} else {
-				$output = Filter::string($v);
-				if(!Filter::ok($output)) {
+				$output = Filter::checkString($v);
+				if(!Filter::isOK($output)) {
 					if ($msgByKey) {
 						self::err("$usrKey must a string", 1, $cli -> callMode);
 					} else {

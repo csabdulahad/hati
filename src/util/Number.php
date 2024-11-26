@@ -40,13 +40,13 @@ abstract class Number {
 	public static function format(mixed $input, string $sign = '', bool $leadZero = false, int $place = 2, bool $print = false): ?string {
 
 		// first see if it is an integer number or not
-		$num = Filter::int($input);
+		$num = Filter::checkInt($input);
 
 		// now see whether it is a floating number
-		if (!Filter::ok($num)) $num = Filter::float($input);
+		if (!Filter::isOK($num)) $num = Filter::checkFloat($input);
 
 		// make sure we have a number
-		if (!Filter::ok($num)) {
+		if (!Filter::isOK($num)) {
 			if (!$print) return '0-0';
 
 			echo '0-0';
@@ -175,8 +175,8 @@ abstract class Number {
 	public static function moneyToNum(mixed $input, string $sign): int | float {
 		$input = (string) $input;
 		$val = str_replace($sign,'', $input);
-		$int = Filter::int($val);
-		return Filter::ok($int) ? (int) $int : (float) $val;
+		$int = Filter::checkInt($val);
+		return Filter::isOK($int) ? (int) $int : (float) $val;
 	}
 
 	/**

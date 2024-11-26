@@ -87,8 +87,8 @@ final class HatiAPIHandler {
 				throw Trunk::error400('Bad request');
 			}
 
-			$path = Filter::string($augment['api'] ?? $_GET['api']);
-			if (!Filter::ok($path)) {
+			$path = Filter::checkString($augment['api'] ?? $_GET['api']);
+			if (!Filter::isOK($path)) {
 				throw Trunk::error400('Bad request');
 			}
 

@@ -24,7 +24,7 @@
     "require": {
         "php": ">=8.1",
         "phpmailer/phpmailer": "^6.5",
-        "rootdata21/hati-installer": "v5.0.1-beta",
+        "rootdata21/hati-installer": "v5.0.2-beta",
         "ext-pdo": "*",
         "ext-zip": "*"
     },

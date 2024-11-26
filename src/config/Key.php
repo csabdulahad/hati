@@ -33,8 +33,5 @@ class Key {
 	const IMG_CONFIG = 'img_config';
 	const VIDEO_CONFIG = 'video_config';
 	const AUDIO_CONFIG = 'audio_config';
-	const MEDIA_CONFIG_EXT = 'ext';
-	const MEDIA_CONFIG_SIZE = 'size';
-	const MEDIA_CONFIG_FOLDER = 'folder';
 
 }

@@ -1,17 +1,5 @@
 <?php
 
-/**
- *
- * WARNING : DON'T MODIFY THIS CLASS ANY POINT BELOW THIS COMMENT.
- *
- * This is configuration object to prepare the working environment
- * properly. Please use hati.json file in order to customize your
- * great HATI.
- *
- * WARNING : DON'T MODIFY THIS CLASS ANY POINT BELOW THIS COMMENT.
- *
- * */
-
 return [
 
 	'favicon'                           =>          '',
@@ -42,25 +30,21 @@ return [
 	'doc_config'                        => [
 		'ext'    => ['txt', 'doc', 'pdf', 'docx', 'ppt'],
 		'size'   => 5, // MB
-		'folder' => 'upload/doc'
 	],
 
 	'img_config'                        => [
 		'ext'    => ['png', 'gif', 'jpg', 'jpeg'],
 		'size'   => 5, // MB
-		'folder' => 'upload/img'
 	],
 
 	'video_config'                       => [
 		'ext'    => ['mp4', 'wmv'],
 		'size'   => 5, // MB
-		'folder' => 'upload/video'
 	],
 
 	'audio_config'                       => [
 		'ext'    => ['mp3', 'wav'],
 		'size'   => 5, // MB
-		'folder' => 'upload/audio'
 	]
 
 ];

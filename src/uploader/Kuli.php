@@ -8,7 +8,7 @@ namespace hati\uploader;
  * single day to earn their bread and butter.
  *
  * This class simplifies file uploading operation with various configuration settings as
- * defined in the HatiConfig file. It is able to deal with single and multi file uploading.
+ * defined in the hati.json file. It is able to deal with single and multi file uploading.
  *
  * Various settings such as size limit, storing folder can be set dynamically.
  *
@@ -22,7 +22,6 @@ use Throwable;
 
 class Kuli {
 
-	private string $rootFolder;
 	private bool $uniqueName;
 	private bool $triggerError;
 
@@ -44,20 +43,27 @@ class Kuli {
 	private array $audioConfig;
 
 	// if this is set then this path will be used in storing the files.
-	private ?string $folder = null;
+	private string $folder;
 
 	// It is used when it is set by setter method.
 	private float $maxSize = -1;
+	
+	public function __construct(bool $uniqueName = false, bool $throwErr = false) {
+		$this->uniqueName = $uniqueName;
+		$this->triggerError = $throwErr;
+		$this->folder = Hati::root() . 'uploads';
+		$this->loadConfig();
+	}
 
 	/**
-	 * This method can be dynamically be set. When it is set the Kuli
+	 * By default, Hati uses root directory. When it is set the Kuli
 	 * uses the specified directory or folder for uploads. It can be
 	 * recursive folder structure.
 	 *
 	 * @param string $folder the folder name.
 	 * */
 	public function setFolder(string $folder): void	{
-		$this -> folder = $folder;
+		$this->folder = rtrim($folder, '/\\');
 	}
 
 	/**
@@ -67,14 +73,7 @@ class Kuli {
 	 * @param float $mb The limit for file max size.
 	 * */
 	public function setMaxSize(float $mb): void {
-		$this -> maxSize = $mb * 1000000;
-	}
-
-	public function __construct(bool $uniqueName = false, bool $throwErr = false) {
-		$this -> uniqueName = $uniqueName;
-		$this -> triggerError = $throwErr;
-		$this -> rootFolder = Hati::projectRoot();
-		$this -> loadConfig();
+		$this->maxSize = $mb * 1000000;
 	}
 
 	/**
@@ -93,7 +92,7 @@ class Kuli {
 			'path'   => [],
 		];
 
-		foreach ($this -> movedFileName as $item) {
+		foreach ($this->movedFileName as $item) {
 			$index = strripos( $item, DIRECTORY_SEPARATOR);
 			if (!$index) continue;
 
@@ -133,14 +132,13 @@ class Kuli {
 	 * upload. Otherwise, failure files were ignored & number of successfully uploaded is returned.
 	 * */
 	public function load(string $nameKey, bool $required = true) : int {
-
 		// reset the moved fileName stack for unlinking later if any exception
 		// occurs on required upload
-		$this -> movedFileName = [];
+		$this->movedFileName = [];
 
 		// check whether any file was selected or an empty file value was submitted
 		if (!isset($_FILES[$nameKey]) || empty($_FILES[$nameKey]['name'])) {
-			$this -> throwError('No files were selected.');
+			$this->throwError('No files were selected.');
 			return 0;
 		}
 
@@ -148,32 +146,37 @@ class Kuli {
 		$singleFile = !is_array($file['name']);
 
 		// get the files meta/info
-		if ($singleFile) $this -> prepareFileInfo($file);
-		else for ($i = 0; $i < count($file['name']); $i++) $this -> prepareFileInfo($file, $i);
+		if ($singleFile) {
+			$this->prepareFileInfo($file);
+		} else {
+			for ($i = 0; $i < count($file['name']); $i++) {
+				$this->prepareFileInfo($file, $i);
+			}
+		}
 
 		// check whether zero file was submitted
-		if (count($this -> fileInfo) == 0) {
-			$this -> throwError('No files were submitted.');
+		if (count($this->fileInfo) == 0) {
+			$this->throwError('No files were submitted.');
 			return 0;
 		}
 
 		// try to upload and increment the counter. On failure reacts as per configuration
 		$uploadCount = 0;
-		foreach ($this -> fileInfo as $file) {
+		foreach ($this->fileInfo as $file) {
 			try {
-				$result = $this -> upload($file);
+				$result = $this->upload($file);
 
 				if ($result) $uploadCount ++;
 				if ($singleFile) return $uploadCount;
 
 				if (!$result && $required) {
-					$this -> deleteUpload();
+					$this->deleteUpload();
 					return 0;
 				}
 			} catch (Throwable $error) {
 				if (!$required) continue;
-				$this -> deleteUpload();
-				$this -> throwError($error -> getMessage());
+				$this->deleteUpload();
+				$this->throwError($error->getMessage());
 				return 0;
 			}
 		}
@@ -187,31 +190,31 @@ class Kuli {
 	// It keeps track of successfully uploaded file with folder name, file name with extension.
 	private function upload(FileInfo $file): bool {
 		// make sure we have supported file type
-		if ($file -> type == FileInfo::TYPE_UNKNOWN) {
-			$this -> throwError('Unsupported file was submitted');
+		if ($file->type == FileInfo::TYPE_UNKNOWN) {
+			$this->throwError('Unsupported file was submitted');
 			return 0;
 		}
 
 		// check if the file size is under limit
-		if (!$this -> scanFileSize($file)) {
-			$this -> throwError('File size is too big.');
+		if (!$this->scanFileSize($file)) {
+			$this->throwError('File size is too big.');
 			return 0;
 		}
 
 		// construct the folder where the file is to be moved to
 		// create the dir if it doesn't exist
-		$folder = $this -> rootFolder . $file -> folder;
+		$folder = $file->folder;
 		if (!file_exists($folder)) {
 			if (!mkdir($folder, recursive: true)) {
-				$this -> throwError('Failed to create folder for the file.');
+				$this->throwError('Failed to create folder for the file.');
 				return 0;
 			}
 		}
 
 		// upload the file
-		$lastName = $folder . DIRECTORY_SEPARATOR . $file -> name;
-		if (!move_uploaded_file($file -> tempName, $lastName)) {
-			$this -> throwError('Failed to moved file to directory');
+		$lastName = $folder . DIRECTORY_SEPARATOR . $file->name;
+		if (!move_uploaded_file($file->tempName, $lastName)) {
+			$this->throwError('Failed to moved file to directory');
 			return 0;
 		}
 
@@ -219,15 +222,17 @@ class Kuli {
 		$this->movedFileName[] = $file->folder . DIRECTORY_SEPARATOR . $file->name;
 
 		// check for unique name and store the uploaded file path with folder and file name
-		if ($this -> uniqueName) {
-			$newName = $file -> folder . DIRECTORY_SEPARATOR . Util::uniqueId() . '.' .  $file -> ext;
+		if ($this->uniqueName) {
+			$uid = str_replace('.', '_', Util::uniqueId());
+			$newName = $file->folder . DIRECTORY_SEPARATOR . $uid . '.' .  $file->ext;
+			
 			if (!rename($lastName, $newName)) {
-				$this -> throwError('Failed to rename the file.');
+				$this->throwError('Failed to rename the file.');
 				return 0;
 			}
 
 			// store the moved file name either unique or original name
-			$this -> updateLastFileName($newName);
+			$this->updateLastFileName($newName);
 		}
 
 		return true;
@@ -238,54 +243,47 @@ class Kuli {
 	// It becomes very useful to delete uploaded files where required setting is on
 	// and one of the files was failed to upload.
 	private function updateLastFileName(string $newName): void {
-		$lastIndex = count($this -> movedFileName) - 1;
+		$lastIndex = count($this->movedFileName) - 1;
 		if ($lastIndex < 0) return;
-		$this -> movedFileName[$lastIndex] = $newName;
+		$this->movedFileName[$lastIndex] = $newName;
 	}
 
 	private function deleteUpload(): void {
-		foreach ($this -> movedFileName as $file) {
-			$file = Hati::fixSeparator(Hati::projectRoot() . $file);
+		foreach ($this->movedFileName as $file) {
 			unlink($file);
 		}
 	}
 
 	private function scanFileSize(FileInfo $fileInfo): bool {
-		if ($this -> maxSize != -1)
-			return $fileInfo -> size <= $this -> maxSize;
+		if ($this->maxSize != -1)
+			return $fileInfo->size <= $this->maxSize;
 
-		if ($fileInfo -> type == FileInfo::TYPE_DOC)
-			return $fileInfo -> size <= $this -> docConfig['size'] * 1000000;
+		if ($fileInfo->type == FileInfo::TYPE_DOC)
+			return $fileInfo->size <= $this->docConfig['size'] * 1000000;
 
-		if ($fileInfo -> type == FileInfo::TYPE_IMG)
-			return $fileInfo -> size <= $this -> imgConfig['size'] * 1000000;
+		if ($fileInfo->type == FileInfo::TYPE_IMG)
+			return $fileInfo->size <= $this->imgConfig['size'] * 1000000;
 
-		if ($fileInfo -> type == FileInfo::TYPE_VIDEO)
-			return $fileInfo -> size <= $this -> videoConfig['size'] * 1000000;
+		if ($fileInfo->type == FileInfo::TYPE_VIDEO)
+			return $fileInfo->size <= $this->videoConfig['size'] * 1000000;
 
-		if ($fileInfo -> type == FileInfo::TYPE_AUDIO)
-			return $fileInfo -> size <= $this -> audioConfig['size'] * 1000000;
+		if ($fileInfo->type == FileInfo::TYPE_AUDIO)
+			return $fileInfo->size <= $this->audioConfig['size'] * 1000000;
 
 		return false;
 	}
 
 	// It calculates the destination folder for the file and extension.
-	private function getFolderAndType(FileInfo $fileInfo): void {
-		if (in_array($fileInfo -> ext, $this -> docConfig['ext'])) {
-			if ($this -> folder == null) $fileInfo -> folder = $this -> docConfig['folder'];
-			$fileInfo -> type = FileInfo::TYPE_DOC;
-		} elseif (in_array($fileInfo -> ext, $this -> imgConfig['ext'])) {
-			if ($this -> folder == null) $fileInfo -> folder = $this -> imgConfig['folder'];
-			$fileInfo -> type = FileInfo::TYPE_IMG;
-		} elseif (in_array($fileInfo -> ext, $this -> videoConfig['ext'])) {
-			if ($this -> folder == null) $fileInfo -> folder = $this -> videoConfig['folder'];
-			$fileInfo -> type = FileInfo::TYPE_VIDEO;
-		} elseif (in_array($fileInfo -> ext, $this -> audioConfig['ext'])) {
-			if ($this -> folder == null) $fileInfo -> folder = $this -> audioConfig['folder'];
-			$fileInfo -> type = FileInfo::TYPE_AUDIO;
+	private function getType(FileInfo $fileInfo): void {
+		if (in_array($fileInfo->ext, $this->docConfig['ext'])) {
+			$fileInfo->type = FileInfo::TYPE_DOC;
+		} elseif (in_array($fileInfo->ext, $this->imgConfig['ext'])) {
+			$fileInfo->type = FileInfo::TYPE_IMG;
+		} elseif (in_array($fileInfo->ext, $this->videoConfig['ext'])) {
+			$fileInfo->type = FileInfo::TYPE_VIDEO;
+		} elseif (in_array($fileInfo->ext, $this->audioConfig['ext'])) {
+			$fileInfo->type = FileInfo::TYPE_AUDIO;
 		}
-
-		if ($this -> folder != null) $fileInfo -> folder = (string) $this -> folder;
 	}
 
 	// This method runs over all the files from the form data and calculates
@@ -301,31 +299,26 @@ class Kuli {
 		$size = filesize($tempName);
 
 		$fileInfo = new FileInfo();
-		$fileInfo -> name = $name;
-		$fileInfo -> tempName = $tempName;
-		$fileInfo -> ext = $ext;
-		$fileInfo -> size = $size;
-		$this -> getFolderAndType($fileInfo);
+		$fileInfo->name = $name;
+		$fileInfo->tempName = $tempName;
+		$fileInfo->ext = $ext;
+		$fileInfo->size = $size;
+		$fileInfo->folder = $this->folder;
+		$this->getType($fileInfo);
 		$this->fileInfo[] = $fileInfo;
 	}
 
 	private function loadConfig(): void {
-		$this -> docConfig = Hati::config(Key::DOC_CONFIG, 'arr');
-		$this -> imgConfig = Hati::config(Key::IMG_CONFIG, 'arr');
-		$this -> videoConfig = Hati::config(Key::VIDEO_CONFIG, 'arr');
-		$this -> audioConfig = Hati::config(Key::AUDIO_CONFIG, 'arr');
+		$this->docConfig = Hati::config(Key::DOC_CONFIG, 'arr');
+		$this->imgConfig = Hati::config(Key::IMG_CONFIG, 'arr');
+		$this->videoConfig = Hati::config(Key::VIDEO_CONFIG, 'arr');
+		$this->audioConfig = Hati::config(Key::AUDIO_CONFIG, 'arr');
 
 		// trim any whitespace from the extension list
-		$this -> trimExt($this -> docConfig);
-		$this -> trimExt($this -> imgConfig);
-		$this -> trimExt($this -> videoConfig);
-		$this -> trimExt($this -> audioConfig);
-
-		// neutralize the directory separator in folder path
-		$this -> docConfig['folder'] = Hati::fixSeparator($this -> docConfig['folder']);
-		$this -> imgConfig['folder'] = Hati::fixSeparator($this -> imgConfig['folder']);
-		$this -> videoConfig['folder'] = Hati::fixSeparator($this -> videoConfig['folder']);
-		$this -> audioConfig['folder'] = Hati::fixSeparator($this -> audioConfig['folder']);
+		$this->trimExt($this->docConfig);
+		$this->trimExt($this->imgConfig);
+		$this->trimExt($this->videoConfig);
+		$this->trimExt($this->audioConfig);
 	}
 
 	// This method is used internally to trim any extra whitespaces from the
@@ -339,7 +332,7 @@ class Kuli {
 
 	// this throws error if the trigger is turned on.
 	private function throwError(string $throwMsg): void {
-		if ($this -> triggerError) throw new Trunk($throwMsg);
+		if ($this->triggerError) throw new Trunk($throwMsg);
 	}
 
 }

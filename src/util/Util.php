@@ -99,7 +99,7 @@ class Util {
 	 * escaping turned on. Both message and redirect path is optional as it can support
 	 * no redirection by setting message or any redirection with no message.
 	 *
-	 * By default it redirect one directory up to from the current calling path.
+	 * By default, it redirects one directory up to from the current calling path.
 	 *
 	 * @param string $to the location where redirection should go to.
 	 * @param string $msg the message is to be hold in session variable.
@@ -262,7 +262,7 @@ class Util {
 	}
 
 	/**
-	 * Tedious title and meta tag can be replaced with this method call. It no title
+	 * Tedious title and meta tag can be replaced with this method call. If no title
 	 * is provided then it tries to extract the title from the file name where file
 	 * name is separated by -. Optional capitalization can be set using the augment.
 	 * Internally this method uses {@link fileTitle} method to obtain the file title
@@ -271,7 +271,7 @@ class Util {
 	 * @param string $title Any specified title to override the file name as title.
 	 * @param bool $capitalize Whether to capitalize the file name in title output.
 	 * @param string $separatorInFileName It indicates how the file name should be extracted.
-	 * By default it is '-' which means that the file name has '-' in file names. For example
+	 * By default, it is '-' which means that the file name has '-' in file names. For example
 	 * 'employee-profile.php' will be extracted as Employee Profile.     *
 	 * */
 	public static function titleTag(string $title = '', bool $capitalize = true, string $separatorInFileName = '-'): void {
@@ -288,7 +288,7 @@ class Util {
 
 	/**
 	 * All the tedious stylesheet linking in html pages can be replaced with
-	 * this method call. By default it looks for css files inside the css
+	 * this method call. By default, it looks for css files inside the css
 	 * directory in the root folder of the server. This can be changed using
 	 * folder argument. Folder name doesn't have any trailing slashes.
 	 *
@@ -316,7 +316,7 @@ class Util {
 
 	/**
 	 * All the tedious js importing in html pages can be replaced with
-	 * this method call. By default it looks for js files inside the js
+	 * this method call. By default, it looks for js files inside the js
 	 * directory in the root folder of the server. This can be changed using
 	 * folder argument. Folder name doesn't have any trailing slashes.
 	 *
@@ -348,7 +348,7 @@ class Util {
 	/**
 	 * Any php files inside the inc folder on project root folder can be included
 	 * simply passing their names without php extension at the end. Before each
-	 * inclusion it checks whether the files exists or not. If triggerErr is on,
+	 * inclusion it checks whether the files exist or not. If triggerErr is on,
 	 * then it throws exception, otherwise it ignores that inclusion.
 	 *
 	 * @param string $files comma separated php files names to be included.

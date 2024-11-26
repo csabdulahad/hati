@@ -111,7 +111,7 @@ class Kuli {
 	/**
 	 * When this method is invoked, it performs various checks on the file form value.
 	 * First it makes sure that no empty files or unselected files were submitted.
-	 * Then it calculates the various file information and store in structure @link FileInfo
+	 * Then it calculates the various file information and store in structure {@link FileInfo}
 	 *
 	 * It can work with single or multi file uploads. Like many others library methods of
 	 * Hati, it can be configured to throw error during object construction. If required
@@ -130,7 +130,7 @@ class Kuli {
 	 *
 	 * @param string $nameKey The form file name value.
 	 * @param bool $required When set it makes sure all the files are passing the check before
-	 * upload. Otherwise failure files were ignored & number of successfully uploaded is returned.
+	 * upload. Otherwise, failure files were ignored & number of successfully uploaded is returned.
 	 * */
 	public function load(string $nameKey, bool $required = true) : int {
 

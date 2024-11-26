@@ -4,12 +4,12 @@ namespace hati\fluent;
 
 use hati\Hati;
 use hati\Trunk;
+use hati\util\Arr;
 use hati\util\Util;
 use InvalidArgumentException;
 use PDO;
 use PDOStatement;
 use RuntimeException;
-use stdClass;
 use Throwable;
 
 /**
@@ -21,11 +21,8 @@ use Throwable;
  *
  *
  * Any data returning method assumes that a successful connection has made to
- * the database and a query has already been executed. Currently, it has three
- * data returning methods such as:<br>
- * - {@link Fluent::dataArr()}   : returns the array containing array of the result/rows
- * - {@link Fluent::datumArr()}  : returns first array of the data
- * - {@link Fluent::datum()}     : returns specific property of the datumArr
+ * the database and a query has already been executed. Check out fetch* or read*
+ * methods to learn how to fetch data.
  *
  * For better security and practice, it is recommended that call to any Fluent
  * method should be inside try-catch block to hide the throwing error message
@@ -33,37 +30,52 @@ use Throwable;
  * */
 
 class Fluent {
-
+	
 	// manages multiple db connections
 	private DBMan $dbMan;
-
+	
 	// holds the in-use PDO object to the db connection
 	private ?PDO $db = null;
-
+	
 	// indicates whether any query has already been executed
 	private bool $executed = false;
-
+	
 	// an internal buffer; used to cache the result set of the query
 	// helping to avoid iterator offset outbound exception
 	private mixed $stmtBuffer = null;
-
+	
 	// holds the actual result set array of the query
 	private mixed $data = null;
-
+	
 	// indicates whether to show query in the error output
 	private bool $debugSql = false;
-
+	
+	private bool $sqlErrInOutput = false;
+	
 	// track which profile id in use
 	private ?string $profileId;
-
+	
 	// a Fluent instance for singleton pattern
 	private static ?Fluent $INS = null;
-
+	
 	private function __construct() {
-		$this -> dbMan = new DBMan();
-		$this -> profileId = self::defaultProfileId();
+		$this->dbMan = new DBMan();
+		$this->profileId = self::defaultProfileId();
 	}
-
+	
+	/**
+	 * The Fluent wrapper object is created by this call. It creates database connection
+	 * as specified in the hati.json file. It uses singleton pattern to cache the
+	 * connection object.
+	 *
+	 * @return Fluent a fluent instance
+	 */
+	public static function get(): Fluent {
+		// create new instance if there is not any already
+		if (Fluent::$INS == null) Fluent::$INS = new Fluent();
+		return Fluent::$INS;
+	}
+	
 	/**
 	 * With Hati 5, multiple database connections can be used. Using this method,
 	 * the current in-use db profile id can be fetched. See {@link Fluent::use()}
@@ -72,56 +84,65 @@ class Fluent {
 	 * @return ?string The current database profile id in use
 	 * */
 	public static function currentDBId(): ?string {
-		return self::get() -> profileId;
+		return self::get()->profileId;
 	}
-
+	
 	/**
-	 * Show sql which runs into SQL error in to debug
+	 * Shows the query with params for debugging
 	 * */
 	public static function debugSQL(): void {
 		$ins = self::get();
-		$ins -> debugSql = true;
+		$ins->debugSql = true;
 	}
-
+	
+	/**
+	 * Show SQL error in the error output
+	 * */
+	public static function sqlErrInOutput(): void {
+		$ins = self::get();
+		$ins->sqlErrInOutput = true;
+	}
+	
 	/**
 	 * Since Hati 5, Fluent can work with multiple database connection profiles.
-	 *  Database connections are specified by objects in the <b>hati/db.json</b>
-	 *  file where each object is identified by their profile names.
+	 * Database connections are specified by objects in the <b>hati/db.json</b>
+	 * file where each object is identified by their profile names.
 	 *
-	 *  A db profile can have many database. Connection to each database is
-	 *  represented by id. Id naming has a strict convention. It should be composed
-	 *  of database profile name followed by colon, followed by the database name it
-	 *  connects to. For example, to represent a connection to database test2 on
-	 *  localhost, using root @ pass, the profile id would be:
-	 *  <b>Example-Localhost:test2</b>
-	 *  <br>
-	 *  <code>
+	 * A db profile can have many database. Connection to each database is
+	 * represented by id. Id naming has a strict convention. It should be composed
+	 * of database profile name followed by colon, followed by the database name it
+	 * connects to. For example, to represent a connection to database test2 on
+	 * localhost, using root @ pass, the profile id would be:
+	 * <b>Example-Localhost:test2</b>
+	 * <br>
+	 * <code>
 	 * {
 	 * 	"db_profiles": {
 	 * 		"Example-Localhost": {
-	 * 			"address": "localhost",
+	 * 			"host": "localhost",
 	 * 			"username": "root",
 	 * 			"password": "pass",
-	 * 			"db": ["test1","test2"]
+	 * 			"port": 3306,
+	 * 			"charset": "utf8",
+	 * 			"timezone": "+06:00", // optional
+	 * 			"db": ["test1","test2"] // can be a single db string
 	 * 		}
 	 * 	}
 	 * }
 	 *  </code>
-	 * Note: Use "<b>hati/tool/dumpdb.php</b>" tool to generate these profile ids
-	 * automatically for your project's db.json file.
 	 *
 	 * @param string $dbProfile The db profile id
 	 * @return ?PDO  The pdo connection object to the database
 	 * */
 	public static function use(string $dbProfile): ?PDO {
 		$ins = self::get();
-
-		$ins -> profileId = $dbProfile;
-		$ins -> db = $ins -> dbMan -> connect($dbProfile);
-
-		return $ins -> db;
+		
+		$ins->profileId = $dbProfile;
+		$ins->db = $ins->dbMan->connect($dbProfile);
+		
+		return $ins->db;
 	}
-
+	
 	/**
 	 * After the call to this method, Fluent is going to use the default database profile
 	 * as specified in the <b>hati/db.json</b> file for the subsequent queries where the PDO
@@ -136,22 +157,7 @@ class Fluent {
 	public static function useDefault(): ?PDO {
 		return self::use(self::defaultProfileId());
 	}
-
-	/**
-	 * This method prints the column value defined by the key in the first row
-	 * of the query result set. Optional default value is printed when it
-	 * can't find the column name in the result set.
-	 *
-	 * @param $key string the key for the value
-	 * @param $defVal mixed the value to be returned when the key is
-	 * not set in the result set.
-	 *
-	 * @return void
-	 * */
-	public static function echo(string $key, mixed $defVal = ''): void {
-		echo self::datum($key, $defVal);
-	}
-
+	
 	/**
 	 * Execute method is more powerful at executing any prepared statement.
 	 * For a given query, it prepares the query then binds it on runtime using PDO
@@ -170,20 +176,24 @@ class Fluent {
 	 * */
 	public static function exePrepareWith(PDO $pdo, string $query, array $param = [], string $msg = ''): int {
 		$ins = self::get();
-
+		
 		try {
-			$ins -> data = null;
-			$ins -> executed = false;
-
-			$ins -> stmtBuffer = $pdo -> prepare($query);
-			$ins -> executed = $ins -> stmtBuffer -> execute($param);
-			return $ins -> stmtBuffer -> rowCount();
+			$ins->data = null;
+			$ins->executed = false;
+			
+			if ($ins->debugSql) {
+				vd([$query, $param]);
+			}
+			
+			$ins->stmtBuffer = $pdo->prepare($query);
+			$ins->executed = $ins->stmtBuffer->execute($param);
+			return $ins->stmtBuffer->rowCount();
 		} catch (Throwable $t) {
-			$message = self::buildErrMsg($msg, $query, $ins -> debugSql, $t -> getMessage());
+			$message = self::buildErrMsg($msg, $query, $ins->sqlErrInOutput, $t->getMessage());
 			throw new Trunk($message);
 		}
 	}
-
+	
 	/**
 	 * Using default database profile, executes query as prepared statement to avoid
 	 * SQL injections. This method calls on exePrepareWith method internally. See
@@ -197,14 +207,14 @@ class Fluent {
 	 * */
 	public static function exePrepare(string $query, array $param = [], string $msg = ''): int {
 		$ins = self::get();
-
-		if (is_null($ins -> db)) {
-			$ins -> db = $ins -> dbMan -> connect(self::defaultProfileId());
+		
+		if (is_null($ins->db)) {
+			$ins->db = $ins->dbMan->connect(self::defaultProfileId());
 		}
-
-		return self::exePrepareWith($ins -> db, $query, $param, $msg);
+		
+		return self::exePrepareWith($ins->db, $query, $param, $msg);
 	}
-
+	
 	/**
 	 * This method works similarly as {@link Fluent::exePrepare} works. The only difference
 	 * between them is that this method doesn't prepare the query. You should use
@@ -220,18 +230,22 @@ class Fluent {
 	public static function exeStaticWith(PDO $pdo, string $query, string $msg = ''): int {
 		$ins = self::get();
 		try {
-			$ins -> data = null;
-			$ins -> executed = false;
-
-			$ins -> stmtBuffer = $pdo -> query($query);
-			$ins -> executed = $ins -> stmtBuffer != false;
-			return $ins -> stmtBuffer -> rowCount();
+			$ins->data = null;
+			$ins->executed = false;
+			
+			if ($ins->debugSql) {
+				vd([$query]);
+			}
+			
+			$ins->stmtBuffer = $pdo->query($query);
+			$ins->executed = $ins->stmtBuffer != false;
+			return $ins->stmtBuffer->rowCount();
 		} catch (Throwable $t) {
-			$message = self::buildErrMsg($msg, $query, $ins -> debugSql, $t -> getMessage());
+			$message = self::buildErrMsg($msg, $query, $ins->sqlErrInOutput, $t -> getMessage());
 			throw new Trunk($message);
 		}
 	}
-
+	
 	/**
 	 * Using default database profile, executes a raw query without using prepared
 	 * statement and there will be no parameter binding during query execution. For
@@ -244,14 +258,14 @@ class Fluent {
 	 * */
 	public static function exeStatic(string $query, string $msg = ''): int {
 		$ins = self::get();
-
-		if (is_null($ins -> db)) {
-			$ins -> db = $ins -> dbMan -> connect(self::defaultProfileId());
+		
+		if (is_null($ins->db)) {
+			$ins->db = $ins->dbMan->connect(self::defaultProfileId());
 		}
-
-		return self::exeStaticWith($ins -> db, $query, $msg);
+		
+		return self::exeStaticWith($ins->db, $query, $msg);
 	}
-
+	
 	/**
 	 * Helper method with allows easy data insertion with prepare statement to default db
 	 * connection.
@@ -275,14 +289,14 @@ class Fluent {
 	 **/
 	public static function insertPrepare(string $table, array $columns, array $values = [], string $msg = ''): int {
 		$ins = self::get();
-
-		if (is_null($ins -> db)) {
-			$ins -> db = $ins -> dbMan -> connect(self::defaultProfileId());
+		
+		if (is_null($ins->db)) {
+			$ins->db = $ins->dbMan->connect(self::defaultProfileId());
 		}
-
-		return self::insertData($ins -> db, $table, $columns, $values, true, $msg);
+		
+		return self::insertData($ins->db, $table, $columns, $values, true, $msg);
 	}
-
+	
 	/**
 	 * Insert data using prepared statement to a specified PDO connection object.
 	 *
@@ -307,7 +321,7 @@ class Fluent {
 	public static function insertPrepareWith(PDO $pdo, string $table, array $columns, array $values = [], string $msg = ''): int {
 		return self::insertData($pdo, $table, $columns, $values, true, $msg);
 	}
-
+	
 	/**
 	 * Allows easy data insertion to default database profile.
 	 *
@@ -330,14 +344,14 @@ class Fluent {
 	 **/
 	public static function insert(string $table, array $columns, array $values = [], string $msg = ''): int {
 		$ins = self::get();
-
-		if (is_null($ins -> db)) {
-			$ins -> db = $ins -> dbMan -> connect(self::defaultProfileId());
+		
+		if (is_null($ins->db)) {
+			$ins->db = $ins->dbMan->connect(self::defaultProfileId());
 		}
-
-		return self::insertData($ins -> db, $table, $columns, $values, false, $msg);
+		
+		return self::insertData($ins->db, $table, $columns, $values, false, $msg);
 	}
-
+	
 	/**
 	 * Insert data without using prepared statement to specified PDO connection.
 	 *
@@ -362,7 +376,7 @@ class Fluent {
 	public static function insertWith(PDO $pdo, string $table, array $columns, array $values = [], string $msg = ''): int {
 		return self::insertData($pdo, $table, $columns, $values, false, $msg);
 	}
-
+	
 	/**
 	 * Helper method allows easy update operation to default database profile. It doesn't use prepare statement.
 	 * No values are prepared for the query. Use {@link Fluent::updatePrepare()} method instead.
@@ -381,14 +395,14 @@ class Fluent {
 	 */
 	public static function update(string $table, array $cols, array $values = [], string $where = '', array $whereValues = [], string $msg = ''): int {
 		$ins = self::get();
-
-		if (is_null($ins -> db)) {
-			$ins -> db = $ins -> dbMan -> connect(self::defaultProfileId());
+		
+		if (is_null($ins->db)) {
+			$ins->db = $ins->dbMan->connect(self::defaultProfileId());
 		}
-
-		return self::updateData($ins -> db, $table, $cols, $values, false, $where, $whereValues, $msg);
+		
+		return self::updateData($ins->db, $table, $cols, $values, false, $where, $whereValues, $msg);
 	}
-
+	
 	/**
 	 * Helper method allows easy update operation to specified PDO connection. It doesn't use prepare statement.
 	 * No values are prepared for the query. Use {@link Fluent::updatePrepare()} method instead.
@@ -409,7 +423,7 @@ class Fluent {
 	public static function updateWith(PDO $pdo, string $table, array $cols, array $values = [], string $where = '', array $whereValues = [], string $msg = ''): int {
 		return self::updateData($pdo, $table, $cols, $values, false, $where, $whereValues, $msg);
 	}
-
+	
 	/**
 	 * Helper method allows easy update operation to default database profile. It doesn't use prepare statement.
 	 * No values are prepared for the query. Use {@link Fluent::updatePrepare()} method instead.
@@ -428,14 +442,14 @@ class Fluent {
 	 */
 	public static function updatePrepare(string $table, array $cols, array $values = [], string $where = '', array $whereValues = [], string $msg = ''): int {
 		$ins = self::get();
-
-		if (is_null($ins -> db)) {
-			$ins -> db = $ins -> dbMan -> connect(self::defaultProfileId());
+		
+		if (is_null($ins->db)) {
+			$ins->db = $ins->dbMan->connect(self::defaultProfileId());
 		}
-
-		return self::updateData($ins -> db, $table, $cols, $values, true, $where, $whereValues,  $msg);
+		
+		return self::updateData($ins->db, $table, $cols, $values, true, $where, $whereValues,  $msg);
 	}
-
+	
 	/**
 	 * Helper method allows easy update operation to specified PDO connection. It uses prepare statement to bind values
 	 * for column values and where clauses.
@@ -456,7 +470,7 @@ class Fluent {
 	public static function updatePrepareWith(PDO $pdo, string $table, array $cols, array $values = [], string $where = '', array $whereValues = [], string $msg = ''): int {
 		return self::updateData($pdo, $table, $cols, $values, true, $where, $whereValues,  $msg);
 	}
-
+	
 	/**
 	 * Helper method allows easy delete operation to default database profile. It doesn't use prepare statement.
 	 * No values are prepared for the query. Use {@link Fluent::deletePrepare()} method instead.
@@ -472,14 +486,14 @@ class Fluent {
 	 */
 	public static function delete(string $table, string $where = '', array $whereValues = [], string $msg = ''): int {
 		$ins = self::get();
-
-		if (is_null($ins -> db)) {
-			$ins -> db = $ins -> dbMan -> connect(self::defaultProfileId());
+		
+		if (is_null($ins->db)) {
+			$ins->db = $ins->dbMan->connect(self::defaultProfileId());
 		}
-
-		return self::deleteData($ins -> db, $table, $where, $whereValues, false, $msg);
+		
+		return self::deleteData($ins->db, $table, $where, $whereValues, false, $msg);
 	}
-
+	
 	/**
 	 * Helper method allows easy delete operation to specified PDO connection. It doesn't use prepare statement.
 	 * No values are prepared for the query. Use {@link Fluent::deletePrepare()} method instead.
@@ -497,7 +511,7 @@ class Fluent {
 	public static function deleteWith(PDO $pdo, string $table, string $where = '', array $whereValues = [], string $msg = ''): int {
 		return self::deleteData($pdo, $table, $where, $whereValues, false, $msg);
 	}
-
+	
 	/**
 	 * Helper method allows easy delete operation to default database profile. It uses prepare statement
 	 * to bind values for where clauses.
@@ -513,14 +527,14 @@ class Fluent {
 	 **/
 	public static function deletePrepare(string $table, string $where = '', array $whereValues = [], string $msg = ''): int {
 		$ins = self::get();
-
-		if (is_null($ins -> db)) {
-			$ins -> db = $ins -> dbMan -> connect(self::defaultProfileId());
+		
+		if (is_null($ins->db)) {
+			$ins->db = $ins->dbMan->connect(self::defaultProfileId());
 		}
-
-		return self::deleteData($ins -> db, $table, $where, $whereValues, true, $msg);
+		
+		return self::deleteData($ins->db, $table, $where, $whereValues, true, $msg);
 	}
-
+	
 	/**
 	 * Helper method allows easy delete operation to specified PDO connection. It uses prepare statement to bind values
 	 * for where clauses.
@@ -538,7 +552,7 @@ class Fluent {
 	public static function deletePrepareWith(PDO $pdo, string $table, string $where = '', array $whereValues = [], string $msg = ''): int {
 		return self::deleteData($pdo, $table, $where, $whereValues, true, $msg);
 	}
-
+	
 	/**
 	 * When a query get successfully prepared with the query string, a PDOStatement
 	 * can be achieved for further processing. This method first checks whether it
@@ -549,11 +563,11 @@ class Fluent {
 	 */
 	public static function stmtBuffer(): PDOStatement {
 		$ins = self::get();
-		if (!$ins -> stmtBuffer)
+		if (!$ins->stmtBuffer)
 			throw new Trunk('PDOStatement was failed to be obtained as encountered error in query preparation.');
-		return $ins -> stmtBuffer;
+		return $ins->stmtBuffer;
 	}
-
+	
 	/**
 	 * Often times, code wants to know whether the query is affecting any row/result
 	 * at all. This method uses @link rowCount method internally to calculate the
@@ -564,7 +578,7 @@ class Fluent {
 	public static function zeroRow(): bool {
 		return Fluent::rowCount() == 0;
 	}
-
+	
 	/**
 	 * This method can count the number of row/result returned by the execution
 	 * of a query. Before, counting it assesses whether there has been any query
@@ -574,10 +588,10 @@ class Fluent {
 	 */
 	public static function rowCount(): int {
 		$ins = self::get();
-		if (!$ins -> executed) throw new Trunk('Failed to count as no query has been executed.');
-		return $ins -> stmtBuffer -> rowCount();
+		if (!$ins->executed) throw new Trunk('Failed to count as no query has been executed.');
+		return $ins->stmtBuffer->rowCount();
 	}
-
+	
 	/**
 	 * This method is used to get the returned value of the sql query count.
 	 * It is not like rowCount method. This works on the query where the query
@@ -587,36 +601,26 @@ class Fluent {
 	 * */
 	public static function sqlCount(): int{
 		$count = 0;
-		$array = Fluent::datumArr();
+		$array = Fluent::fetchFirst();
+		
+		if (empty($array)) return $count;
+		
 		foreach ($array as $value)  {
 			$count = $value;
 			break;
 		}
 		return $count;
 	}
-
-	/**
-	 * The Fluent wrapper object is created by this call. It creates database connection
-	 * as specified in the hati.json file. It uses singleton pattern to cache the
-	 * connection object.
-	 *
-	 * @return Fluent a fluent instance
-	 */
-	public static function get(): Fluent {
-		// create new instance if there is not any already
-		if (Fluent::$INS == null) Fluent::$INS = new Fluent();
-		return Fluent::$INS;
-	}
-
+	
 	/**
 	 * This method returns the id of the last inserted row by the query.
 	 *
 	 * @return int returns the last inserted row of last sql query
 	 */
 	public static function lastInsertRowId(): int {
-		return self::getPDO() -> lastInsertId();
+		return self::getPDO()->lastInsertId();
 	}
-
+	
 	/**
 	 * By using this method, you can get the PDO handler object to perform
 	 * various database query on demand, so that you have no limitation by
@@ -625,113 +629,57 @@ class Fluent {
 	 * @return ?PDO a PDO handler object is returned.
 	 */
 	public static function getPDO(): ?PDO {
-		return self::get() -> db;
+		return self::get()->db;
 	}
 	
 	/**
-	 * Using datum method on Fluent object, any single piece of information or
-	 * in other words, any property of the result set array of query execution
-	 * can be obtained.
+	 * Returns the specific row of the result set. By default, it returns
+	 * the very first row.
 	 *
-	 * This method checks whether the key is present in the result set array
-	 * before returning.
-	 *
-	 * @param $key string the key for the value
-	 * @param $defVal mixed the value to be returned when the key is
-	 * not set in the result set.
-	 *
-	 * @return mixed the value defined by the key
+	 * @return ?array it returns the row of result set by the row number.
+	 * Returns null if the index is not present in the result set.
 	 */
-	public static function datum(string $key, mixed $defVal = null): mixed {
-		$datum = Fluent::datumArr();
-		return $datum[$key] ?? $defVal;
+	public static function fetch(int $row = 0): ?array {
+		$dataArr = self::get()->dataArr();
+		$count = count($dataArr);
+		
+		if ($count == 0 || $row >= $count) return null;
+		
+		return $dataArr[$row];
 	}
-
+	
 	/**
-	 * this method firstly use the @link dataArrr method to get the data as
-	 * associative array out of the database using PDO fetchAll method. then
-	 * it only gets/access the first element of the array as this method is
-	 * used to get one single array result set object of the query.
+	 * Returns the first row of the result set
 	 *
-	 * @param bool $throwErr indicates whether to throw error
-	 *
-	 * @return array it returns the array containing the result set of the query
+	 * @return ?array it returns the first row of result set. Returns null if none found.
 	 */
-	public static function datumArr(bool $throwErr = false): array {
-		$dataArr = self::get() -> dataArr();
-		if (count($dataArr) == 0) {
-			if ($throwErr) throw new Trunk("Data don't have any datum array.");
-			else return [];
-		}
-
-		$datumArr = $dataArr[0];
-		if ($datumArr == null || count($datumArr) == 0) {
-			if ($throwErr) throw new Trunk('Datum array is empty or null.');
-			else return [];
-		}
-
-		return $datumArr;
+	public static function fetchFirst(): ?array {
+		return self::fetch();
 	}
-
+	
 	/**
-	 * this method firstly use the @link dataObj method to get the data as
-	 * an array of php std class out of the database using PDO fetchAll method.
-	 * Then it only gets/access the first element of the array as this method is
-	 * used to get one single result set object of the query.
+	 * Returns the last row of the result set
 	 *
-	 * @param bool $throwErr indicates whether to throw error
-	 *
-	 * @return stdClass it returns the object containing the result set of the query
+	 * @return ?array it returns the last row of result set. Returns empty array if none found.
 	 */
-	public static function datumObj(bool $throwErr = false): stdClass {
-		$dataObj = self::get() -> dataObj();
-		if (count($dataObj) == 0) {
-			if ($throwErr) throw new Trunk('Data don\'t have any datum array.');
-			else return new stdClass();
-		}
-
-		$datumObj = $dataObj[0];
-		if ($datumObj == null) {
-			if ($throwErr) throw new Trunk('Datum object is empty or null.');
-			else return new stdClass();
-		}
-
-		return $datumObj;
+	public static function fetchLast(): ?array {
+		$dataArr = self::get()->dataArr();
+		$count = count($dataArr);
+		
+		if ($count == 0) return [];
+		return $dataArr[$count - 1];
 	}
-
+	
 	/**
-	 * dataArr method will first get the Fluent instance by call get() method
-	 * then it checks for the flag whether any query has already been executed.
-	 * if not, then it throws a runtime exception of type HatiError. otherwise it fetch
-	 * the data as associative array from the result set using PDO fetchAll method.
+	 * Fetches the rows as associative array from the result set using PDO fetchAll method.
 	 *
-	 * @return array the array containing the data
+	 * @return array the array containing the data. Returns empty array if there is nothing to fetch!
 	 */
-	public static function dataArr(): array {
-		$ins = self::get();
-		if (!$ins -> executed) throw new Trunk('No query has been executed.');
-		$buffer = $ins -> stmtBuffer;
-		if ($ins -> data == null) $ins -> data = $buffer -> fetchAll(PDO::FETCH_ASSOC);
-		return $ins -> data;
+	public static function fetchAll(): array {
+		$dataArr = self::get()->dataArr();
+		return empty($dataArr) ? [] : $dataArr;
 	}
-
-	/**
-	 * dataObj method will first get the Fluent instance by call get() method
-	 * then it checks for the flag whether any query has already been executed.
-	 * if not, then it throws a runtime exception of type HatiError. otherwise it fetch
-	 * the data inside an array as php object from the result set using PDO fetchAll
-	 * method.
-	 *
-	 * @return array the array containing the data
-	 */
-	public static function dataObj(): array {
-		$ins = self::get();
-		if (!$ins -> executed) throw new Trunk('No query has been executed.');
-		$buffer = $ins -> stmtBuffer;
-		if ($ins -> data == null) $ins -> data = $buffer -> fetchAll(PDO::FETCH_OBJ);
-		return $ins -> data;
-	}
-
+	
 	/**
 	 * A database query result set can be extracted by columns. It returns an associative
 	 * array of data by columns. For single column, it returns 1D array containing data in
@@ -742,11 +690,11 @@ class Fluent {
 	 * @throws InvalidArgumentException when invalid column name was passed in
 	 * @returns array containing column values
 	 * */
-	public static function col(string|array ...$column): array {
+	public static function fetchColumns(string|array ...$column): array {
 		$data = self::dataArr();
-
-		if (count($data) < 1) return [];
-
+		
+		if (empty($data)) return [];
+		
 		$bufferCol = [];
 		foreach ($column as $col) {
 			if (is_array($col)) {
@@ -755,10 +703,10 @@ class Fluent {
 			}
 			$bufferCol[] = $col;
 		}
-
+		
 		$singleCol = count($bufferCol) == 1;
 		$colArr = [];
-
+		
 		foreach ($data as $datum) {
 			$arr = [];
 			foreach ($bufferCol as $col) {
@@ -766,14 +714,14 @@ class Fluent {
 				if ($v == '-null') throw new InvalidArgumentException("No such column as $col");
 				$arr[] = $datum[$col];
 			}
-
+			
 			if ($singleCol) {
 				$colArr[] = $arr[0];
 			} else {
 				$colArr[] = $arr;
 			}
 		}
-
+		
 		return $colArr;
 	}
 	
@@ -791,7 +739,7 @@ class Fluent {
 	 *
 	 * @throws Trunk If the dataset is empty or null, or if the specified key doesn't exist in the dataset's first element.
 	 */
-	public static function dataByKey(string $key, bool $keepKeyInDataset = true): array {
+	public static function fetchByKey(string $key, bool $keepKeyInDataset = true): array {
 		$data = Fluent::dataArr();
 		
 		if (empty($data))
@@ -812,7 +760,88 @@ class Fluent {
 		
 		return $returnArr;
 	}
-
+	
+	/**
+	 * Returns rows indexed by a particular column value. It works like
+	 * {@link Fluent::fetchByKey()}, but gives freedom to further selects
+	 * the columns to fetch.
+	 *
+	 * There must at least be 2 columns selected by the query. Otherwise,
+	 * an empty array will be returned.
+	 *
+	 * @param string $colKey the column whose value will be the key
+	 * @param string|array $cols columns to be fetched
+	 * */
+	public static function fetchColumnsByKey(string $colKey, string|array ...$cols): array {
+		$data = self::dataArr();
+		if (empty($data) || count($data[0]) < 2) return [];
+		
+		$cols = Arr::varargsAsArray($cols);
+		
+		// Make sure there is the key column exists
+		if (empty($data[0][$colKey])) return [];
+		
+		/*
+		 * Remove the colKey from the result and make that key
+		 * */
+		$return = [];
+		
+		foreach ($data as $row) {
+			$key = null;
+			$buffer = [];
+			
+			foreach ($row as $k => $v) {
+				if ($k == $colKey) {
+					$key = $v;
+					continue;
+				}
+				
+				if (!in_array($k, $cols)) continue;
+				
+				$buffer[$k] = $v;
+			}
+			
+			if (empty($key)) continue;
+			
+			$return[$key] = $buffer;
+		}
+		
+		return $return;
+	}
+	
+	/**
+	 * Returns the value of the specified column of the specified row.
+	 * If the column or the row doesn't exist, it returns default value.
+	 *
+	 * @param $col string the key for the value
+	 * @param $defVal mixed the value to be returned when the key is
+	 * not set in the result set.
+	 *
+	 * @return mixed the value defined by the key
+	 */
+	public static function read(string $col, mixed $defVal = null, int $row = 0): mixed {
+		$data = self::fetch($row);
+		if (empty($data)) return $defVal;
+		
+		return $data[$col] ?? $defVal;
+	}
+	
+	/**
+	 * dataArr method will first get the Fluent instance by call get() method
+	 * then it checks for the flag whether any query has already been executed.
+	 * if not, then it throws a runtime exception of type HatiError. otherwise it fetch
+	 * the data as associative array from the result set using PDO fetchAll method.
+	 *
+	 * @return array the array containing the data
+	 */
+	private static function dataArr(): array {
+		$ins = self::get();
+		if (!$ins->executed) throw new Trunk('No query has been executed.');
+		$buffer = $ins->stmtBuffer;
+		if (is_null($ins->data)) $ins->data = $buffer->fetchAll(PDO::FETCH_ASSOC);
+		return $ins->data;
+	}
+	
 	/**
 	 * This method initiates a transaction for the database query. This prevents
 	 * auto commit features of the queries unless it is said by @link commit method.
@@ -823,13 +852,13 @@ class Fluent {
 	public static function beginTrans(): bool {
 		$ins = self::get();
 		try {
-			$ins -> db -> beginTransaction();
+			$ins->db->beginTransaction();
 			return true;
 		} catch (Throwable) {
 			return false;
 		}
 	}
-
+	
 	/**
 	 * Any changes to the database using @link beginTrans method executed beforehand
 	 * can be rolled back using this method. This method checks whether the database
@@ -838,10 +867,10 @@ class Fluent {
 	 * @return bool returns true on success; false otherwise.
 	 * */
 	public static function rollback(): bool {
-		$db = self::get() -> db;
-		return $db -> inTransaction() && $db -> rollback();
+		$db = self::get()->db;
+		return $db->inTransaction() && $db->rollback();
 	}
-
+	
 	/**
 	 * Any changes made during transaction is written off to the database
 	 * using commit method. This function save from throwing exception by
@@ -850,55 +879,8 @@ class Fluent {
 	 * @return true if it can commit changes to the database; false otherwise.
 	 * */
 	public static function commit(): bool {
-		$db = self::get() -> db;
-		return $db -> inTransaction() && $db -> commit();
-	}
-
-	/**
-	 * Replace ? mark with bind values array. if it is for non-prepare statement the values get directly added
-	 * as part of the query, otherwise left out with ? mark so that it can be uses as prepare statement.
-	 *
-	 * @param bool $usePrepare Indicates whether the calculated returned query be used for prepare statement
-	 * @param array $columns The query where this binding operation to be performed
-	 * @param array $values Values for those ? mark
-	 * @param string $errMsg Any message in case there is mismatch between number of values and ? marks
-	 *
-	 * @return string Completed query where ? are either replaced with values or left out as is based on $usePrepare
-	 * flag
-	 **@throws RuntimeException If there is a mismatch between number of values and ? marks
-	 */
-	private static function bind(bool $usePrepare, array $columns, array $values, string $errMsg): string {
-		$foundQ = 0;
-		
-		foreach ($columns as $v) {
-			if (!is_array($v)) continue;
-			$foundQ++;
-		}
-		
-		if ($foundQ !== count($values)) {
-			throw new RuntimeException($errMsg);
-		}
-
-		$value = '';
-		
-		foreach ($columns as $i) {
-			if (!is_array($i)) {
-				// Here $i represents like column=value already!
-				$value .= "$i, ";
-				continue;
-			}
-			
-			$value .= $i[0];
-			
-			if ($usePrepare) {
-				$value .= '?, ';
-			} else {
-				$value .= self::typedValue(array_shift($values));
-				$value .= ', ';
-			}
-		}
-		
-		return rtrim($value, ', ');
+		$db = self::get()->db;
+		return $db->inTransaction() && $db->commit();
 	}
 
 	/**
@@ -911,7 +893,7 @@ class Fluent {
 		else if (is_object($val)) return $pdo->quote((string) $val);
 		return $val;
 	}
-
+	
 	/**
 	 * This method breaks the key-value pairs into SQL syntax like fragments so that they
 	 * can easily be processed by insert/update/delete methods.
@@ -939,7 +921,7 @@ class Fluent {
 			
 			if (!is_integer($i)) {
 				$cols[] = $i;
-
+				
 				$typedV = self::typedValue($v);
 				$vals[] = "$sign{$typedV}";
 			} else {
@@ -964,10 +946,10 @@ class Fluent {
 				$vals[$i] = "$sign{$typedV}";
 			}
 		}
-
+		
 		return [$cols, $vals];
 	}
-
+	
 	/**
 	 * This method is used particularly for DELETE & UPDATE SQL statements. It substitutes values of the WHERE
 	 * clause with  ? sign or the value meant to be provided as part param binding.
@@ -981,7 +963,7 @@ class Fluent {
 			return $usePrepare ? ' = ? ' : ' = ' . self::typedValue(array_shift($values));
 		}, $query);
 	}
-
+	
 	/**
 	 * This method performs the update operation based on the argument values.
 	 *
@@ -1001,27 +983,27 @@ class Fluent {
 	 **/
 	private static function updateData(PDO $pdo, string $table, array $columns, array $values, bool $usePrepare, string $where, array $whereVal, string $msg): int {
 		[$cols, $val] = self::toQueryStruct($columns, $values, ' = ', $usePrepare);
-
+		
 		$sets = '';
 		foreach ($cols as $i => $v) {
 			$sets .= "$v$val[$i], ";
 		}
 		$sets = substr($sets, 0, strlen($sets) - 2);
-
+		
 		$q = "UPDATE $table SET $sets";
-
+		
 		if (!empty($where)) {
 			$w = self::bindWhere($usePrepare, $where, $whereVal);
 			$q .= " WHERE $w";
 		}
-
+		
 		if ($usePrepare) {
 			$values = array_merge($values, $whereVal);
 		}
-
+		
 		return $usePrepare ? self::exePrepareWith($pdo, $q, $values, $msg) : self::exeStaticWith($pdo, $q, $msg);
 	}
-
+	
 	/**
 	 * This method performs the update operation based on the argument values.
 	 *
@@ -1037,15 +1019,15 @@ class Fluent {
 	 **/
 	private static function deleteData(PDO $pdo, string $table, string $where, array $whereValues, bool $usePrepare, string $msg): int {
 		$q = "DELETE FROM $table";
-
+		
 		if (!empty($where)) {
 			$w = self::bindWhere($usePrepare, $where, $whereValues);
 			$q .= " WHERE $w";
 		}
-
+		
 		return $usePrepare ? self::exePrepareWith($pdo, $q, $whereValues, $msg) : self::exeStaticWith($pdo, $q, $msg);
 	}
-
+	
 	/**
 	 * This method build up the query string based on how the columns & values array are set.
 	 * It is private only because of function signature.
@@ -1071,7 +1053,7 @@ class Fluent {
 		
 		return $usePrepare ? self::exePrepareWith($pdo, $q, $values, $msg) : self::exeStaticWith($pdo, $q, $msg);
 	}
-
+	
 	/**
 	 * With introduction of Hati 5, Fluent now supports multiple db connections to be
 	 * used for various database operations. To have backward compatibility with older
@@ -1082,7 +1064,7 @@ class Fluent {
 	 * */
 	private static function defaultProfileId(): ?string {
 		$dbConfig = Hati::dbConfigObj();
-
+		
 		// Figure out where we are running!
 		if (Util::cli()) {
 			$key = 'default_cli_db';
@@ -1091,18 +1073,18 @@ class Fluent {
 		} else {
 			$key = 'default_prod_db';
 		}
-
+		
 		return $dbConfig[$key] ?? null;
 	}
-
+	
 	private static function buildErrMsg(string $customMsg, string $query, bool $debug, string $throwableMsg): string {
 		if ($debug) {
 			$message = "$throwableMsg: $query";
 		} else {
 			$message = empty($customMsg) ? $throwableMsg : $customMsg;
 		}
-
+		
 		return $message;
 	}
-
+	
 }

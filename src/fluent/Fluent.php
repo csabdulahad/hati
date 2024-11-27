@@ -1079,7 +1079,7 @@ class Fluent {
 	
 	private static function buildErrMsg(string $customMsg, string $query, bool $debug, string $throwableMsg): string {
 		if ($debug) {
-			$query = str_replace(["\n", "\t"], '', $query);
+			$query = str_replace(["\n", "\t"], [' ', ''], $query);
 			$message = "$throwableMsg: $query";
 		} else {
 			$message = empty($customMsg) ? $throwableMsg : $customMsg;

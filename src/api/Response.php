@@ -254,9 +254,9 @@ class Response {
 		$this->cookies[] = [
 			'name' => $name,
 			'value' => $value,
-			'expire' => $expire,
+			'expires' => $expire,
 			'secure' => $secure,
-			'httpOnly' => $httpOnly,
+			'httponly' => $httpOnly,
 			'path' => $path,
 			'domain' => $domain,
 			'samesite' => $sameSite

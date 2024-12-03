@@ -251,7 +251,7 @@ class Response {
 			$domain = $_SERVER['HTTP_HOST'] != 'localhost' ? ($_SERVER['HTTP_HOST'] ?? false) : false;
 		}
 		
-		$this->cookies = [
+		$this->cookies[] = [
 			'name' => $name,
 			'value' => $value,
 			'expire' => $expire,

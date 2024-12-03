@@ -24,6 +24,9 @@ abstract class HatiAPI {
 
 	/** Array containing headers came with the request */
 	protected array $headers = [];
+	
+	/** Array containing cookies came with the request */
+	protected array $cookies = [];
 
 	/** Array containing segments after the API path */
 	protected array $args = [];
@@ -77,7 +80,7 @@ abstract class HatiAPI {
 	 * */
 	protected function openAccess(string|array ...$method): void {
 		$method = Arr::varargsAsArray($method);
-		$this -> noAuthFor = array_merge($this -> noAuthFor, $method);
+		$this->noAuthFor = array_merge($this->noAuthFor, $method);
 	}
 
 	/**
@@ -106,7 +109,7 @@ abstract class HatiAPI {
 	 * @return true if the API method is private, needing no authentication; false otherwise.
 	 * */
 	public function isPrivateMethod(string $method): bool {
-		return !in_array($method, $this -> noAuthFor);
+		return !in_array($method, $this->noAuthFor);
 	}
 
 	/**
@@ -120,7 +123,7 @@ abstract class HatiAPI {
 	public static function noDirectAccess(): void {
 		if (!defined('HATI_API_CALL')) {
 			$trunk = Trunk::error403('No direct access');
-			$trunk -> report();
+			$trunk->report();
 		}
 	}
 
@@ -137,12 +140,12 @@ abstract class HatiAPI {
 			throw Trunk::error400('Request body can only be fetched either as json or as raw value');
 		}
 
-		if (array_key_exists($as, $this -> reqBody)) {
-			return $this -> reqBody[$as];
+		if (array_key_exists($as, $this->reqBody)) {
+			return $this->reqBody[$as];
 		}
 
 		$data = Request::body($as);
-		$this -> reqBody[$as] = $data;
+		$this->reqBody[$as] = $data;
 
 		return $data;
 	}
@@ -192,9 +195,13 @@ abstract class HatiAPI {
 	 * @return mixed the header value
 	 * */
 	public function header(string $key, mixed $default = null): mixed {
-		return $this -> headers[$key] ?? $default;
+		return $this->headers[$key] ?? $default;
 	}
 
+	public function cookie(string $key, mixed $default = null): mixed {
+		return $this->cookies[$key] ?? $default;
+	}
+	
 	/**
 	 * Returns whether a specified header was set in the request.
 	 *
@@ -202,7 +209,17 @@ abstract class HatiAPI {
 	 * @return bool true if the header key exists in the request, false otherwise.
 	 * */
 	public function headerSet(string $key): bool {
-		return key_exists($key, $this -> headers);
+		return key_exists($key, $this->headers);
+	}
+	
+	/**
+	 * Returns whether a specified cookie was set in the request.
+	 *
+	 * @param string $key the cookie key
+	 * @return bool true if the cookie key exists in the request, false otherwise.
+	 * */
+	public function cookieSet(string $key): bool {
+		return key_exists($key, $this->cookies);
 	}
 
 	/**
@@ -211,7 +228,7 @@ abstract class HatiAPI {
 	 * @reutrn array containing segments after in the API path
 	 * */
 	public function args(): array {
-		return $this -> args;
+		return $this->args;
 	}
 
 	/**
@@ -221,7 +238,7 @@ abstract class HatiAPI {
 	 * @reutrn array containing query parameters in the URL
 	 * */
 	public function queryParams(): array {
-		return $this -> params;
+		return $this->params;
 	}
 
 	/**
@@ -233,7 +250,7 @@ abstract class HatiAPI {
 	 * @return mixed The value by the key from the query parameter
 	 * */
 	protected function param(string $key, mixed $default = null): mixed {
-		return $this -> queryParams()[$key] ?? $default;
+		return $this->queryParams()[$key] ?? $default;
 	}
 
 	/**
@@ -245,19 +262,23 @@ abstract class HatiAPI {
 	 * @return mixed The value at the specified position in the arguments array, or the default value.
 	 */
 	protected function arg(int $pos, mixed $default = null): mixed {
-		return $this -> args()[$pos] ?? $default;
+		return $this->args()[$pos] ?? $default;
 	}
 
 	public function setHeaders(array $headers): void {
-		$this -> headers = $headers;
+		$this->headers = $headers;
+	}
+	
+	public function setCookies(array $cookies): void {
+		$this->cookies = $cookies;
 	}
 
 	public function setArgs(array $args): void {
-		$this -> args = $args;
+		$this->args = $args;
 	}
 
 	public function setParams(array $params): void {
-		$this -> params = $params;
+		$this->params = $params;
 	}
 	
 	/**
@@ -267,15 +288,17 @@ abstract class HatiAPI {
 	 * @param string $path API endpoint path
 	 * @param array $params Query parameters required by the API
 	 * @param array $headers Headers required by the API. It should be an associative array.
+	 * @param array $cookies Cookies required by the API. It should be an associative array.
 	 *
 	 * @return array Returns the api response as an associative array. Contains headers, body keys.
 	 * */
-	public static function call(string $method, string $path, array $params = [], array $headers = []): array {
+	public static function call(string $method, string $path, array $params = [], array $headers = [], array $cookies = []): array {
 		return HatiAPIHandler::boot([
 			'method' => $method,
 			'api' => $path,
 			'params' => $params,
-			'headers' => $headers
+			'headers' => $headers,
+			'cookies' => $cookies,
 		]);
 	}
 	
@@ -288,17 +311,19 @@ abstract class HatiAPI {
 	 * @param string $path API endpoint path
 	 * @param array $params Query parameters required by the API
 	 * @param array $headers Headers required by the API. It should be an associative array.
+	 * @param array $cookies Cookies required by the API. It should be an associative array.
 	 *
 	 * @return array Returns the api response as an associative array. Contains headers, body keys.
 	 * Body will be an empty array if there was problem parsing the API response body as JSON.
 	 * */
-	public static function callJSON(string $method, string $path, array $params = [], array $headers = []): array {
-		$output = self::call($method, $path, $params, $headers);
+	public static function callJSON(string $method, string $path, array $params = [], array $headers = [], array $cookies = []): array {
+		$output = self::call($method, $path, $params, $headers, $cookies);
 		
 		$response = json_decode($output['body'], true) ?? [];
 		
 		return [
 			'headers' => $output['headers'],
+			'cookies' => $output['cookies'],
 			'body' => $response
 		];
 	}

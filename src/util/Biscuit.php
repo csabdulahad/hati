@@ -26,7 +26,7 @@ abstract class Biscuit {
 	 *            (or the cookie will be blocked).
 	 *
 	 *
-	 *      Lax: Cookies are not sent on normal cross-site subrequests (for example to load images or frames
+	 *      Lax: Cookies are not sent on normal cross-site subsequent requests (for example to load images or frames
 	 *           into a third party site), but are sent when a user is navigating to the origin site
 	 *           (i.e., when following a link).
 	 *
@@ -85,7 +85,7 @@ abstract class Biscuit {
 	}
 
 	private static function getDomain(): string {
-		return ($_SERVER['HTTP_HOST'] != 'localhost') ? $_SERVER['HTTP_HOST'] : false;
+		return ($_SERVER['HTTP_HOST'] != 'localhost') ? ($_SERVER['HTTP_HOST'] ?? false) : false;
 	}
 
 }

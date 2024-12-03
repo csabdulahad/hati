@@ -5,7 +5,6 @@ namespace hati\api;
 use hati\config\Key;
 use hati\Hati;
 use hati\Trunk;
-use hati\util\Arr;
 use hati\util\Util;
 use InvalidArgumentException;
 use JetBrains\PhpStorm\NoReturn;
@@ -35,12 +34,12 @@ use JetBrains\PhpStorm\NoReturn;
  *  $response = new Response();
  *
  *  // single key-value pair
- *  $response -> add('name', 'Alex');
+ *  $response->add('name', 'Alex');
  *
  *  // multiple key-value pairs in order
- *  $response -> addAll(['age', 'sex'], [26, 'male']);
+ *  $response->addAll(['age', 'sex'], [26, 'male']);
  *
- *  $response -> getJSON();
+ *  $response->getJSON();
  * </code>
  * Output:
  * <code>
@@ -76,6 +75,9 @@ class Response {
 	// buffer response headers
 	private array $headers = [];
 	
+	// buffer response cookie
+	private array $cookies = [];
+	
 	/**
 	 * Indicates if the response is supposed to be returned and be handled by HatiAPIHandler.
 	 * By default, response is outputted on {@link reply()} method invocation.
@@ -83,13 +85,13 @@ class Response {
 	private bool $directReply = true;
 
 	public function addKey(string $key): Response {
-		if (!array_key_exists($key, $this -> output)) $this -> output[$key] = null;
+		if (!array_key_exists($key, $this->output)) $this->output[$key] = null;
 		
 		return $this;
 	}
 
 	public function add(string $key, $value): Response {
-		$this -> output[$key] = $this -> getTypedValue($value);
+		$this->output[$key] = $this->getTypedValue($value);
 		
 		return $this;
 	}
@@ -98,7 +100,7 @@ class Response {
 		$keyCount = count($keys);
 		if ($keyCount != count($values)) throw new InvalidArgumentException('Keys and values are not of same length.');
 
-		for ($i = 0; $i < $keyCount; $i++) $this -> add($keys[$i], $values[$i]);
+		for ($i = 0; $i < $keyCount; $i++) $this->add($keys[$i], $values[$i]);
 		
 		return $this;
 	}
@@ -117,25 +119,25 @@ class Response {
 	 * */
 	public function addToArr(string $arrKey, mixed $val): Response {
 		// first define the array with given key if we don't have already
-		$this -> addKey($arrKey);
-		if (!is_array($this -> output[$arrKey])) $this -> output[$arrKey] = [];
+		$this->addKey($arrKey);
+		if (!is_array($this->output[$arrKey])) $this->output[$arrKey] = [];
 
 		// check whether the value is an array of map; if yes then add them iteratively
-		if (is_array($val)) foreach ($val as $map) $this -> addToArray($arrKey, $map);
+		if (is_array($val)) foreach ($val as $map) $this->addToArray($arrKey, $map);
 
 		// otherwise add the value normally
-		else $this -> addToArray($arrKey, $val);
+		else $this->addToArray($arrKey, $val);
 		
 		return $this;
 	}
 
 	private function addToArray(string $arrKey, $val): void {
-		$this -> output[$arrKey][] =  $this -> getTypedValue($val);
+		$this->output[$arrKey][] =  $this->getTypedValue($val);
 	}
 
 	/**
 	 * This method can take a map or object and add the keys and the values in the json output
-	 * buffer iteratively. Every properties of the passed object will be the direct properties
+	 * buffer iteratively. Every property of the passed object will be the direct properties
 	 * of the final JSON output object. Existing property value of the main JSON output object
 	 * will be overridden by latest property value.
 	 *
@@ -143,8 +145,8 @@ class Response {
 	 * @return Response returns this object for further method chaining
 	 */
 	public function addFromMap($map): Response {
-		$this -> checkMap($map);
-		foreach ($map as $key => $value) $this -> add($key, $value);
+		$this->checkMap($map);
+		foreach ($map as $key => $value) $this->add($key, $value);
 		
 		return $this;
 	}
@@ -160,7 +162,7 @@ class Response {
 	 * */
 	public function addFromMaps($maps): Response {
 		if (!is_array($maps)) throw new InvalidArgumentException('The value has to be an array of maps');
-		foreach ($maps as $map) $this -> addFromMap($map);
+		foreach ($maps as $map) $this->addFromMap($map);
 		
 		return $this;
 	}
@@ -190,15 +192,15 @@ class Response {
 	 * @return Response returns this object for further method chaining
 	 */
 	public function addToMap(string $mapKey, string $key, mixed $val): Response {
-		$this -> addKey($mapKey);
-		if ($this -> output[$mapKey] == null) $this -> output[$mapKey] = [];
-		$this -> output[$mapKey][$key] = $this -> getTypedValue($val);
+		$this->addKey($mapKey);
+		if ($this->output[$mapKey] == null) $this->output[$mapKey] = [];
+		$this->output[$mapKey][$key] = $this->getTypedValue($val);
 		
 		return $this;
 	}
 
 	/**
-	 * This methods takes a map/object and put their properties with values under a direct property
+	 * This method takes a map/object and put their properties with values under a direct property
 	 * of the JSON output object. It checks whether passed map is an actual map or not. It then
 	 * internally call {@link addToMap} iteratively to add all the properties of the given map to the
 	 * specified map/object of the JSON output object.
@@ -210,8 +212,8 @@ class Response {
 	 * @return Response returns this object for further method chaining
 	 */
 	public function addMapToMap(string $mapKey, array $map): Response {
-		$this -> checkMap($map);
-		foreach ($map as $key => $value) $this -> addToMap($mapKey, $key, $value);
+		$this->checkMap($map);
+		foreach ($map as $key => $value) $this->addToMap($mapKey, $key, $value);
 		
 		return $this;
 	}
@@ -227,21 +229,42 @@ class Response {
 	 */
 	public function addMapsToMap(string $mapKey, mixed $mapArray): Response {
 		if (!is_array($mapArray)) throw new InvalidArgumentException('an array of maps is required.');
-		foreach ($mapArray as $map) $this -> addMapToMap($mapKey, $map);
+		foreach ($mapArray as $map) $this->addMapToMap($mapKey, $map);
 		
 		return $this;
 	}
 	
 	public function addHeader(string $header): void {
-		$this -> headers[] = $header;
+		$this->headers[] = $header;
 	}
 	
 	public function getHeaders(): array {
-		return $this -> headers;
+		return $this->headers;
+	}
+	
+	public function getCookies(): array {
+		return $this->cookies;
+	}
+	
+	public function addCookie(string $name, mixed $value, int $expire = 0, bool $secure = true, bool $httpOnly = true, string $path = '/', string $domain = '', string $sameSite = 'Strict'): void {
+		if (empty($domain)) {
+			$domain = $_SERVER['HTTP_HOST'] != 'localhost' ? ($_SERVER['HTTP_HOST'] ?? false) : false;
+		}
+		
+		$this->cookies = [
+			'name' => $name,
+			'value' => $value,
+			'expire' => $expire,
+			'secure' => $secure,
+			'httpOnly' => $httpOnly,
+			'path' => $path,
+			'domain' => $domain,
+			'samesite' => $sameSite
+		];
 	}
 	
 	public function disableReply(): void {
-		$this -> directReply = false;
+		$this->directReply = false;
 	}
 
 	/**
@@ -250,7 +273,7 @@ class Response {
 	 * @reutrn string JSON data as string
 	 * */
 	public function getJSON(): string {
-		return json_encode($this -> output);
+		return json_encode($this->output);
 	}
 
 	/**
@@ -258,22 +281,25 @@ class Response {
 	 *
 	 * @param mixed $msg The response message
 	 * @param int $status The response status
-	 * @param string|array $header HTTP headers to be set before sending JSON response
+	 * @param ?array $header containing HTTP headers string to be set before sending JSON response.
+	 * @param ?array $cookies cookies to be set before sending JSON response. Each cookie has name, value and other
+	 * cookie parameters.
 	 * */
 	#[NoReturn]
-	public function reply(mixed $msg = '', int $status = Response::SUCCESS, string|array ...$header): void {
+	public function reply(mixed $msg = '', int $status = Response::SUCCESS, ?array $header = null, ?array $cookies = null): void {
 		$resObj = self::addResponseObject($status, $msg);
-		$this -> add(self::$KEY_RESPONSE, $resObj);
+		$this->add(self::$KEY_RESPONSE, $resObj);
 
-		$this -> headers = array_merge($this -> headers, Arr::varargsAsArray($header));
+		$this->headers = array_merge($this->headers, $header ?? []);
 		
-		if (!$this -> directReply) {
+		if (!$this->directReply) {
 			throw new Trunk('HATI_API_CALL');
 		}
 		
 		self::setHTTPHeaders($header);
+		self::setCookies(array_merge($this->cookies, $cookies ?? []));
 
-		echo $this -> getJSON();
+		echo $this->getJSON();
 		exit;
 	}
 
@@ -283,13 +309,13 @@ class Response {
 	 *
 	 * @param mixed $msg The response message
 	 * @param int $status The response status
-	 * @param string|array $header HTTP headers
+	 * @param ?array $headers HTTP headers
 	 * */
 	#[NoReturn]
-	public static function report(mixed $msg, int $status, string|array ...$header): void {
+	public static function report(mixed $msg, int $status, ?array $headers = null, ?array $cookies = null): void {
 		if (!Util::cli()) {
-			$header = Arr::varargsAsArray($header);
-			self::setHTTPHeaders($header);
+			self::setHTTPHeaders($headers ?? []);
+			self::setCookies($cookies ?? []);
 		}
 
 		echo self::buildResponse($msg, $status);
@@ -325,25 +351,33 @@ class Response {
 			header($h);
 		}
 	}
-
-	#[NoReturn]
-	public static function reportOk(string $msg = '', string|array ...$header): void {
-		self::report($msg, Response::SUCCESS, $header);
-	}
 	
-	#[NoReturn]
-	public static function reportInfo(string $msg = '', string|array ...$header): void {
-		self::report($msg, Response::INFO, $header);
-	}
-	
-	#[NoReturn]
-	public static function reportWarn(string $msg = '', string|array ...$header): void {
-		self::report($msg, Response::WARNING, $header);
+	public static function setCookies(array $cookies): void {
+		foreach ($cookies as $cookie) {
+			$name = pop('name', $cookie);
+			$value = pop('value', $cookie);
+			setcookie($name, $value, $cookie);
+		}
 	}
 
 	#[NoReturn]
-	public static function reportErr(string $msg = '', string|array ...$header): void {
-		self::report($msg, Response::ERROR, $header);
+	public static function reportOk(string $msg = '', ?array $headers = null, ?array $cookies = null): void {
+		self::report($msg, Response::SUCCESS, $headers, $cookies);
+	}
+	
+	#[NoReturn]
+	public static function reportInfo(string $msg = '', ?array $headers = null, ?array $cookies = null): void {
+		self::report($msg, Response::INFO, $headers, $cookies);
+	}
+	
+	#[NoReturn]
+	public static function reportWarn(string $msg = '', ?array $headers = null, ?array $cookies = null): void {
+		self::report($msg, Response::WARNING, $headers, $cookies);
+	}
+
+	#[NoReturn]
+	public static function reportErr(string $msg = '', ?array $headers = null, ?array $cookies = null): void {
+		self::report($msg, Response::ERROR, $headers, $cookies);
 	}
 
 	/**
@@ -361,7 +395,7 @@ class Response {
 	}
 
 	#[NoReturn]
-	public static function sendJSON(array $data = [], string|array ...$header): void {
+	public static function sendJSON(array $data = [], ?array $headers = null, ?array $cookies = null): void {
 		$output = [];
 
 		if (is_array($data)) {
@@ -374,8 +408,8 @@ class Response {
 		if ($delay > 0) sleep($delay);
 		self::addDevProperties($output);
 
-		$header = Arr::varargsAsArray($header);
-		self::setHTTPHeaders($header);
+		self::setHTTPHeaders($headers ?? []);
+		self::setCookies($cookies ?? []);
 
 		echo count($output) == 0 ? '{}' : json_encode($output);
 		exit;
@@ -394,7 +428,7 @@ class Response {
 	}
 
 	private function getTypedValue($val) {
-		if (is_array($val)) foreach($val as $k => $v) $val[$k] = $this -> getTypedValue($v);
+		if (is_array($val)) foreach($val as $k => $v) $val[$k] = $this->getTypedValue($v);
 		if (!is_numeric($val))  return $val;
 		return strpos($val, ".") ? (float) $val : (int) $val;
 	}

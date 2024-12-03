@@ -99,7 +99,7 @@ final class HatiAPIHandler {
 				throw Trunk::error405('Unacceptable request method');
 			}
 
-			$paths = $handler -> apis[$method] ?? null;
+			$paths = $handler->apis[$method] ?? null;
 			if (empty($paths)) {
 				throw Trunk::error400('API is not supported');
 			}
@@ -131,7 +131,7 @@ final class HatiAPIHandler {
 			unset($queryParams['api']);
 
 			// Get the API endpoint details
-			$arr = $handler -> apis[$method][$apiPathKey] ?? null;
+			$arr = $handler->apis[$method][$apiPathKey] ?? null;
 			if (is_null($arr)) {
 				throw Trunk::error500('Server failed to create a response');
 			}
@@ -196,10 +196,12 @@ final class HatiAPIHandler {
 
 			// #1 Set various properties
 			$headers = array_merge(getallheaders(), $augment['headers'] ?? []);
+			$cookies = array_merge($_COOKIE ?? [], $augment['cookies'] ?? []);
 			
-			$class -> setHeaders($headers);
-			$class -> setArgs($arguments);
-			$class -> setParams($queryParams);
+			$class->setHeaders($headers);
+			$class->setCookies($cookies);
+			$class->setArgs($arguments);
+			$class->setParams($queryParams);
 
 			// #1.1 Set the handler as working directory
 			$reflection = new ReflectionClass($class);
@@ -207,22 +209,22 @@ final class HatiAPIHandler {
 			chdir($directory);
 
 			// #2 Initialize the API
-			$class -> init();
+			$class->init();
 
 			// #2.2 Prepare public methods
-			$class -> publicMethod();
+			$class->publicMethod();
 
 			// #3 Check authentication
-			$privateMethod = $class -> isPrivateMethod($method);
+			$privateMethod = $class->isPrivateMethod($method);
 
 			if ($privateMethod) {
-				$class -> authenticate($method);
+				$class->authenticate($method);
 			}
 
 			// #4 Ready to call the API serving method with a ready response object!
-			if (!is_null($augment)) $res -> disableReply();
+			if (!is_null($augment)) $res->disableReply();
 
-			$class -> $method($res);
+			$class->$method($res);
 			
 			// #5 Restore the CWD
 			chdir($cwd);
@@ -237,19 +239,21 @@ final class HatiAPIHandler {
 			}
 
 			if (is_null($augment)) {
-				$e -> report();
+				$e->report();
 			}
 			
 			if ($e->getMessage() == 'HATI_API_CALL') {
 				return [
-					'headers' => $res -> getHeaders(),
-					'body' => $res -> getJSON()
+					'headers' => $res->getHeaders(),
+					'cookies' => $res->getCookies(),
+					'body' => $res->getJSON()
 				];
 			}
 			
 			return [
-				'headers' => $e -> getHeaders(),
-				'body' => $e -> __toString()
+				'headers' => $e->getHeaders(),
+				'cookies' => $e->getCookies(),
+				'body' => $e->__toString()
 			];
 		}
 
@@ -344,7 +348,7 @@ final class HatiAPIHandler {
 
 			// Register the API!
 			foreach ($method as $m) {
-				$handler -> apis[$m][$path] = [
+				$handler->apis[$m][$path] = [
 					'handler' => $filePath,
 					'extension' => $func
 				];
@@ -357,15 +361,15 @@ final class HatiAPIHandler {
 				$e = Trunk::error500($msg);
 			}
 
-			$e -> report();
+			$e->report();
 		}
 	}
 
 	private static function getFullErrorMsg(Throwable $e): string {
 		return sprintf("%s in %s at line %s",
 			ucfirst($e ->getMessage()),
-			$e -> getFile(),
-			$e -> getLine()
+			$e->getFile(),
+			$e->getLine()
 		);
 	}
 

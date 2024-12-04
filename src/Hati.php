@@ -19,7 +19,7 @@ use Throwable;
 abstract class Hati {
 
 	// version
-	private static string $version = '7.0.11-beta';
+	private static string $version = '7.0.12-beta';
 
 	private static float $BENCHMARK_START = 0;
 
@@ -34,7 +34,7 @@ abstract class Hati {
 	// The global hati json configuration
 	private static ?array $CONFIG_GLOBAL = null;
 
-	// The sub-project hati json configuration
+	// The subproject hati json configuration
 	private static ?array $CONFIG_LOCAL = null;
 
 	// Indicates if the global config in use
@@ -71,7 +71,7 @@ abstract class Hati {
 
 		date_default_timezone_set(self::config(Key::TIME_ZONE));
 
-		// start the benchmark if Hati is setup to include dev benchmark
+		// start the benchmark if Hati is set up to include dev benchmark
 		if(self::config(Key::DEV_API_BENCHMARK, 'bool'))
 			self::$BENCHMARK_START = microtime(true);
 
@@ -112,11 +112,11 @@ abstract class Hati {
 
 	/**
 	 * Based on location, where the hati is being used, it tries to find the config path.
-	 * This helps Hati to figure out whether it is used for sub-project & load configuration
+	 * This helps Hati to figure out whether it is used for subproject & load configuration
 	 * appropriately.
 	 *
 	 * It tries for 15 times, from current working directory to see if there is any folder called
-	 * hati and there is a hati.json file exists. If so then Hati loads that as sub-project config
+	 * hati and there is a hati.json file exists. If so then Hati loads that as subproject config
 	 * file. However, on failure, Hati falls back to root project config file.
 	 * */
 	private static function getConfigPath(): void {
@@ -169,7 +169,7 @@ abstract class Hati {
 	}
 
 	/**
-	 * Loads configuration files to setup Hati as defined by various json files
+	 * Loads configuration files to set up Hati as defined by various json files
 	 * */
 	private static function loadConfig(): void {
 		self::getConfigPath();
@@ -200,11 +200,11 @@ abstract class Hati {
 	}
 
 	/**
-	 * Since version 5, Hati can be installed once and be reused in sub-project like structure.
+	 * Since version 5, Hati can be installed once and be reused in subproject like structure.
 	 * Using this method, code can get the root path, the path where the vendor folder is found.
 	 *
-	 * This way it makes it easier for sub-projects to refer to any file/folder from the root
-	 * directory path, avoid confusion and it becomes very clear what the path is referring to.
+	 * This way it makes it easier for subprojects to refer to any file/folder from the root
+	 * directory path, avoid confusion and, it becomes very clear what the path is referring to.
 	 *
 	 * @param string $path Any path segment to be appended to the root path
 	 * @return string The path referring from the root directory
@@ -216,10 +216,10 @@ abstract class Hati {
 	/**
 	 * With introduction of version 5, Hati can be reused in more than one project in
 	 * the same parent folder. Using this method, code can get the path to the
-	 * sub-project directory.
+	 * subproject directory.
 	 *
-	 * This method always returns the sub-project directory, not the parent folder.
-	 * If the project is not a sub-project, then both {@link Hati::root()} & this
+	 * This method always returns the subproject directory, not the parent folder.
+	 * If the project is not a subproject, then both {@link Hati::root()} & this
 	 * method return the same path.
 	 *
 	 * @param string $path Any path segment to be appended to the root path
@@ -230,10 +230,10 @@ abstract class Hati {
 	}
 
 	/**
-	 * This returns the loader instance of the composer auto loader.
+	 * This returns the loader instance of the composer autoloader.
 	 * It returns null if Hati is configured to use its own loader.
 	 *
-	 * @return ?object The composer auto loader object.
+	 * @return ?object The composer autoloader object.
 	 */
 	public static function loader(): ?object {
 		return self::$loader;

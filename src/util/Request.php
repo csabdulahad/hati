@@ -35,7 +35,7 @@ abstract class Request {
 	/**
 	 * Checks whether the content type is set and the type is application/json.
 	 *
-	 * @return bool true if the content type is set and it is application/json, false otherwise.
+	 * @return bool true if the content type is set and, it is application/json, false otherwise.
 	 * */
 	public static function contentTypeJSON(): bool {
 		$headers = getallheaders();
@@ -49,7 +49,7 @@ abstract class Request {
 	 * @throws InvalidArgumentException Throws InvalidArgumentException 'as' argument is neither json
 	 * nor raw.
 	 * @return array|string|null null when the data is not in right format or the content type is not matching
-	 * as specified. Returns associative array if it is parsed successfully for json data. Otherwise
+	 * as specified. Returns associative array if it is parsed successfully for json data. Otherwise,
 	 * returns as string value.
 	 */
 	public static function body(string $as = 'json') : array|string|null {
@@ -141,10 +141,10 @@ abstract class Request {
 	 * */
 	public static function os(): string {
 		$userAgent = $_SERVER['HTTP_USER_AGENT'];
-		$os  = "Unknown OS Platform";
+		$os  = "Unknown OS";
 
 		$osArray  = array(
-			'/windows nt 10/i'      =>  'Windows 10',
+			'/windows nt 10/i'      =>  'Windows 10/11',
 			'/windows nt 6.3/i'     =>  'Windows 8.1',
 			'/windows nt 6.2/i'     =>  'Windows 8',
 			'/windows nt 6.1/i'     =>  'Windows 7',
@@ -184,29 +184,34 @@ abstract class Request {
 	 */
 	public static function browser(): string {
 		$userAgent =  $_SERVER['HTTP_USER_AGENT'];
-		$browser = "Unknown";
 
-		$browser_array = [
-			'/msie/i'      => 'Internet Explorer',
-			'/firefox/i'   => 'Firefox',
-			'/safari/i'    => 'Safari',
-			'/chrome/i'    => 'Chrome',
-			'/edge/i'      => 'Edge',
-			'/opera/i'     => 'Opera',
-			'/netscape/i'  => 'Netscape',
-			'/maxthon/i'   => 'Maxthon',
-			'/konqueror/i' => 'Konqueror',
-			'/mobile/i'    => 'Mobile Browser'
+		$browserList = [
+			'Firefox' => '/Firefox/',
+			'Edge' => '/Edg|Edge/',
+			'Chrome' => '/Chrome|CriOS/',
+			'Opera' => '/Opera|OPR/',
+			'Safari' => '/Safari/',
+			'Internet Explorer' => '/MSIE|Trident/',
+			'Mobile Browser' => '/mobile/i'
 		];
 
-		foreach ($browser_array as $regex => $value) {
-			if (preg_match($regex, $userAgent)) $browser = $value;
+		
+		foreach ($browserList as $browser => $pattern) {
+			if (preg_match($pattern, $userAgent)) {
+				// Special case: Distinguish Safari from Chrome
+				if ($browser === 'Safari' && preg_match('/Chrome|CriOS/', $userAgent)) {
+					continue;
+				}
+				
+				return $browser;
+			}
 		}
-		return $browser;
+		
+		return 'Unknown Browser';
 	}
 
 	/**
-	 * By using this methods, script can acquire the system information
+	 * By using this method, script can acquire the system information
 	 * such as browser and os info. A string consisting of browser name
 	 * and os name seperated by comma will be returned.
 	 *

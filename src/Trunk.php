@@ -263,7 +263,7 @@ class Trunk extends RuntimeException {
 		return self::buildTrunkWithHeaders($msg, 'HTTP/1.0 504 Gateway Timeout', $headers, $cookies);
 	}
 
-	private static function buildTrunkWithHeaders(string $msg, string $errorHeader, array $headers, array $cookies): Trunk {
+	private static function buildTrunkWithHeaders(string $msg, string $errorHeader, ?array $headers, ?array $cookies): Trunk {
 		if (empty($headers)) $headers = [];
 		if (empty($cookies)) $cookies = [];
 		

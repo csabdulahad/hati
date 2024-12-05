@@ -743,7 +743,7 @@ class Fluent {
 		$data = Fluent::dataArr();
 		
 		if (empty($data))
-			throw new Trunk('The query result is either null or empty');
+			return [];
 		
 		if (!array_key_exists($key, $data[0]))
 			throw new Trunk("The query result dataset doesn't have key $key");

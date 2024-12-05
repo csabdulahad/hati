@@ -8,6 +8,7 @@ use hati\Hati;
 use hati\Trunk;
 use hati\util\Arr;
 use hati\util\Request;
+use hati\util\Text;
 use ReflectionClass;
 use Throwable;
 
@@ -124,6 +125,10 @@ final class HatiAPIHandler {
 			$registeredAPIPathLen = strlen($apiPathKey);
 			$arguments = substr($path, $registeredAPIPathLen);
 			$arguments = trim($arguments, '/');
+			
+			// Remove query params from the path including ? mark
+			$arguments = strtok($arguments, '?');
+			
 			$arguments = explode('/', $arguments);
 
 			// Build up the query params
@@ -158,6 +163,11 @@ final class HatiAPIHandler {
 			$func = null;
 			foreach ($functions as $f) {
 				foreach ($arguments as $a) {
+					// Do we need to make it camel cased function/method name?
+					if (str_contains($a, '-')) {
+						$a = Text::toCamelCase($a);
+					}
+					
 					if ($f == $a) {
 						$func = $f;
 						break 2;
@@ -169,8 +179,20 @@ final class HatiAPIHandler {
 			if (!is_null($func)) {
 				$arguments = implode('/', $arguments);
 
-				$start = strpos($arguments, $func);
-				$len = strlen($func);
+				/*
+				 * Let's try with camel case version
+				 * */
+				if (str_contains($arguments, Text::deCamelCase($func))) {
+					$caseNeutral = Text::deCamelCase($func);
+					$start = strpos($arguments, $caseNeutral);
+					$len = strlen($caseNeutral);
+				} else {
+					/*
+					 * path has the extension name as is in the API class
+					 * */
+					$start = strpos($arguments, $func);
+					$len = strlen($func);
+				}
 
 				$arguments = substr($arguments, $start + $len);
 				$arguments = trim($arguments, '/');

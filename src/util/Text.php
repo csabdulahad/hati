@@ -207,6 +207,45 @@ abstract class Text {
 	public static function camelize(string $string): string {
 		return lcfirst(str_replace(' ', '', ucwords(preg_replace('/[\s_]+/', ' ', $string))));
 	}
+	
+	/**
+	 * Converts a string with a given separator into camelCase format.
+	 *
+	 * @param string $string The input string to be converted.
+	 *                       Example: "trans-typed-data".
+	 * @param string $separator The character that separates words in the input string.
+	 *                          Default is '-'. Example: '-' or '_'.
+	 *
+	 * @return string The converted camelCase string.
+	 *                Example: "transTypedData".
+	 *
+	 * @example
+	 * toCamelCase("trans-typed-data");          // Returns: "transTypedData"
+	 * toCamelCase("trans_typed_data", "_");     // Returns: "transTypedData"
+	 */
+	public static function toCamelCase(string $string, string $separator = '-'): string {
+		$camelCase = str_replace(' ', '', ucwords(str_replace($separator, ' ', $string)));
+		return lcfirst($camelCase);
+	}
+	
+	/**
+	 * Converts a camelCase string into a lowercased string with a given separator.
+	 *
+	 * @param string $string The camelCase string to be converted.
+	 *                       Example: "transTypedData".
+	 * @param string $separator The character to insert between words in the output string.
+	 *                          Default is '-'. Example: '-' or '_'.
+	 *
+	 * @return string The deCamelCased string with words separated by the given separator.
+	 *                Example: "trans-typed-data".
+	 *
+	 * @example
+	 * deCamelCase("transTypedData");          // Returns: "trans-typed-data"
+	 * deCamelCase("transTypedData", "_");     // Returns: "trans_typed_data"
+	 */
+	public static function deCamelCase(string $string, string $separator = '-'): string {
+		return strtolower(preg_replace('/([a-z])([A-Z])/', '$1' . $separator . '$2', $string));
+	}
 
 	/**
 	 * Limits a string to X number of words.

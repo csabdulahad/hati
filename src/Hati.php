@@ -3,6 +3,7 @@
 namespace hati;
 
 use hati\config\Key;
+use hati\util\Util;
 use RuntimeException;
 use Throwable;
 
@@ -19,7 +20,7 @@ use Throwable;
 abstract class Hati {
 
 	// version
-	private static string $version = '7.0.14-beta';
+	private static string $version = '7.0.15-beta';
 
 	private static float $BENCHMARK_START = 0;
 
@@ -91,8 +92,10 @@ abstract class Hati {
 		if (self::config(Key::SESSION_AUTO_START, 'bool')) {
 			// Cookies will only be sent in a first-party context and not be sent along with
 			// requests initiated by third party websites.
-			session_set_cookie_params(['SameSite' => 'Strict', 'Secure' => true]);
-			session_start();
+			if (!Util::cli()) {
+				session_set_cookie_params(['SameSite' => 'Strict', 'Secure' => true]);
+				session_start();
+			}
 		}
 
 		// Load the global functions file

@@ -4,9 +4,9 @@ namespace hati\filter;
 
 use Closure;
 use hati\api\Response;
-use hati\util\Arr;
 use hati\util\Request;
 use hati\util\Util;
+use InvalidArgumentException;
 use JetBrains\PhpStorm\NoReturn;
 use RuntimeException;
 
@@ -101,6 +101,9 @@ class DataFilter {
 
 	// Custom error handler closure
 	private ?Closure $errorHandler = null;
+	
+	// Localization handler for filte message
+	private ?FilterLocalization $localization = null;
 
 	/**
 	 * Constructs the DataFilter for specified data source. The data source method
@@ -333,6 +336,24 @@ class DataFilter {
 		
 		($this->errorHandler)($this->errList, $this);
 	}
+	
+	/**
+	 * Set localization handler for filter output messages.
+	 *
+	 * @param string $handlerCls It must be subtype of class {@link FilterLocalization}
+	 * @return void
+	 * */
+	public function setLocalization(string $handlerCls): void {
+		if (!class_exists($handlerCls)) {
+			throw new RuntimeException("Class doesn't exist: $handlerCls");
+		}
+		
+		if (!is_subclass_of($handlerCls, FilterLocalization::class)) {
+			throw new InvalidArgumentException("Invalid filter localization handler");
+		}
+		
+		$this->localization = new $handlerCls;
+	}
 
 	private function handleErr(FilterOut $err, ?array $rule = null): void {
 		$name = '';
@@ -353,21 +374,7 @@ class DataFilter {
 			$code = 400;
 			$key = $rule['key'];
 			$name = $rule['name'] ?? $key;
-			$msg =  match ($err) {
-				FilterOut::NULL => "$name is required",
-				FilterOut::EMPTY => "$name is empty",
-				FilterOut::ILLEGAL => "$name contains illegal character",
-				FilterOut::INVALID => "$name is invalid",
-				FilterOut::RANGE_FRACTION_ERROR => "$name can't have more than " . $this->pluralMsg($rule['place'], 'digit') . " after decimal point",
-				FilterOut::VAL_LEN_ERROR => "$name can't be lower or higher than {$rule['minLen']}-{$rule['maxLen']} characters in length",
-				FilterOut::VAL_LEN_OVER_ERROR => "$name can't exceed " . $this->pluralMsg($rule['maxLen'], 'character') . " in length",
-				FilterOut::VAL_LEN_UNDER_ERROR	=> "$name can't be less than " . $this->pluralMsg($rule['minLen'], 'character') . " in length",
-				FilterOut::RANGE_ERROR => "$name must have limit of {$rule['minValue']}-{$rule['maxValue']}",
-				FilterOut::RANGE_OVER_ERROR => "$name can't be greater than {$rule['maxValue']}",
-				FilterOut::RANGE_UNDER_ERROR => "$name can't be lower than {$rule['minValue']}",
-				FilterOut::NOT_IN_OPTION => "$name must be any of the following: " . Arr::strList($rule['option']),
-				default => "Unknown error"
-			};
+			$msg = $this->getMst($err, $name, $rule);
 		}
 
 		if (is_null($this->errorHandler)) {
@@ -387,7 +394,32 @@ class DataFilter {
 			}
 		}
 	}
-
+	
+	private function getMst(FilterOut $err, string $name, array $rule): string {
+		$locale = $this->getLocalization();
+		
+		return match ($err) {
+			FilterOut::NULL 	=> $locale->nullInputErr($name),
+			FilterOut::EMPTY 	=> $locale->emptyInputErr($name),
+			FilterOut::ILLEGAL 	=> $locale->illegalInputErr($name),
+			FilterOut::INVALID 	=> $locale->invalidInputErr($name),
+			
+			FilterOut::RANGE_FRACTION_ERROR => $locale->rangeFractionInputErr($name, $rule['place']),
+			
+			FilterOut::VAL_LEN_ERROR 		=> $locale->inputLengthErr($name, $rule['minLen'], $rule['maxLen']),
+			FilterOut::VAL_LEN_OVER_ERROR 	=> $locale->inputLengthOverErr($name, $rule['maxLen']),
+			FilterOut::VAL_LEN_UNDER_ERROR	=> $locale->inputLengthUnderErr($name, $rule['minLen']),
+			
+			FilterOut::RANGE_ERROR 			=> $locale->inputRangeErr($name, $rule['minValue'], $rule['maxValue']),
+			FilterOut::RANGE_OVER_ERROR 	=> $locale->inputRangeOverErr($name, $rule['maxValue']),
+			FilterOut::RANGE_UNDER_ERROR 	=> $locale->inputRangeUnderErr($name, $rule['minValue']),
+			
+			FilterOut::NOT_IN_OPTION => $locale->invalidInputOptionErr($name, $rule['option']),
+			
+			default => $locale->unknownErr()
+		};
+	}
+	
 	private function checkLen(mixed $data, array $rule): FilterOut {
 		if (empty($rule['maxLen']) && empty($rule['minLen']))
 			return FilterOut::OK;
@@ -545,8 +577,12 @@ class DataFilter {
 		return FilterOut::OK;
 	}
 
-	private function pluralMsg(int $count, string $noun): string {
-		return $count > 1 ? "$count {$noun}s" : "$count $noun";
+	private function getLocalization(): FilterLocalization {
+		if (is_null($this->localization)) {
+			$this->localization = new FilterLocalization();
+		}
+		
+		return $this->localization;
 	}
 
 	#[NoReturn]

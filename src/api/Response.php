@@ -296,7 +296,7 @@ class Response {
 			throw new Trunk('HATI_API_CALL');
 		}
 		
-		self::setHTTPHeaders($header);
+		self::setHTTPHeaders($this->headers);
 		self::setCookies(array_merge($this->cookies, $cookies ?? []));
 
 		echo $this->getJSON();

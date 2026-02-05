@@ -2,8 +2,6 @@
 
 return [
 
-	'favicon'                           =>          '',
-	
 	'api_registry_folder'				=>			'',
 
 	'project_dir_as_include_path'       =>          true,
@@ -17,8 +15,6 @@ return [
 	'session_msg_key'                   =>          'msg',
 
 	'global_php'                        =>          [],
-	'common_js_files'                   =>          [],
-	'common_css_files'                  =>          [],
 
 	'mailer_host'						=>			'smtp.gmail.com',
 	'mailer_email'                      =>          '',

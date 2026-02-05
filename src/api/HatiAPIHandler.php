@@ -387,6 +387,27 @@ final class HatiAPIHandler {
 		}
 	}
 
+	/**
+	 * Runs any function as HatiAPI.
+	 *
+	 * @param callable $fun function to be invoked as api. It receives {@link Response} as `$res`
+	 * to allow easier API response.
+	 * */
+	public static function runAsAPI(callable $fun): void {
+		$res = new Response();
+		
+		try {
+			$fun($res);
+		} catch (Throwable $e) {
+			if (!$e instanceof Trunk) {
+				$msg = self::$DEBUG ?  self::getFullErrorMsg($e) : 'Error in API implementation';
+				$e = Trunk::error500($msg);
+			}
+			
+			$e->report();
+		}
+	}
+	
 	private static function getFullErrorMsg(Throwable $e): string {
 		return sprintf("%s in %s at line %s",
 			ucfirst($e ->getMessage()),

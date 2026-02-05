@@ -587,7 +587,7 @@ class DataFilter {
 
 	#[NoReturn]
 	private function output(int $code, string $msg): void {
-		if (!Util::cli()) {
+		if (!Util::isCLI()) {
 			header('Content-Type: application/json');
 			http_response_code($code);
 		}

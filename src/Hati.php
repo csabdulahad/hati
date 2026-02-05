@@ -20,7 +20,7 @@ use Throwable;
 abstract class Hati {
 
 	// version
-	private static string $version = '7.0.16-beta';
+	private static string $version = '7.0.17-beta';
 
 	private static float $BENCHMARK_START = 0;
 
@@ -92,7 +92,7 @@ abstract class Hati {
 		if (self::config(Key::SESSION_AUTO_START, 'bool')) {
 			// Cookies will only be sent in a first-party context and not be sent along with
 			// requests initiated by third party websites.
-			if (!Util::cli()) {
+			if (!Util::isCLI()) {
 				session_set_cookie_params(['SameSite' => 'Strict', 'Secure' => true]);
 				session_start();
 			}
@@ -108,6 +108,7 @@ abstract class Hati {
 		$globalPHP = self::config(Key::GLOBAL_PHP, 'arr');
 		foreach ($globalPHP as $file) {
 			$file = trim($file);
+			$file = rtrim($file, '.php');
 			$path = self::projectRoot("$file.php");
 			if (file_exists($path)) require_once $path;
 		}

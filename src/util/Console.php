@@ -5,7 +5,7 @@ namespace hati\util;
 /**
  * A cool class help printing log messages with minimal effort. This class
  * checks the type output console and formats message accordingly with lines
- * break & colors. Currently there are 5 methods it supports:<br>
+ * break & colors. Currently, there are 5 methods it supports:<br>
  * - {@link Console::log()} : Logs normal message with no color
  * - {@link Console::info} : Logs info message with blue color
  * - {@link Console::success()} : Logs success message with green color
@@ -66,15 +66,15 @@ abstract class Console {
 	}
 
 	private static function println(mixed $value, int $numOfBreak = 1, string $type = 'log'): void {
-		$b = Util::cli() ? "\n" : "<br>";
+		$b = Util::isCLI() ? "\n" : "<br>";
 
 		// Remove one extra break as pre tag adds one already
-		if (!Util::cli()) {
+		if (!Util::isCLI()) {
 			$numOfBreak -= 1;
 		}
 
 		// Remove one extra break if it of type array/obj for CLI output
-		if (Util::cli() && (is_array($value) || is_object($value))) {
+		if (Util::isCLI() && (is_array($value) || is_object($value))) {
 			$numOfBreak -= 1;
 		}
 
@@ -88,7 +88,7 @@ abstract class Console {
 			$value = $value ? 'true' : 'false';
 		}
 
-		if (Util::cli()) {
+		if (Util::isCLI()) {
 			echo match ($type) {
 				'error' => "\033[31m$value\033[0m$break",
 				'success' => "\033[32m$value\033[0m$break",

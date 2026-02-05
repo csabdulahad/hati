@@ -60,7 +60,7 @@ class Trunk extends RuntimeException {
 	 * */
 	#[NoReturn]
 	public function report(): void {
-		if (!Util::cli()) {
+		if (!Util::isCLI()) {
 			foreach ($this->headers as $h) {
 				header($h);
 			}

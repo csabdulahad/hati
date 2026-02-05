@@ -313,7 +313,7 @@ class Response {
 	 * */
 	#[NoReturn]
 	public static function report(mixed $msg, int $status, ?array $headers = null, ?array $cookies = null): void {
-		if (!Util::cli()) {
+		if (!Util::isCLI()) {
 			self::setHTTPHeaders($headers ?? []);
 			self::setCookies($cookies ?? []);
 		}
@@ -340,7 +340,7 @@ class Response {
 	 * @param array $headers containing HTTP headers
 	 * */
 	private static function setHTTPHeaders(array $headers): void {
-		if (Util::cli()) return;
+		if (Util::isCLI()) return;
 
 		$contentTypeJSON = 'Content-Type: application/json';
 		if (!in_array($contentTypeJSON, $headers)) {

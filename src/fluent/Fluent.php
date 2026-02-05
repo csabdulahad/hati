@@ -1066,7 +1066,7 @@ class Fluent {
 		$dbConfig = Hati::dbConfigObj();
 		
 		// Figure out where we are running!
-		if (Util::cli()) {
+		if (Util::isCLI()) {
 			$key = 'default_cli_db';
 		} elseif (str_contains(Util::host(), '://localhost')) {
 			$key = 'default_test_db';

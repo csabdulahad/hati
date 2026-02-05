@@ -18,7 +18,7 @@ use hati\util\Util;
  **/
 function vd(mixed $var, bool $exit = true): void {
 	if (is_object($var)) {
-		if (Util::cli()) var_dump($var);
+		if (Util::isCLI()) var_dump($var);
 		else {
 			echo "<pre>";
 			var_dump($var);
@@ -34,7 +34,7 @@ function vd(mixed $var, bool $exit = true): void {
 		$var = 'null';
 	}
 
-	if (Util::cli()) echo $var;
+	if (Util::isCLI()) echo $var;
 	else echo "<pre>$var</pre>";
 
 	if ($exit) exit;
@@ -52,13 +52,13 @@ function vd(mixed $var, bool $exit = true): void {
 function println(mixed $value, int $numOfBreak = 1, bool $pretty = true): void {
 
 	// Remove one extra break as pre tag adds one already
-	$b = Util::cli() ? "\n" : "<br>";
-	if (!Util::cli() && $pretty) {
+	$b = Util::isCLI() ? "\n" : "<br>";
+	if (!Util::isCLI() && $pretty) {
 		$numOfBreak -= 1;
 	}
 
 	// Remove one extra break if it of type array/obj for CLI output
-	if ((is_array($value) || is_object($value) && Util::cli()))
+	if ((is_array($value) || is_object($value) && Util::isCLI()))
 		$numOfBreak -= 1;
 
 	// Can't have zero number of break for str_repeat function
@@ -73,9 +73,9 @@ function println(mixed $value, int $numOfBreak = 1, bool $pretty = true): void {
 		$value = 'null';
 	}
 
-	if ($pretty && !Util::cli()) echo "<pre>";
+	if ($pretty && !Util::isCLI()) echo "<pre>";
 	echo $value;
-	if ($pretty && !Util::cli()) echo "</pre>";
+	if ($pretty && !Util::isCLI()) echo "</pre>";
 	echo $break;
 }
 

@@ -457,7 +457,7 @@ abstract class CLI {
 		 * If the isColored is null that means it was not checkd for color support yet.
 		 * So check it and cache the result for STDOUT.
 		 * */
-		if (is_null(self::$isColored) && Util::cli()) {
+		if (is_null(self::$isColored) && Util::isCLI()) {
 			static::$isColored = static::hasColorSupport(STDOUT);
 		}
 
@@ -829,7 +829,7 @@ abstract class CLI {
 	 * @return void
 	 */
 	private static function fwrite($handle, string $string): void {
-		if (! Util::cli()) {
+		if (! Util::isCLI()) {
 			echo $string;
 			return;
 		}

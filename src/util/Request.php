@@ -46,10 +46,10 @@ abstract class Request {
 	 * Extracts the request body either as 'json' or 'raw'.
 	 *
 	 * @param string $as The format you want to request body be in. Only supports 'raw' & 'json'.
-	 * @throws InvalidArgumentException Throws InvalidArgumentException 'as' argument is neither json
+	 * @throws InvalidArgumentException Throws InvalidArgumentException 'as' argument is neither JSON
 	 * nor raw.
 	 * @return array|string|null null when the data is not in right format or the content type is not matching
-	 * as specified. Returns associative array if it is parsed successfully for json data. Otherwise,
+	 * as specified. Returns associative array if it is parsed successfully for JSON data. Otherwise,
 	 * returns as string value.
 	 */
 	public static function body(string $as = 'json') : array|string|null {
@@ -213,7 +213,7 @@ abstract class Request {
 	/**
 	 * By using this method, script can acquire the system information
 	 * such as browser and os info. A string consisting of browser name
-	 * and os name seperated by comma will be returned.
+	 * and os name separated by comma will be returned.
 	 *
 	 * @return string browser,os name will be returned.
 	 */

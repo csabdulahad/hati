@@ -6,7 +6,7 @@ use hati\Trunk;
 
 /**
  * All processing related with Url processing such scheme, host, query parameters etc.
- * can extracted and manipulated using this simple utility class.
+ * can be extracted and manipulated using this simple utility class.
  *
  * Almost all the methods take optional url argument to extract url related information.
  * By default, it gets the current url from the $_SERVER global array.
@@ -105,7 +105,7 @@ abstract class Url {
 	 * The fragment part after the # sign in the url can be extracted as string by
 	 * this method. Unlike other methods, the url is not optional to this method.
 	 *
-	 * @param $url string The url whose fragment is be extracted.
+	 * @param $url string The url whose fragment is to be extracted.
 	 * @param $defVal mixed The default value is to be returned when the fragment is not found.
 	 * @param $throwErr bool Indicated whether to throw error on not finding the fragment.
 	 * */
@@ -117,4 +117,35 @@ abstract class Url {
 		return empty($value) ? $defVal : $value;
 	}
 
+	
+	/**
+	 * Returns the subdomain of the request URI.
+	 *
+	 * @param string $url The url whose subdomain is to be extracted.
+	 * @return string subdomain
+	 * */
+	public static function subdomain(string $url = ''): string
+	{
+		$host =
+			!empty($url) ?
+			$url :
+			($_SERVER['HTTP_HOST'] ?? '');
+		
+		if (empty($host)) return $host;
+		
+		$host = strtolower(preg_replace('/:\d+$/', '', $host));
+		
+		$dotPos = strpos($host, '.');
+		if (!$dotPos) return '';
+		
+		$host = substr($host, 0, $dotPos);
+		
+		if (str_contains($host, '://')) {
+			$schemaEndPos = strpos($host, '://');
+			$host = substr($host, $schemaEndPos + 3);
+		}
+		
+		return $host;
+	}
+	
 }

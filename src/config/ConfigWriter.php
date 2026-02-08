@@ -4,7 +4,7 @@ namespace hati\config;
 
 class ConfigWriter {
 
-	// Add extra line break before these json keys
+	// Add extra line break before these JSON keys
 	private static array $group = [
 		'project_dir_as_include_path', 'dev_API_benchmark', 'time_zone',
 		'global_php', 'mailer_host', 'doc_config','img_config',
@@ -68,7 +68,7 @@ class ConfigWriter {
 		];
 	}
 
-	// Beautify the json output
+	// Beautify the JSON output
 	private static function beautifyAsJSON(array $json): string {
 		$output = json_encode($json, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 		$data = json_decode($output, true);

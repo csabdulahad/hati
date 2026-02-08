@@ -2,7 +2,7 @@
 
 return [
 
-	'api_registry_folder'				=>			'',
+	'api_registry'						=>			'',
 
 	'project_dir_as_include_path'       =>          true,
 	'use_global_func'                   =>          true,

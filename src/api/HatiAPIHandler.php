@@ -68,14 +68,19 @@ final class HatiAPIHandler {
 			$handler = self::get();
 			
 			/*
-			 * Figure out the registry location
+			 * Figure out the registry file and
+			 * register all the API endpoints path
 			 * */
-			$registry = is_null($augment) ? getcwd() : Hati::root(Hati::config(Key::API_REGISTRY_FOLDER));
+			$registryFile = Hati::config(Key::API_REGISTRY);
+			
+			if (empty($registryFile)) {
+				throw Trunk::error500('API registry is not configured');
+			}
 
-			/*
-			 * Register all the API endpoints path
-			 * */
-			$registry .= DIRECTORY_SEPARATOR . 'hati_api_registry.php';
+			$registryFile = ltrim($registryFile, '/');
+			$registryFile = str_replace('.php', '', $registryFile) . '.php';
+			
+			$registry = Hati::projectRoot($registryFile);
 			
 			if (!file_exists($registry)) {
 				throw Trunk::error500('API registry is missing');

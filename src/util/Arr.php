@@ -149,7 +149,7 @@ abstract class Arr {
 	 * @return mixed depends on what the array contains
 	 */
 	public static function randElement(array $array): mixed {
-		return is_array($array) ? $array[array_rand($array)] : $array;
+		return $array[array_rand($array)];
 	}
 
 	/**
@@ -287,6 +287,27 @@ abstract class Arr {
 		}
 
 		return $result;
+	}
+	
+	/**
+	 * Shuffles the associative array items by keys.
+	 *
+	 * @param array $array The array to be shuffled
+	 *
+	 * @return array new shuffled array
+	 * */
+	public static function shuffleAssoc(array $array): array
+	{
+		$keys = array_keys($array);
+		shuffle($keys);
+		
+		$shuffled = [];
+		
+		foreach ($keys as $key) {
+			$shuffled[$key] = $array[$key];
+		}
+		
+		return $shuffled;
 	}
 
 	/**

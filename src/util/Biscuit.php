@@ -84,6 +84,23 @@ abstract class Biscuit {
 		);
 	}
 
+	/**
+	 * Any cookie variable can be accessed either with escaping/safe manner or without escaping.
+	 * This method first checks whether the cookie variable is set; if not then it simply returns
+	 * an empty string.
+	 *
+	 * The escaping can be turned off. By default, escaping is on.
+	 *
+	 * @param string $key Cookie variable key to get.
+	 * @param string $defVal The default value for the cookie it wasn't found in the request.
+	 * @param bool $escape Whether to escape the cookie variable or not.
+	 * */
+	public static function get(string $key, string $defVal = '', bool $escape = true): string
+	{
+		$value = $_COOKIE[$key] ?? $defVal;
+		return  $escape ? htmlentities($value) : $value;
+	}
+	
 	private static function getDomain(): string {
 		return ($_SERVER['HTTP_HOST'] != 'localhost') ? ($_SERVER['HTTP_HOST'] ?? false) : false;
 	}

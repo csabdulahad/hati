@@ -59,8 +59,10 @@ class ConfigWriter {
 		 * Write merged configuration to the hati.json file in the root directory
 		 */
 		$result = self::writeToConfigFile($newConfig, $rootPath);
-		$msg = $result ? 'New configuration has been merged with existing hati.json'
-			: 'Failed to merge the new configuration with existing hati.json';
+		$msg =
+			$result ?
+			'New configuration has been merged with existing hati.json' :
+			'Failed to merge the new configuration with existing hati.json';
 
 		return [
 			'msg' => $msg,

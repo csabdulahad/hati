@@ -4,7 +4,7 @@
  *                     !!! Handle CORS !!!
  * Modify the CORS request as per API requirement below.
  * Hati provided bare minimum header configurations to allow APIs
- * to be invoked from cross origin manner. For web apps, Cookies are
+ * to be invoked from cross-origin manner. For web apps, Cookies are
  * request to be attached in actual request
  *********************************************************************/
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {

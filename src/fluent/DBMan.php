@@ -71,9 +71,10 @@ class DBMan {
 		}
 		
 		if ($dbNotFoundInList) {
-			$msg = empty($dbName) ?
-				"Database name is not specified in the id $id followed by a colon"
-				: "Database $dbName is not defined for in the config for $id";
+			$msg =
+				empty($dbName) ?
+				"Database name is not specified in the id $id followed by a colon" :
+				"Database $dbName is not defined for in the config for $id";
 
 			throw new Trunk($msg);
 		}

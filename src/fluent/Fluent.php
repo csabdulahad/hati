@@ -58,6 +58,8 @@ class Fluent {
 	// a Fluent instance for singleton pattern
 	private static ?Fluent $INS = null;
 	
+	private array $errorInfo = [];
+	
 	private function __construct() {
 		$this->dbMan = new DBMan();
 		$this->profileId = self::defaultProfileId();
@@ -159,6 +161,42 @@ class Fluent {
 	}
 	
 	/**
+	 * Returns boolean saying if the last query execution encountered error or not.
+	 *
+	 * @return bool true if error happened, false if not
+	 * */
+	public static function hasError(): bool
+	{
+		$ins = self::get();
+		return !empty($ins->errorInfo['message']);
+	}
+	
+	/**
+	 * Returns the last error message. Empty string is returned if no error happened
+	 * and this method is called.
+	 *
+	 * @return string the last error message
+	 * */
+	public static function getLastErrMsg(): string
+	{
+		$ins = self::get();
+		return $ins->errorInfo['message'];
+	}
+	
+	/**
+	 * Returns the last error code for the error if happened.
+	 * 0 is returned if no error happened and this method is
+	 * called.
+	 *
+	 * @return int the error code.
+	 * */
+	public static function getLastErrCode(): int
+	{
+		$ins = self::get();
+		return (int) $ins->errorInfo['code'];
+	}
+	
+	/**
 	 * Execute method is more powerful at executing any prepared statement.
 	 * For a given query, it prepares the query then binds it on runtime using PDO
 	 * execute method. After execution, it caches the output into a variable called
@@ -170,14 +208,16 @@ class Fluent {
 	 * @param PDO $pdo the PDO is to be used for the query to be executed
 	 * @param string $query the query to be executed
 	 * @param array $param array containing binding values to the query
-	 * @param string $msg any custom message to replace default system error message
 	 *
 	 * @return int indicates how many rows were affected by the query execution.
 	 * */
-	public static function exePrepareWith(PDO $pdo, string $query, array $param = [], string $msg = ''): int {
+	public static function exePrepareWith(PDO $pdo, string $query, array $param = []): int {
 		$ins = self::get();
 		
 		try {
+			$ins->errorInfo['code'] = '';
+			$ins->errorInfo['message'] = '';
+			
 			$ins->data = null;
 			$ins->executed = false;
 			
@@ -189,8 +229,12 @@ class Fluent {
 			$ins->executed = $ins->stmtBuffer->execute($param);
 			return $ins->stmtBuffer->rowCount();
 		} catch (Throwable $t) {
-			$message = self::buildErrMsg($msg, $query, $ins->sqlErrInOutput, $t->getMessage());
-			throw new Trunk($message);
+			$message = self::buildErrMsg($query, $ins->sqlErrInOutput, $t->getMessage());
+			
+			$ins->errorInfo['code'] = $t->getCode();
+			$ins->errorInfo['message'] = $message;
+			
+			return 0;
 		}
 	}
 	
@@ -201,18 +245,17 @@ class Fluent {
 	 *
 	 * @param string $query the query to be executed
 	 * @param array $param array containing binding values to the query
-	 * @param string $msg any custom message to replace default system error message
 	 *
 	 * @return int indicates how many rows were affected by the query execution.
 	 * */
-	public static function exePrepare(string $query, array $param = [], string $msg = ''): int {
+	public static function exePrepare(string $query, array $param = []): int {
 		$ins = self::get();
 		
 		if (is_null($ins->db)) {
 			$ins->db = $ins->dbMan->connect(self::defaultProfileId());
 		}
 		
-		return self::exePrepareWith($ins->db, $query, $param, $msg);
+		return self::exePrepareWith($ins->db, $query, $param);
 	}
 	
 	/**
@@ -223,13 +266,15 @@ class Fluent {
 	 *
 	 * @param PDO $pdo the PDO is to be used for the query to be executed
 	 * @param string $query the query to be executed
-	 * @param string $msg any custom message to replace default system error message
 	 *
 	 * @return int indicates how many rows were affected by the query execution.
 	 * */
-	public static function exeStaticWith(PDO $pdo, string $query, string $msg = ''): int {
+	public static function exeStaticWith(PDO $pdo, string $query): int {
 		$ins = self::get();
 		try {
+			$ins->errorInfo['code'] = '';
+			$ins->errorInfo['message'] = '';
+			
 			$ins->data = null;
 			$ins->executed = false;
 			
@@ -241,8 +286,12 @@ class Fluent {
 			$ins->executed = $ins->stmtBuffer != false;
 			return $ins->stmtBuffer->rowCount();
 		} catch (Throwable $t) {
-			$message = self::buildErrMsg($msg, $query, $ins->sqlErrInOutput, $t -> getMessage());
-			throw new Trunk($message);
+			$message = self::buildErrMsg($query, $ins->sqlErrInOutput, $t->getMessage());
+			
+			$ins->errorInfo['code'] = $t->getCode();
+			$ins->errorInfo['message'] = $message;
+			
+			return 0;
 		}
 	}
 	
@@ -252,18 +301,17 @@ class Fluent {
 	 * using prepared statements, use {@link Fluent::exePrepare} method instead
 	 *
 	 * @param string $query the query to be executed
-	 * @param string $msg any custom message to replace default system error message
 	 *
 	 * @return int indicates how many rows were affected by the query execution.
 	 * */
-	public static function exeStatic(string $query, string $msg = ''): int {
+	public static function exeStatic(string $query): int {
 		$ins = self::get();
 		
 		if (is_null($ins->db)) {
 			$ins->db = $ins->dbMan->connect(self::defaultProfileId());
 		}
 		
-		return self::exeStaticWith($ins->db, $query, $msg);
+		return self::exeStaticWith($ins->db, $query);
 	}
 	
 	/**
@@ -282,19 +330,18 @@ class Fluent {
 	 * prepare statement.
 	 *
 	 * @param array $values Array containing the values for the prepared statement data binding
-	 * @param string $msg Any message to replace the default mysql error with
 	 *
 	 * @throws RuntimeException If the number of bind columns don't match with the number of values passed-in
 	 * @return int indicates how many rows were affected by the query execution.
 	 **/
-	public static function insertPrepare(string $table, array $columns, array $values = [], string $msg = ''): int {
+	public static function insertPrepare(string $table, array $columns, array $values = []): int {
 		$ins = self::get();
 		
 		if (is_null($ins->db)) {
 			$ins->db = $ins->dbMan->connect(self::defaultProfileId());
 		}
 		
-		return self::insertData($ins->db, $table, $columns, $values, true, $msg);
+		return self::insertData($ins->db, $table, $columns, $values, true);
 	}
 	
 	/**
@@ -313,13 +360,12 @@ class Fluent {
 	 * prepare statement.
 	 *
 	 * @param array $values Array containing the values for the prepared statement data binding
-	 * @param string $msg Any message to replace the default mysql error with
 	 *
 	 * @return int indicates how many rows were affected by the query execution.
 	 * *@throws RuntimeException If the number of bind columns don't match with the number of values passed-in
 	 */
-	public static function insertPrepareWith(PDO $pdo, string $table, array $columns, array $values = [], string $msg = ''): int {
-		return self::insertData($pdo, $table, $columns, $values, true, $msg);
+	public static function insertPrepareWith(PDO $pdo, string $table, array $columns, array $values = []): int {
+		return self::insertData($pdo, $table, $columns, $values, true);
 	}
 	
 	/**
@@ -336,20 +382,19 @@ class Fluent {
 	 * match the missing value from the values array to complete the array
 	 *
 	 * @param array $values Array containing the values for the query
-	 * @param string $msg Any message to replace the default mysql error with
 	 *
 	 * @throws RuntimeException If the number of columns which have missing values don't
 	 * match with the number of values passed-in
 	 * @return int indicates how many rows were affected by the query execution.
 	 **/
-	public static function insert(string $table, array $columns, array $values = [], string $msg = ''): int {
+	public static function insert(string $table, array $columns, array $values = []): int {
 		$ins = self::get();
 		
 		if (is_null($ins->db)) {
 			$ins->db = $ins->dbMan->connect(self::defaultProfileId());
 		}
 		
-		return self::insertData($ins->db, $table, $columns, $values, false, $msg);
+		return self::insertData($ins->db, $table, $columns, $values, false);
 	}
 	
 	/**
@@ -367,14 +412,13 @@ class Fluent {
 	 * match the missing value from the values array to complete the array
 	 *
 	 * @param array $values Array containing the values for the query
-	 * @param string $msg Any message to replace the default mysql error with
 	 *
 	 * @return int indicates how many rows were affected by the query execution.
 	 * *@throws RuntimeException If the number of columns which have missing values don't
 	 * match with the number of values passed-in
 	 */
-	public static function insertWith(PDO $pdo, string $table, array $columns, array $values = [], string $msg = ''): int {
-		return self::insertData($pdo, $table, $columns, $values, false, $msg);
+	public static function insertWith(PDO $pdo, string $table, array $columns, array $values = []): int {
+		return self::insertData($pdo, $table, $columns, $values, false);
 	}
 	
 	/**
@@ -387,20 +431,19 @@ class Fluent {
 	 * @param string $where Optional where clause to control the update operation. Column here can be set as part of
 	 * the string or be marked with ? mark which can be passed in by whereValues array.
 	 * @param array $whereValues Array containing the values for the where clauses
-	 * @param string $msg Any custom message to replace SQL error message
 	 *
 	 * @return int The number of raws were updated by the query
 	 * @throws RuntimeException It throws run time exception when number cols-values or where-whereValue pair don't
 	 * match
 	 */
-	public static function update(string $table, array $cols, array $values = [], string $where = '', array $whereValues = [], string $msg = ''): int {
+	public static function update(string $table, array $cols, array $values = [], string $where = '', array $whereValues = []): int {
 		$ins = self::get();
 		
 		if (is_null($ins->db)) {
 			$ins->db = $ins->dbMan->connect(self::defaultProfileId());
 		}
 		
-		return self::updateData($ins->db, $table, $cols, $values, false, $where, $whereValues, $msg);
+		return self::updateData($ins->db, $table, $cols, $values, false, $where, $whereValues);
 	}
 	
 	/**
@@ -414,14 +457,13 @@ class Fluent {
 	 * @param string $where Optional where clause to control the update operation. Column here can be set as part of
 	 * the string or be marked with ? mark which can be passed in by whereValues array.
 	 * @param array $whereValues Array containing the values for the where clauses
-	 * @param string $msg Any custom message to replace SQL error message
 	 *
 	 * @return int The number of raws were updated by the query
 	 **@throws RuntimeException It throws run time exception when number cols-values or where-whereValue pair don't
 	 * match
 	 */
-	public static function updateWith(PDO $pdo, string $table, array $cols, array $values = [], string $where = '', array $whereValues = [], string $msg = ''): int {
-		return self::updateData($pdo, $table, $cols, $values, false, $where, $whereValues, $msg);
+	public static function updateWith(PDO $pdo, string $table, array $cols, array $values = [], string $where = '', array $whereValues = []): int {
+		return self::updateData($pdo, $table, $cols, $values, false, $where, $whereValues);
 	}
 	
 	/**
@@ -434,20 +476,19 @@ class Fluent {
 	 * @param string $where Optional where clause to control the update operation. Column here can be set as part of
 	 * the string or be marked with ? mark which can be passed in by whereValues array.
 	 * @param array $whereValues Array containing the values for the where clauses
-	 * @param string $msg Any custom message to replace SQL error message
 	 *
 	 * @return int The number of raws were updated by the query
 	 **@throws RuntimeException It throws run time exception when number cols-values or where-whereValue pair don't
 	 * match
 	 */
-	public static function updatePrepare(string $table, array $cols, array $values = [], string $where = '', array $whereValues = [], string $msg = ''): int {
+	public static function updatePrepare(string $table, array $cols, array $values = [], string $where = '', array $whereValues = []): int {
 		$ins = self::get();
 		
 		if (is_null($ins->db)) {
 			$ins->db = $ins->dbMan->connect(self::defaultProfileId());
 		}
 		
-		return self::updateData($ins->db, $table, $cols, $values, true, $where, $whereValues,  $msg);
+		return self::updateData($ins->db, $table, $cols, $values, true, $where, $whereValues);
 	}
 	
 	/**
@@ -461,14 +502,13 @@ class Fluent {
 	 * @param string $where Optional where clause to control the update operation. Column here can be set as part of
 	 * the string or be marked with ? mark which can be passed in by whereValues array.
 	 * @param array $whereValues Array containing the values for the where clauses
-	 * @param string $msg Any custom message to replace SQL error message
 	 *
 	 * @return int The number of raws were updated by the query
 	 **@throws RuntimeException It throws run time exception when number cols-values or where-whereValue pair don't
 	 * match
 	 */
-	public static function updatePrepareWith(PDO $pdo, string $table, array $cols, array $values = [], string $where = '', array $whereValues = [], string $msg = ''): int {
-		return self::updateData($pdo, $table, $cols, $values, true, $where, $whereValues,  $msg);
+	public static function updatePrepareWith(PDO $pdo, string $table, array $cols, array $values = [], string $where = '', array $whereValues = []): int {
+		return self::updateData($pdo, $table, $cols, $values, true, $where, $whereValues);
 	}
 	
 	/**
@@ -479,19 +519,18 @@ class Fluent {
 	 * @param string $where The where clause to control the update operation. Column here can be set as part of
 	 * the string or be marked with ? mark which can be passed in by whereValues array.
 	 * @param array $whereValues Array containing the values for the where clauses
-	 * @param string $msg Any custom message to replace SQL error message
 	 *
 	 * @return int The number of raws were deleted by the query
 	 **@throws RuntimeException It throws run time exception when number of  where-whereValue pair don't match
 	 */
-	public static function delete(string $table, string $where = '', array $whereValues = [], string $msg = ''): int {
+	public static function delete(string $table, string $where = '', array $whereValues = []): int {
 		$ins = self::get();
 		
 		if (is_null($ins->db)) {
 			$ins->db = $ins->dbMan->connect(self::defaultProfileId());
 		}
 		
-		return self::deleteData($ins->db, $table, $where, $whereValues, false, $msg);
+		return self::deleteData($ins->db, $table, $where, $whereValues, false);
 	}
 	
 	/**
@@ -503,13 +542,12 @@ class Fluent {
 	 * @param string $where The where clause to control the update operation. Column here can be set as part of
 	 * the string or be marked with ? mark which can be passed in by whereValues array.
 	 * @param array $whereValues Array containing the values for the where clauses
-	 * @param string $msg Any custom message to replace SQL error message
 	 *
 	 * @return int The number of raws were deleted by the query
 	 **@throws RuntimeException It throws run time exception when number of  where-whereValue pair don't match
 	 */
-	public static function deleteWith(PDO $pdo, string $table, string $where = '', array $whereValues = [], string $msg = ''): int {
-		return self::deleteData($pdo, $table, $where, $whereValues, false, $msg);
+	public static function deleteWith(PDO $pdo, string $table, string $where = '', array $whereValues = []): int {
+		return self::deleteData($pdo, $table, $where, $whereValues, false);
 	}
 	
 	/**
@@ -520,19 +558,18 @@ class Fluent {
 	 * @param string $where The where clause to control the delete operation. Column here can be set as part of
 	 * the string or be marked with ? mark which can be passed in by whereValues array.
 	 * @param array $whereValues Array containing the values for the where clauses
-	 * @param string $msg Any custom message to replace SQL error message
 	 *
 	 * @throws RuntimeException It throws run time exception when number where-whereValue pair don't match
 	 * @return int The number of raws were deleted by the query
 	 **/
-	public static function deletePrepare(string $table, string $where = '', array $whereValues = [], string $msg = ''): int {
+	public static function deletePrepare(string $table, string $where = '', array $whereValues = []): int {
 		$ins = self::get();
 		
 		if (is_null($ins->db)) {
 			$ins->db = $ins->dbMan->connect(self::defaultProfileId());
 		}
 		
-		return self::deleteData($ins->db, $table, $where, $whereValues, true, $msg);
+		return self::deleteData($ins->db, $table, $where, $whereValues, true);
 	}
 	
 	/**
@@ -544,13 +581,12 @@ class Fluent {
 	 * @param string $where The where clause to control the delete operation. Column here can be set as part of
 	 * the string or be marked with ? mark which can be passed in by whereValues array.
 	 * @param array $whereValues Array containing the values for the where clauses
-	 * @param string $msg Any custom message to replace SQL error message
 	 *
 	 * @throws RuntimeException It throws run time exception when number where-whereValue pair don't match
 	 * @return int The number of raws were deleted by the query
 	 **/
-	public static function deletePrepareWith(PDO $pdo, string $table, string $where = '', array $whereValues = [], string $msg = ''): int {
-		return self::deleteData($pdo, $table, $where, $whereValues, true, $msg);
+	public static function deletePrepareWith(PDO $pdo, string $table, string $where = '', array $whereValues = []): int {
+		return self::deleteData($pdo, $table, $where, $whereValues, true);
 	}
 	
 	/**
@@ -593,11 +629,11 @@ class Fluent {
 	}
 	
 	/**
-	 * This method is used to get the returned value of the sql query count.
+	 * This method is used to get the returned value of the SQL query count.
 	 * It is not like rowCount method. This works on the query where the query
 	 * uses the COUNT() function from SQL syntax.
 	 *
-	 * @return int number of result counted by the sql query
+	 * @return int number of result counted by the SQL query
 	 * */
 	public static function sqlCount(): int{
 		$count = 0;
@@ -615,7 +651,7 @@ class Fluent {
 	/**
 	 * This method returns the id of the last inserted row by the query.
 	 *
-	 * @return int returns the last inserted row of last sql query
+	 * @return int returns the last inserted row of last SQL query
 	 */
 	public static function lastInsertRowId(): int {
 		return self::getPDO()->lastInsertId();
@@ -976,12 +1012,11 @@ class Fluent {
 	 * @param string $where Where clauses to control the update operation. Values can be left out by ? mark be picked
 	 * up from the whereValues array.
 	 * @param array $whereVal Array containing the values for the where clauses
-	 * @param string $msg Any message to replace SQL error
 	 *
 	 * @throws RuntimeException When column-value pair mismatched
 	 * @return int Number of raw were updated by this query
 	 **/
-	private static function updateData(PDO $pdo, string $table, array $columns, array $values, bool $usePrepare, string $where, array $whereVal, string $msg): int {
+	private static function updateData(PDO $pdo, string $table, array $columns, array $values, bool $usePrepare, string $where, array $whereVal): int {
 		[$cols, $val] = self::toQueryStruct($columns, $values, ' = ', $usePrepare);
 		
 		$sets = '';
@@ -1001,7 +1036,7 @@ class Fluent {
 			$values = array_merge($values, $whereVal);
 		}
 		
-		return $usePrepare ? self::exePrepareWith($pdo, $q, $values, $msg) : self::exeStaticWith($pdo, $q, $msg);
+		return $usePrepare ? self::exePrepareWith($pdo, $q, $values) : self::exeStaticWith($pdo, $q);
 	}
 	
 	/**
@@ -1012,12 +1047,11 @@ class Fluent {
 	 * can also be left out with ? mark so that the values can be fetched from the whereValues.
 	 * @param array $whereValues Array containing values for the ? marked columns
 	 * @param bool $usePrepare Indicates whether the value should use prepare statement or regular query
-	 * @param string $msg Any message to replace SQL query error
 	 *
 	 * @throws RuntimeException When the number of values doesn't with the number of question mark for binding
 	 * @return int The number of rows were affected by this query
 	 **/
-	private static function deleteData(PDO $pdo, string $table, string $where, array $whereValues, bool $usePrepare, string $msg): int {
+	private static function deleteData(PDO $pdo, string $table, string $where, array $whereValues, bool $usePrepare): int {
 		$q = "DELETE FROM $table";
 		
 		if (!empty($where)) {
@@ -1025,7 +1059,7 @@ class Fluent {
 			$q .= " WHERE $w";
 		}
 		
-		return $usePrepare ? self::exePrepareWith($pdo, $q, $whereValues, $msg) : self::exeStaticWith($pdo, $q, $msg);
+		return $usePrepare ? self::exePrepareWith($pdo, $q, $whereValues) : self::exeStaticWith($pdo, $q);
 	}
 	
 	/**
@@ -1037,12 +1071,11 @@ class Fluent {
 	 * or can be an associative array containing name-value mapping.
 	 * @param array $values Array containing the values for the prepared statement data binding or columns
 	 * @param bool $usePrepare Indicates whether the query it to use prepare statement or not
-	 * @param string $msg Any message to replace the default mysql error with
 	 *
 	 * @throws RuntimeException If the number of bind columns don't match with the number of values passed-in
 	 * @return int indicates how many rows were affected by the query execution.
 	 **/
-	private static function insertData(PDO $pdo, string $table, array $columns, array $values = [], bool $usePrepare = false, string $msg = ''): int {
+	private static function insertData(PDO $pdo, string $table, array $columns, array $values = [], bool $usePrepare = false): int {
 		[$cols, $vals] = self::toQueryStruct($columns, $values, '', $usePrepare);
 		
 		$cols = join(',', $cols);
@@ -1051,7 +1084,7 @@ class Fluent {
 		// build up the query string & execute as per request
 		$q = "INSERT INTO $table($cols) VALUES($vals)";
 		
-		return $usePrepare ? self::exePrepareWith($pdo, $q, $values, $msg) : self::exeStaticWith($pdo, $q, $msg);
+		return $usePrepare ? self::exePrepareWith($pdo, $q, $values) : self::exeStaticWith($pdo, $q);
 	}
 	
 	/**
@@ -1077,12 +1110,12 @@ class Fluent {
 		return $dbConfig[$key] ?? null;
 	}
 	
-	private static function buildErrMsg(string $customMsg, string $query, bool $debug, string $throwableMsg): string {
+	private static function buildErrMsg(string $query, bool $debug, string $throwableMsg): string {
+		$message = $throwableMsg;
+		
 		if ($debug) {
 			$query = str_replace(["\n", "\t"], [' ', ''], $query);
 			$message = "$throwableMsg: $query";
-		} else {
-			$message = empty($customMsg) ? $throwableMsg : $customMsg;
 		}
 		
 		return $message;

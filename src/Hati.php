@@ -20,7 +20,7 @@ use Throwable;
 abstract class Hati {
 
 	// version
-	private static string $version = '7.0.17-beta';
+	private static string $version = '7.0.21-beta';
 
 	private static float $BENCHMARK_START = 0;
 
@@ -32,16 +32,16 @@ abstract class Hati {
 	// The config directory
 	private static ?string $DIR_PROJECT = null;
 
-	// The global hati json configuration
+	// The global hati JSON configuration
 	private static ?array $CONFIG_GLOBAL = null;
 
-	// The subproject hati json configuration
+	// The subproject hati JSON configuration
 	private static ?array $CONFIG_LOCAL = null;
 
 	// Indicates if the global config in use
 	private static bool $GLOBAL_CONFIG_IN_USE;
 
-	// The db configuration file is cached as json decoded array
+	// The db configuration file is cached as JSON decoded array
 	private static ?array $DB_CONFIG = [];
 
 	/**
@@ -51,7 +51,7 @@ abstract class Hati {
 	 * @throws Throwable
 	 */
 	public static function start(): void {
-		global $HATI_USE_SRC_AS_ROOT;
+		self::checkConstants();
 
 		// calculate the project root folder
 		self::$DIR_ROOT = realpath(dirname(__DIR__, 4)) . DIRECTORY_SEPARATOR;
@@ -62,12 +62,12 @@ abstract class Hati {
 		/*
 		 * Adjust root dir if there is a src folder!
 		 * */
-		if ($HATI_USE_SRC_AS_ROOT) {
+		if (HATI_USE_SRC_AS_ROOT) {
 			$root = self::$DIR_ROOT . 'src' . DIRECTORY_SEPARATOR;
 			self::$DIR_ROOT = $root;
 		}
 
-		// load the correct config json file
+		// load the correct config JSON file
 		self::loadConfig();
 
 		date_default_timezone_set(self::config(Key::TIME_ZONE));
@@ -108,7 +108,7 @@ abstract class Hati {
 		$globalPHP = self::config(Key::GLOBAL_PHP, 'arr');
 		foreach ($globalPHP as $file) {
 			$file = trim($file);
-			$file = rtrim($file, '.php');
+			$file = str_replace('.php', '', $file);
 			$path = self::projectRoot("$file.php");
 			if (file_exists($path)) require_once $path;
 		}
@@ -157,8 +157,8 @@ abstract class Hati {
 	}
 
 	/**
-	 * Parse a specific json file as associative array and assigns it to the specified variable.
-	 * @throws RuntimeException If the file doesn't exist or the json is not properly formatted.
+	 * Parse a specific JSON file as associative array and assigns it to the specified variable.
+	 * @throws RuntimeException If the file doesn't exist or the JSON is not properly formatted.
 	 * */
 	private static function parseConfigFile(string $fileName, string $path, &$assignTo): void {
 		if (!file_exists($path))
@@ -173,22 +173,22 @@ abstract class Hati {
 	}
 
 	/**
-	 * Loads configuration files to set up Hati as defined by various json files
+	 * Loads configuration files to set up Hati as defined by various JSON files
 	 * */
 	private static function loadConfig(): void {
 		self::getConfigPath();
 
-		// Load hati configuration json object
+		// Load hati configuration JSON object
 		$configFile =
 			self::$GLOBAL_CONFIG_IN_USE ?
-			self::root('hati/hati.json') :
-			self::projectRoot('hati/hati.json');
+			self::root(HATI_CONFIG_FOLDER_NAME . '/hati.json') :
+			self::projectRoot(HATI_CONFIG_FOLDER_NAME . '/hati.json');
 
 		self::parseConfigFile('hati.json', $configFile, self::$CONFIG_LOCAL);
 
-		// Load db configuration json object from root
+		// Load db configuration JSON object from root
 		try {
-			$configFile = self::root('hati/db.json');
+			$configFile = self::root(HATI_CONFIG_FOLDER_NAME . '/db.json');
 			self::parseConfigFile('db.json', $configFile, self::$DB_CONFIG);
 		} catch (Throwable) {}
 	}
@@ -292,7 +292,10 @@ abstract class Hati {
 
 			// Parse the global config if needed
 			if(is_null(self::$CONFIG_GLOBAL)) {
-				self::parseConfigFile('hati.json', self::root('hati/hati.json'), self::$CONFIG_GLOBAL);
+				self::parseConfigFile(
+					'hati.json',
+					self::root(HATI_CONFIG_FOLDER_NAME . '/hati.json'),
+					self::$CONFIG_GLOBAL);
 			}
 
 			// Global config is in-use and the value is missing; throw exception!
@@ -312,6 +315,20 @@ abstract class Hati {
 		return (float) $data;
 	}
 
+	private static function checkConstants(): void
+	{
+		$consts = [
+			'HATI_USE_SRC_AS_ROOT' => true,
+			'HATI_CONFIG_FOLDER_NAME' => 'hati'
+		];
+		
+		foreach ($consts as $const => $value) {
+			if (defined($const)) continue;
+			
+			define($const, $value);
+		}
+	}
+	
 }
 
 try {

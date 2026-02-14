@@ -5,7 +5,14 @@
  * However, Hati can also work without 'src' folder. Adjust as per
  * your project requirement.
  * */
-$HATI_USE_SRC_AS_ROOT = true;
+const HATI_USE_SRC_AS_ROOT = true;
+
+
+/*
+ * Default folder name where Hati tries to find various configuration
+ * file.
+ * */
+const HATI_CONFIG_FOLDER_NAME = 'hati';
 
 
 /*
@@ -15,6 +22,6 @@ $HATI_USE_SRC_AS_ROOT = true;
  * load it which will set up Hati as defined by configurations.
  * */
 if (!class_exists(\hati\Hati::class)) {
-	$level = $HATI_USE_SRC_AS_ROOT ? 2 : 1;
+	$level = HATI_USE_SRC_AS_ROOT ? 2 : 1;
 	require dirname(__DIR__, $level) . '/vendor/rootdata21/hati/src/Hati.php';
 }

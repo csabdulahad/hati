@@ -31,7 +31,7 @@ use RuntimeException;
  *
  * Calling these functions, behind the scene {@link HatiCLIThrowing} runtime exception is thrown which is
  * supposed to be picked by {@link HatiCLI::call()} method. Catching that exception will not report exit or
- * error to HatCLI thus not getting unexpected behaviour. If you need to catch exception, then make sure to
+ * error to HatCLI thus not getting unexpected behavior. If you need to catch exception, then make sure to
  * make the first call to the {@link HatiCLI::escalate()} in catch block so that HatiCLI can handle the
  * exception to simulate the error/exit scenarios intended.
  *
@@ -181,7 +181,7 @@ abstract class HatiCLI {
 	 * Adds the option specified by the array to the CLI. Options can be built
 	 * and added using {@link optionBuilder()} method which eases the process.
 	 *
-	 * An option can have various fields. By default an options is mandatory,
+	 * An option can have various fields. By default, an options is mandatory,
 	 * however it can be marked optional using required field. Short name is the
 	 * mandatory field.Marking short/long name with double dashes is not necessary.
 	 * <br>
@@ -349,7 +349,7 @@ abstract class HatiCLI {
 	 *
 	 * @param string $key The name
 	 * @param array $arr The array to be used for short-to-long name mapping
-	 * @return ?string the short name for the key. If the can't be figured out
+	 * @return ?string the short name for the key. If they can't be figured out
 	 * it returns null
 	 * */
 	private function getShortname(string $key, array $arr): ?string {
@@ -751,7 +751,7 @@ abstract class HatiCLI {
 	}
 
 	/**
-	 * It tell whether a specified flag was set by the user in the command.
+	 * It tells whether a specified flag was set by the user in the command.
 	 *
 	 * @param string $key The flag. It can be short or long name with/without '-' prepended.
 	 * @return bool true if the flag was set; false otherwise

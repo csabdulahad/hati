@@ -64,12 +64,12 @@ class Response {
 	const SUCCESS = 1;
 	const INFO = 2;
 
-	// json output keys
+	// JSON output keys
 	private static string $KEY_RESPONSE = 'response';
 	private static string $KEY_STATUS = 'status';
 	private static string $KEY_MSG = 'msg';
 
-	// buffer for json output
+	// buffer for JSON output
 	private array $output = [];
 	
 	// buffer response headers
@@ -136,7 +136,7 @@ class Response {
 	}
 
 	/**
-	 * This method can take a map or object and add the keys and the values in the json output
+	 * This method can take a map or object and add the keys and the values in the JSON output
 	 * buffer iteratively. Every property of the passed object will be the direct properties
 	 * of the final JSON output object. Existing property value of the main JSON output object
 	 * will be overridden by latest property value.
@@ -304,7 +304,7 @@ class Response {
 	}
 
 	/**
-	 * Static helper method to report with a json response object containing 'msg' & 'status'
+	 * Static helper method to report with a JSON response object containing 'msg' & 'status'
 	 * field with optional HTTP headers.
 	 *
 	 * @param mixed $msg The response message
@@ -329,7 +329,7 @@ class Response {
 		if (Hati::config(Key::DEV_API_BENCHMARK, 'bool'))
 			$buffer['exe_time'] = sprintf('%.4f', microtime(true) - Hati::benchmarkStart());
 
-		// For any positive DEV_API_DELAY config, we need to add 'delay_time' to the output json
+		// For any positive DEV_API_DELAY config, we need to add 'delay_time' to the output JSON
 		$apiDelay = Hati::config(Key::DEV_API_DELAY, 'int');
 		if ($apiDelay) $buffer['delay_time'] = $apiDelay;
 	}

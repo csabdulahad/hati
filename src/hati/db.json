@@ -1,16 +1,13 @@
 {
-	"default_prod_db": "Example-Localhost:test",
-	"default_cli_db" : "Example-Localhost:test",
-	"default_test_db": "Example-Localhost:test",
+	"default_prod_db": "localhost:test",
+	"default_cli_db" : "localhost:test",
 
 	"db_profiles": {
-
-		"Example-Localhost": {
+		"localhost": {
 			"host": "localhost",
 			"username": "root",
 			"password": "",
 			"db": ["test"]
 		}
-
 	}
 }

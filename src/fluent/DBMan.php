@@ -3,9 +3,8 @@
 namespace hati\fluent;
 
 use hati\Hati;
-use hati\Trunk;
 use PDO;
-use Throwable;
+use RuntimeException;
 
 /**
  * Database Manager or DBMan for short is a class which is used by {@link Fluent} class
@@ -34,7 +33,7 @@ class DBMan {
 
 	/**
 	 * Connection to databases are cached to avoid memory leaks. This method
-	 * fetches the db profile from the db json file as specified by the id
+	 * fetches the db profile from the db JSON file as specified by the id
 	 * argument. If cache is hit, the connection is returned, else it tries
 	 * to connect to the database.
 	 *
@@ -45,7 +44,7 @@ class DBMan {
 	 * */
 	public function connect(?string $id): ?PDO {
 		if (empty($id))
-			throw new Trunk("DB profile with id $id was not found in the config");
+			throw new RuntimeException("DB profile with id $id was not found in the config", 1);
 
 		/*
 		 * Extract profile name & db name
@@ -59,7 +58,7 @@ class DBMan {
 		 * */
 		$profile = $this->dbConfig['db_profiles'][$proId] ?? null;
 		if (empty($profile))
-			throw new Trunk("Unknown db profile $id");
+			throw new RuntimeException("Unknown db profile $id", 2);
 
 		/*
 		 * Check if db exists
@@ -76,7 +75,7 @@ class DBMan {
 				"Database name is not specified in the id $id followed by a colon" :
 				"Database $dbName is not defined for in the config for $id";
 
-			throw new Trunk($msg);
+			throw new RuntimeException($msg, 3);
 		}
 
 		/*
@@ -89,31 +88,28 @@ class DBMan {
 		/*
 		 * Connect to the db
 		 * */
-		try {
-			$host = $profile['host'];
-			$user = $profile['username'];
-			$pass = $profile['password'];
-			$charset = $profile['charset'] ?? 'utf8';
-			$port = $profile['port'] ?? 3306;
-			$timezone = $profile['timezone'] ?? null;
+		$host = $profile['host'];
+		$user = $profile['username'];
+		$pass = $profile['password'];
+		$charset = $profile['charset'] ?? 'utf8';
+		$port = $profile['port'] ?? 3306;
+		$timezone = $profile['timezone'] ?? null;
 
-			$arg = "mysql:host=$host;dbname=$dbName;port=$port;charset=$charset";
-			$db = new PDO($arg, $user, $pass);
-			$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+		$arg = "mysql:host=$host;dbname=$dbName;port=$port;charset=$charset";
 
-			if (!empty($timezone)) {
-				$db->exec("SET time_zone = '$timezone';");
-			}
+		$db = new PDO($arg, $user, $pass, [
+			PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+			PDO::ATTR_EMULATE_PREPARES => false,
+			PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+			PDO::MYSQL_ATTR_INIT_COMMAND => "SET time_zone = '$timezone'"
+		]);
 
-			/*
-			 * Cache the connection
-			 * */
-			$this->dbPool[$id] = $db;
+		/*
+		 * Cache the connection
+		 * */
+		$this->dbPool[$id] = $db;
 
-			return $db;
-		} catch (Throwable $t) {
-			throw new Trunk("Failed connecting to database: {$t->getMessage()}");
-		}
+		return $db;
 	}
 
 }

@@ -27,7 +27,7 @@ function vd(mixed $var, bool $exit = true): void {
 
 		if ($exit) exit;
 	} else if (is_array($var)) {
-		$var = print_r($var, true);
+		$var = json_encode($var, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 	} else if (is_bool($var)) {
 		$var = $var ? 'true' : 'false';
 	} else if (is_null($var)) {
@@ -36,6 +36,14 @@ function vd(mixed $var, bool $exit = true): void {
 
 	if (Util::isCLI()) echo $var;
 	else echo "<pre>$var</pre>";
+	
+	$trace  = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+	$file   = $trace['file'] ?? '';
+	$line   = $trace['line'] ?? '';
+	$line   = empty($line) ? '' : ":$line";
+	
+	$calledAt = "$file$line";
+	echo $calledAt;
 
 	if ($exit) exit;
 }
@@ -43,7 +51,7 @@ function vd(mixed $var, bool $exit = true): void {
 /**
  * Prints out variable of mixed type in nice formatted way. If object is passed as
  * value then it prints the var_dump of the object. By default, it adds one line
- * break at the end of the output. This works seamlessly in both CLI & HTMl output.
+ * break at the end of the output. This works seamlessly in both CLI & HTML output.
  *
  * @param mixed $value The value needs to be printed
  * @param int $numOfBreak The number break to be added at the end. 1 is default
@@ -84,11 +92,12 @@ function println(mixed $value, int $numOfBreak = 1, bool $pretty = true): void {
  *
  * @param string $key The key whose associated value is to be retrieved and removed from the array.
  * @param array &$var The associative array from which the value is to be retrieved and removed.
+ * @param mixed $default If the key doesn't exist then returns default value.
  *
  * @return mixed The value associated with the specified key in the associative array.
  */
-function pop(string $key, &$var): mixed {
-	$value = $var[$key];
+function pop(string $key, array &$var, mixed $default = null): mixed {
+	$value = $var[$key] ?? $default;
 	unset($var[$key]);
 	return $value;
 }
@@ -171,4 +180,21 @@ function mutateIfEmpty(&$var, mixed $val): void {
  */
 function mutateIfNotEmpty(&$var, mixed $val): void {
 	mutate(!empty($var), $var, $val);
+}
+
+/**
+ * Renames an existing key in an array (in-place) while preserving its value.
+ *
+ * - If $oldKey does not exist, the array is unchanged.
+ * - If $oldKey === $newKey, the array is unchanged.
+ * - If $newKey already exists, it will be overwritten.
+ *
+ * @param string|int $oldKey Key to rename.
+ * @param string|int $newKey New key name.
+ * @param array      $array  Target array (modified by reference).
+ */
+function renameKey(string|int $oldKey, string|int $newKey, array &$array): void
+{
+	if (!array_key_exists($oldKey, $array) || $oldKey === $newKey) return;
+	$array[$newKey] = pop($oldKey, $array);
 }

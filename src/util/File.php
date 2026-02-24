@@ -226,6 +226,49 @@ abstract class File {
 			return false;
 		}
 	}
+	
+	/**
+	 * Recursively delete a directory and all of its contents.
+	 *
+	 * - Deletes all files and subdirectories within the given directory.
+	 * - Finally removes the directory itself.
+	 * - If the directory does not exist, returns false.
+	 *
+	 * @param string $dir Absolute or relative path to the directory to delete.
+	 *
+	 * @return bool Returns true on successful deletion, false otherwise.
+	 */
+	public static function deleteDir(string $dir): bool
+	{
+		if (!is_dir($dir)) {
+			return false;
+		}
+		
+		$items = scandir($dir);
+		if ($items === false) {
+			return false;
+		}
+		
+		foreach ($items as $item) {
+			if ($item === '.' || $item === '..') {
+				continue;
+			}
+			
+			$path = $dir . DIRECTORY_SEPARATOR . $item;
+			
+			if (is_dir($path) && !is_link($path)) {
+				if (!self::deleteDir($path)) {
+					return false;
+				}
+			} else {
+				if (!unlink($path)) {
+					return false;
+				}
+			}
+		}
+		
+		return rmdir($dir);
+	}
 
 	/**
 	 * Get Directory File Information

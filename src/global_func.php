@@ -43,6 +43,7 @@ function vd(mixed $var, bool $exit = true): void {
 	$line   = empty($line) ? '' : ":$line";
 	
 	$calledAt = "$file$line";
+	$calledAt = Util::isCLI() ? "\n$calledAt" : $calledAt;
 	echo $calledAt;
 
 	if ($exit) exit;

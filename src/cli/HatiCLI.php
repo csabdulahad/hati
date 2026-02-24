@@ -759,6 +759,7 @@ abstract class HatiCLI {
 	protected function flagSet(string $key): bool {
 		if (!str_starts_with($key, '-')) $key = "-$key";
 		
+		$key = $this->getShortname($key, $this->shortLongFlag);
 		return in_array($key, $this -> flags);
 	}
 

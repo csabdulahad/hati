@@ -114,7 +114,7 @@ abstract class File {
 	 *
 	 * @throws InvalidArgumentException
 	 */
-	function copyDir(string $originDir, string $targetDir, bool $overwrite = true): void {
+	public static function copyDir(string $originDir, string $targetDir, bool $overwrite = true): void {
 		if (! is_dir($originDir = rtrim($originDir, '\\/'))) {
 			throw new InvalidArgumentException(sprintf('The origin directory "%s" was not found.', $originDir));
 		}
@@ -143,6 +143,39 @@ abstract class File {
 				copy($origin, $target);
 			}
 		}
+	}
+	
+	/**
+	 * Copy a file from source to destination.
+	 *
+	 * If the destination file already exists and $override is set to false,
+	 * the function will NOT overwrite the file and will return false.
+	 *
+	 * If $override is true, the destination file will be overwritten.
+	 *
+	 * @param string $source       Absolute or relative path to the source file.
+	 * @param string $destination  Absolute or relative path to the destination file.
+	 * @param bool   $override     Whether to overwrite the destination if it exists.
+	 *
+	 * @return bool Returns true on successful copy, false otherwise.
+	 */
+	public static function copy(string $source, string $destination, bool $override): bool
+	{
+		if (!file_exists($source) || !is_readable($source)) {
+			return false;
+		}
+		
+		if (file_exists($destination)) {
+			if (!$override) {
+				return false;
+			}
+			
+			if (!is_writable($destination)) {
+				return false;
+			}
+		}
+		
+		return copy($source, $destination);
 	}
 
 	/**

@@ -148,34 +148,36 @@ abstract class File {
 	/**
 	 * Copy a file from source to destination.
 	 *
-	 * If the destination file already exists and $override is set to false,
-	 * the function will NOT overwrite the file and will return false.
+	 * - If the destination file exists and $override is false, the file will NOT be overwritten
+	 *   and the function will return false.
+	 * - If the destination file exists and $override is true, the file will be overwritten.
+	 * - If the destination parent directory does not exist, it will be created automatically.
 	 *
-	 * If $override is true, the destination file will be overwritten.
-	 *
-	 * @param string $source       Absolute or relative path to the source file.
-	 * @param string $destination  Absolute or relative path to the destination file.
+	 * @param string $sourceFile       Absolute or relative path to the source file.
+	 * @param string $destinationFile  Absolute or relative path to the destination file.
 	 * @param bool   $override     Whether to overwrite the destination if it exists.
 	 *
 	 * @return bool Returns true on successful copy, false otherwise.
 	 */
-	public static function copy(string $source, string $destination, bool $override): bool
+	public static function copy(string $sourceFile, string $destinationFile, bool $override): bool
 	{
-		if (!file_exists($source) || !is_readable($source)) {
+		if (!file_exists($sourceFile) || !is_readable($sourceFile)) {
 			return false;
 		}
 		
-		if (file_exists($destination)) {
-			if (!$override) {
-				return false;
-			}
-			
-			if (!is_writable($destination)) {
+		if (file_exists($destinationFile) && !$override) {
+			return false;
+		}
+		
+		$parentDir = dirname($destinationFile);
+		
+		if (!is_dir($parentDir)) {
+			if (!mkdir($parentDir, 0755, true) && !is_dir($parentDir)) {
 				return false;
 			}
 		}
 		
-		return copy($source, $destination);
+		return copy($sourceFile, $destinationFile);
 	}
 
 	/**

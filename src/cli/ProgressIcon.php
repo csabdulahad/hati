@@ -4,7 +4,7 @@ namespace hati\cli;
 
 /**
  * A set of constants for setting various progress icons to
- * {@link CLI::setProgressIcon()}
+ * {@link HatiCLI::setProgressIcon()}
  *
  * @since 5.0.0
  * */

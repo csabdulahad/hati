@@ -20,7 +20,7 @@ use Throwable;
 abstract class Hati {
 
 	// version
-	private static string $version = '7.0.27-beta';
+	private static string $version = '7.0.28-beta';
 
 	private static float $BENCHMARK_START = 0;
 
@@ -54,7 +54,7 @@ abstract class Hati {
 		self::checkConstants();
 
 		// calculate the project root folder
-		self::$DIR_ROOT = realpath(dirname(__DIR__, 4)) . DIRECTORY_SEPARATOR;
+		self::$DIR_ROOT = realpath(dirname(__DIR__, HATI_VENDOR_FOLDER_UP_BY)) . DIRECTORY_SEPARATOR;
 
 		// register autoloader function
 		Hati::$loader = require self::$DIR_ROOT . 'vendor/autoload.php';
@@ -317,9 +317,14 @@ abstract class Hati {
 
 	private static function checkConstants(): void
 	{
+		if (defined('HATI_DEV')) {
+			define('HATI_VENDOR_FOLDER_UP_BY', 1);
+		}
+		
 		$consts = [
 			'HATI_USE_SRC_AS_ROOT' => true,
-			'HATI_CONFIG_FOLDER_NAME' => 'hati'
+			'HATI_CONFIG_FOLDER_NAME' => 'hati',
+			'HATI_VENDOR_FOLDER_UP_BY' => 4
 		];
 		
 		foreach ($consts as $const => $value) {

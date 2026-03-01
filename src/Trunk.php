@@ -37,7 +37,7 @@ class Trunk extends RuntimeException {
 	public function getMsg(): string {
 		return $this->msg;
 	}
-
+ 
 	public function getStatus(): int {
 		return $this->status;
 	}

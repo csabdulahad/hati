@@ -5,7 +5,7 @@
 namespace hati\util;
 
 use Exception;
-use hati\cli\CLI;
+use hati\cli\io\ConsoleIO;
 use InvalidArgumentException;
 use function ord;
 use function strlen;
@@ -47,11 +47,13 @@ abstract class Text {
 	 * @param int $desWidth the limit for the width of the description to be wrapped when it is long
 	 * @param bool $return the formatted title-description when set true; otherwise prints that out
 	 *
-	 * @return ?string when the $return is set to false. Otherwise the string is returned.
+	 * @return ?string when the $return is set to false. Otherwise, the string is returned.
 	 * */
 	public static function table2D(array $titles, array $descriptions, int $gap = 5, int $desWidth = 50, bool $return = false): ?string {
 		$maxLen = max(array_map('strlen', $titles));
 
+		$terminalIO = new ConsoleIO();
+		
 		$str = '';
 		for ($i = 0; $i < count($titles); $i++) {
 			$str .=
@@ -64,15 +66,16 @@ abstract class Text {
 				// Wrap the descriptions in a right-hand column
 				// with its left side 4 characters wider than
 				// the longest item on the left.
-				CLI::wrap($descriptions[$i], $desWidth, $maxLen + $gap)
+				$terminalIO->wrap($descriptions[$i], $desWidth, $maxLen + $gap)
 			;
+			
 			$str .= "\n";
 		}
 		$str = rtrim($str, "\n");
 
 		if ($return) return $str;
 
-		CLI::write($str);
+		$terminalIO->write($str);
 		return null;
 	}
 
@@ -384,7 +387,7 @@ abstract class Text {
 	 *
 	 * @param string $str string to ellipsize
 	 * @param int $maxLen max length of string
-	 * @param mixed	$position int (1|0) or float, .5, .2, etc for position to split
+	 * @param mixed	$position int (1|0) or float, .5, .2, etc. for position to split
 	 * @param string $ellipsis ellipsis ; Default '...'
 	 * @return string ellipsized string
 	 */
@@ -497,7 +500,7 @@ abstract class Text {
 					$index = ($unpackedData & ((1 << $bits) - 1));
 					$unpackedData >>= $bits;
 					// Unfortunately, the alphabet size is not necessarily a power of two.
-					// Worst case, it is 2^k + 1, which means we need (k+1) bits and we
+					// Worst case, it is 2^k + 1, which means we need (k+1) bits, and we
 					// have around a 50% chance of missing as k gets larger
 					if ($index < $poolSize) {
 						$string .= $pool[$index];

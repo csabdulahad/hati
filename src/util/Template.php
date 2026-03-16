@@ -28,12 +28,11 @@ abstract class Template {
 	}
 
 	/**
-	 * Any php file can be used as template file. It is advised to keep the file extension
+	 * Any PHP file can be used as template file. It is advised to keep the file extension
 	 * as '.tlp.php' to make it distinguishable from other php scripts file. Rendered output
 	 * can be returned or written in the buffer by specifying print argument.
 	 *
-	 * Use helper methods {@link Hati::root()} & {@link Hati::projectRoot()} to explicitly
-	 * get the path to the template file.
+	 * Use helper method {@link Hati::root()} to explicitly get the path to the template file.
 	 *
 	 * @param string $filePath Path to the template file
 	 * @param bool $print Specify whether to print out the rendered template or return

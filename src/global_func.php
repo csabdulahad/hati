@@ -1,5 +1,7 @@
 <?php
 
+/** @noinspection PhpUnused */
+
 use hati\util\Util;
 
 /**
@@ -47,45 +49,6 @@ function vd(mixed $var, bool $exit = true): void {
 	echo $calledAt;
 
 	if ($exit) exit;
-}
-
-/**
- * Prints out variable of mixed type in nice formatted way. If object is passed as
- * value then it prints the var_dump of the object. By default, it adds one line
- * break at the end of the output. This works seamlessly in both CLI & HTML output.
- *
- * @param mixed $value The value needs to be printed
- * @param int $numOfBreak The number break to be added at the end. 1 is default
- * @param bool $pretty Controls whether output keeps the whitespace intact
- **/
-function println(mixed $value, int $numOfBreak = 1, bool $pretty = true): void {
-
-	// Remove one extra break as pre tag adds one already
-	$b = Util::isCLI() ? "\n" : "<br>";
-	if (!Util::isCLI() && $pretty) {
-		$numOfBreak -= 1;
-	}
-
-	// Remove one extra break if it of type array/obj for CLI output
-	if ((is_array($value) || is_object($value) && Util::isCLI()))
-		$numOfBreak -= 1;
-
-	// Can't have zero number of break for str_repeat function
-	if ($numOfBreak < 0) $numOfBreak = 0;
-	$break = str_repeat($b, $numOfBreak);
-
-	if (is_array($value) || is_object($value)) {
-		$value = print_r($value, true);
-	} elseif (is_bool($value)) {
-		$value = $value ? 'true' : 'false';
-	} else if (is_null($value)) {
-		$value = 'null';
-	}
-
-	if ($pretty && !Util::isCLI()) echo "<pre>";
-	echo $value;
-	if ($pretty && !Util::isCLI()) echo "</pre>";
-	echo $break;
 }
 
 /**

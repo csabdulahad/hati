@@ -109,7 +109,7 @@ class Util {
 	 * in HatiConfig file.
 	 * */
 	public static function host(bool $secure = true): string {
-		$root = Hati::projectRoot();
+		$root = Hati::root();
 
 		if (empty($_SERVER['HTTP_HOST'])) {
 			return $root;

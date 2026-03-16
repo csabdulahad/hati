@@ -149,10 +149,9 @@ class Perok {
 	/**
 	 * This method eases the composing HTML email by getting the contents from an HTML file.
 	 *
-	 * Use helper methods {@link Hati::root()} & {@link Hati::projectRoot()} to explicitly
-	 * get the path to any html file.
+	 * Use helper method {@link Hati::root()} to explicitly get the path to any HTML file.
 	 *
-	 * @param string $filePath The path to the html file.
+	 * @param string $filePath The path to the HTML file.
 	 * @param bool $throwErr Indicate whether to throw exception upon encountering any error.
 	 *
 	 * @return bool Returns true if it can successfully compose message body from the HTML file.
@@ -183,8 +182,7 @@ class Perok {
 	/**
 	 * Any file can be composed as part of attachment of the email.
 	 *
-	 * Use helper methods {@link Hati::root()} & {@link Hati::projectRoot()} to explicitly
-	 * get the path to the file.
+	 * Use helper method {@link Hati::root()} to explicitly get the path to the file.
 	 *
 	 * @param string $filePath The path to the file to be sent as attachment.
 	 * @param string $fileName File name as it will be shown in the email client.
@@ -218,8 +216,7 @@ class Perok {
 	/**
 	 * This method can embed any image for including images as CID image in the HTML message.
 	 *
-	 *  Use helper methods {@link Hati::root()} & {@link Hati::projectRoot()} to explicitly
-	 *  get the path to the image file.
+	 *  Use helper method {@link Hati::root()} to explicitly get the path to the image file.
 	 *
 	 * @param string $filePath The path to the image file
 	 * @param string $fileName Argument for CID image to be used inside the HTML message.

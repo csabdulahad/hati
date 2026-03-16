@@ -66,27 +66,6 @@ final class HatiAPIHandler {
 		
 		try {
 			$handler = self::get();
-			
-			/*
-			 * Figure out the registry file and
-			 * register all the API endpoints path
-			 * */
-			$registryFile = Hati::config(Key::API_REGISTRY);
-			
-			if (empty($registryFile)) {
-				throw Trunk::error500('API registry is not configured');
-			}
-
-			$registryFile = ltrim($registryFile, '/');
-			$registryFile = str_replace('.php', '', $registryFile) . '.php';
-			
-			$registry = Hati::projectRoot($registryFile);
-			
-			if (!file_exists($registry)) {
-				throw Trunk::error500('API registry is missing');
-			}
-
-			require_once $registry;
 
 			// Is it an API thing?
 			if (empty($augment['api']) && empty($_GET['api'])) {
@@ -148,15 +127,6 @@ final class HatiAPIHandler {
 
 			// Load the API class file!
 			$class = $arr['handler'];
-
-			if (str_ends_with($class, '.php')) {
-				$class = basename($arr['handler']);
-				$class = substr($class, 0, strpos($class, '.'));
-
-				// Import the class file
-				require $arr['handler'];
-			}
-
 			$class = new $class;
 
 			if (!$class instanceof HatiAPI) {
@@ -209,11 +179,9 @@ final class HatiAPIHandler {
 
 				$method = $func;
 			} else {
-
 				if (!method_exists($class, $method)) {
 					throw Trunk::error405('Unacceptable request method');
 				}
-
 			}
 
 			// Adjust empty segments
@@ -249,7 +217,8 @@ final class HatiAPIHandler {
 			}
 
 			// #4 Ready to call the API serving method with a ready response object!
-			if (!is_null($augment)) $res->disableReply();
+			$disableReply = $augment['disable_reply'] ?? false;
+			if ($disableReply) $res->disableReply();
 
 			$class->$method($res);
 			
@@ -265,9 +234,8 @@ final class HatiAPIHandler {
 				$e = Trunk::error500($msg);
 			}
 
-			if (is_null($augment)) {
-				$e->report();
-			}
+			$disableReply = $augment['disable_reply'] ?? false;
+			if (!$disableReply) $e->report();
 			
 			if ($e->getMessage() == 'HATI_API_CALL') {
 				return [

@@ -1,9 +1,6 @@
 <?php
 
 return [
-
-	'api_registry'						=>			'',
-
 	'project_dir_as_include_path'       =>          true,
 	'use_global_func'                   =>          true,
 
@@ -11,8 +8,6 @@ return [
 	'dev_API_delay'                     =>          0, // sec in integer
 
 	'time_zone'                         =>          'Europe/London',
-	'session_auto_start'                =>          false,
-	'session_msg_key'                   =>          'msg',
 
 	'global_php'                        =>          [],
 

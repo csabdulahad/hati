@@ -131,21 +131,16 @@ abstract class Url {
 			$url :
 			($_SERVER['HTTP_HOST'] ?? '');
 		
-		if (empty($host)) return $host;
+		if ($host === '') return $host;
 		
 		$host = strtolower(preg_replace('/:\d+$/', '', $host));
+		$parts = explode('.', $host);
 		
-		$dotPos = strpos($host, '.');
-		if (!$dotPos) return '';
-		
-		$host = substr($host, 0, $dotPos);
-		
-		if (str_contains($host, '://')) {
-			$schemaEndPos = strpos($host, '://');
-			$host = substr($host, $schemaEndPos + 3);
+		if (count($parts) < 3) {
+			return '';
 		}
 		
-		return $host;
+		return $parts[0];
 	}
 	
 }

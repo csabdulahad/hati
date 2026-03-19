@@ -22,14 +22,10 @@ use RuntimeException;
 class DBMan {
 
 	// Loaded db configuration object
-	private array $dbConfig;
+	private ?array $dbConfig = null;
 
 	// Connection cache pool
 	private array $dbPool= [];
-
-	public function __construct() {
-		$this->dbConfig = Hati::dbConfigObj();
-	}
 
 	/**
 	 * Connection to databases are cached to avoid memory leaks. This method
@@ -43,8 +39,13 @@ class DBMan {
 	 * otherwise
 	 * */
 	public function connect(?string $id): ?PDO {
-		if (empty($id))
+		if (empty($id)) {
 			throw new RuntimeException("DB profile with id $id was not found in the config", 1);
+		}
+		
+		if ($this->dbConfig === null) {
+			$this->dbConfig = Hati::dbConfigObj();
+		}
 
 		/*
 		 * Extract profile name & db name

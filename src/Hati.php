@@ -16,7 +16,7 @@ use Throwable;
 abstract class Hati {
 
 	// version
-	private static string $version = '7.0.30-beta';
+	private static string $version = '7.0.31-beta';
 
 	private static float $BENCHMARK_START = 0;
 
@@ -27,7 +27,7 @@ abstract class Hati {
 	private static array $CONFIG = [];
 
 	// The db configuration file is cached as JSON decoded array
-	private static ?array $DB_CONFIG = [];
+	private static ?array $DB_CONFIG = null;
 
 	/**
 	 * This is the first method call of the execution. It initializes the environment
@@ -132,9 +132,9 @@ abstract class Hati {
 	 * The hati/db.json file is parsed as array using {@link json_decode()} to be used by {@link Fluent}
 	 * to manage database configurations & connections
 	 *
-	 * @return array represents the database configuration object
+	 * @return ?array represents the database configuration object
 	 * */
-	public static function dbConfigObj(): array
+	public static function dbConfigObj(): ?array
 	{
 		return self::$DB_CONFIG;
 	}

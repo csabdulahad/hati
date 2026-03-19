@@ -34,7 +34,7 @@ use Throwable;
  * method should be inside try-catch block to hide the throwing error message
  * or reactive to any error.
  *
- * @method errorHandler(string $query, int $errCode, string $errMessage, string $dbID)
+ * @method errorHandler(string $query, string $errCode, string $errMessage, string $dbID)
  * */
 
 class Fluent {
@@ -244,7 +244,7 @@ class Fluent {
 			$ins->errorInfo['message'] = $t->getMessage();
 			
 			if (!is_null($ins->errorHandler)) {
-				$ins->errorHandler($query, $t->getCode(), $t->getMessage(), $ins->profileId);
+				call_user_func($ins->errorHandler, $query, $t->getCode(), $t->getMessage(), $ins->profileId);
 			}
 			
 			return 0;
@@ -288,7 +288,7 @@ class Fluent {
 			$ins->errorInfo['message'] = $t->getMessage();
 			
 			if (!is_null($ins->errorHandler)) {
-				$ins->errorHandler($query, $t->getCode(), $t->getMessage(), $ins->profileId);
+				call_user_func($ins->errorHandler, $query, $t->getCode(), $t->getMessage(), $ins->profileId);
 			}
 			
 			return 0;

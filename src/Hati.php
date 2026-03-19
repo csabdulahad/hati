@@ -16,7 +16,7 @@ use Throwable;
 abstract class Hati {
 
 	// version
-	private static string $version = '7.0.29-beta';
+	private static string $version = '7.0.30-beta';
 
 	private static float $BENCHMARK_START = 0;
 

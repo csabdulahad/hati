@@ -6,7 +6,6 @@ use DateInterval;
 use DateTime;
 use DateTimeZone;
 use Exception;
-use hati\config\Key;
 use hati\Hati;
 use hati\Trunk;
 use Throwable;
@@ -20,7 +19,8 @@ use Throwable;
  * See <b>hati.json</b> file for changing the default timezone.
  * */
 
-class Shomoy {
+class Shomoy
+{
 
 	public const TIMEZONE_DHAKA = 'Asia/Dhaka';
 	public const TIMEZONE_LONDON = 'Europe/London';
@@ -28,11 +28,11 @@ class Shomoy {
 	private DateTime $dateTime;
 
 	// During construction of shomoy object, it created the internal datetime
-	// object with the default timezone as it is configured in the hati.json
-	// file. By default, it creates current datetime object.
-	public function __construct(string $time = 'now', string $timezone = null) {
+	// object with server's default timezone.
+	public function __construct(string $time = 'now', string $timezone = null)
+	{
 		try {
-			$timezone = $timezone ?? Hati::config(Key::TIME_ZONE);
+			$timezone = $timezone ?? date_default_timezone_get();
 			$this -> dateTime = new DateTime($time, new DateTimeZone($timezone));
 		} catch (Throwable $t) {
 			throw new Trunk('Shomoy encountered error while creating current date & time: ' . $t -> getMessage());
@@ -46,7 +46,8 @@ class Shomoy {
 	 *
 	 * @return Shomoy the shomoy object that is representing the timestamp.
 	 * */
-	public static function fromTimestamp(int $timestamp): Shomoy {
+	public static function fromTimestamp(int $timestamp): Shomoy
+	{
 		// first, convert the timestamp into textual representation.
 		// then create datetime object from that string.
 		$dateTime = date_create(date('Y-m-d\TH:i:sO', $timestamp));
@@ -56,7 +57,7 @@ class Shomoy {
 	}
 
 	/**
-	 * When this methods compares itself with other date time object, it is considered
+	 * When these methods compare itself with another date time object, it is considered
 	 * that the comparing date time object is in the same timezone as this shomoy date
 	 * time is. The  Shomoy gets its default timezone from the Hati by calling
 	 * {@link Hati::defaultTimezone()} method. It can be configured with other flags in
@@ -73,7 +74,8 @@ class Shomoy {
 	 * 1 is returned when this shomoy is ahead of the comparing datetime.
 	 * 0 is returned when both of the datetime are equal.
 	 */
-	public function compareDateTime(DateTime $dateTime): int {
+	public function compareDateTime(DateTime $dateTime): int
+	{
 		// get micro-seconds from both objects
 		$thisSec = strtotime($this -> dateTime -> format('Y-m-d\TH:i:sO')) * 1000;
 		$thatSec = strtotime($dateTime -> format('Y-m-d\TH:i:sO')) * 1000;
@@ -93,7 +95,8 @@ class Shomoy {
 	 *
 	 * @return int the difference between two shomoy objects
 	 * */
-	public function compare(Shomoy $shomoy): int {
+	public function compare(Shomoy $shomoy): int
+	{
 		return $this -> compareDateTime($shomoy -> getDateTime());
 	}
 
@@ -107,7 +110,8 @@ class Shomoy {
 	 *
 	 * @return int the difference between two Shomoy objects.
 	 * */
-	public function diff(Shomoy $shomoy, bool $inMilli = true): int {
+	public function diff(Shomoy $shomoy, bool $inMilli = true): int
+	{
 		if ($inMilli) return $this -> getMilliSeconds() - $shomoy -> getMilliSeconds();
 		else return $this -> getTimestamp() - $shomoy -> getTimestamp();
 	}
@@ -117,7 +121,8 @@ class Shomoy {
 	 *
 	 * @param int $timestamp The timestamp value
 	 * */
-	public function setTimestamp(int $timestamp): void {
+	public function setTimestamp(int $timestamp): void
+	{
 		$this -> dateTime -> setTimestamp($timestamp);
 	}
 
@@ -138,7 +143,8 @@ class Shomoy {
 	 * @param bool $exact to calculate whether the time has past the period exactly or not
 	 * @return bool true if the shomoy has past the time period; false otherwise.
 	 * */
-	public function past(string $period, bool $exact = false): bool {
+	public function past(string $period, bool $exact = false): bool
+	{
 		// Get the current date and time
 		$now = new Shomoy();
 
@@ -202,7 +208,8 @@ class Shomoy {
 	 *
 	 * @param string $period The time period
 	 * */
-	public function add(string $period): void {
+	public function add(string $period): void
+	{
 
 		// Parse the period string to extract days, weeks, months, and years
 		preg_match_all('/(-?\d+)\s*(sec|min|hour|day|week|month|year)s?/', $period, $matches, PREG_SET_ORDER);
@@ -250,7 +257,8 @@ class Shomoy {
 	 *
 	 * @param int $sec number of seconds to be added.
 	 * */
-	public function addSec(int $sec): void {
+	public function addSec(int $sec): void
+	{
 		try {
 			$interval = sprintf('PT%dS', $sec);
 			$this -> adjustInterval($sec, $interval);
@@ -264,7 +272,8 @@ class Shomoy {
 	 *
 	 * @param int $min number of minutes to be added.
 	 * */
-	public function addMin(int $min): void {
+	public function addMin(int $min): void
+	{
 		try {
 			$interval = sprintf('PT%dM', $min);
 			$this -> adjustInterval($min, $interval);
@@ -277,7 +286,8 @@ class Shomoy {
 	 *
 	 * @param int $hour number of hours to be added.
 	 * */
-	public function addHour(int $hour): void {
+	public function addHour(int $hour): void
+	{
 		try {
 			$interval = sprintf('PT%dH', $hour);
 			$this -> adjustInterval($hour, $interval);
@@ -290,7 +300,8 @@ class Shomoy {
 	 *
 	 * @param int $day number of days to be added.
 	 * */
-	public function addDay(int $day): void {
+	public function addDay(int $day): void
+	{
 		try {
 			$interval = sprintf('P%dD', $day);
 			$this -> adjustInterval($day, $interval);
@@ -303,7 +314,8 @@ class Shomoy {
 	 *
 	 * @param int $month number of months to be added.
 	 * */
-	public function addMonth(int $month): void {
+	public function addMonth(int $month): void
+	{
 		try {
 			$interval = sprintf('P%dM', $month);
 			$this -> adjustInterval($month, $interval);
@@ -316,7 +328,8 @@ class Shomoy {
 	 *
 	 * @param int $year number of years to be added.
 	 * */
-	public function addYear(int $year): void {
+	public function addYear(int $year): void
+	{
 		try {
 			$interval = sprintf('P%dY', $year);
 			$this -> adjustInterval($year, $interval);
@@ -328,14 +341,15 @@ class Shomoy {
 	 * affect the underlying timestamp so changing timezone it just a
 	 * representational function.
 	 *
-	 * Currently Shomoy has two default timezone constants for Dhaka & London.
+	 * Currently, Shomoy has two default timezone constants for Dhaka & London.
 	 *
 	 * @param string $timeZone the timezone must in region/city format such
 	 * as Asia/Dhaka.
 	 *
 	 * @throws Exception When fails to set the timezone
 	 */
-	public function setTimezone(string $timeZone): void {
+	public function setTimezone(string $timeZone): void
+	{
 		$this -> dateTime -> setTimezone(new DateTimeZone($timeZone));
 	}
 	
@@ -348,7 +362,8 @@ class Shomoy {
 	 * @param int $month 1-12 month number
 	 * @param int $year 4 digit year number
 	 * */
-	public function changeDate(int $day = 0, int $month = 0, int $year = 0): void {
+	public function changeDate(int $day = 0, int $month = 0, int $year = 0): void
+	{
 		$dateTime = $this -> dateTime;
 		
 		$cYear  = $dateTime -> format('Y');
@@ -373,7 +388,8 @@ class Shomoy {
 	 * @param int $sec second
 	 * @param int $ms microsecond
 	 * */
-	public function changeTime(int $hour = -1, int $min = -1, int $sec = -1, int $ms = -1): void {
+	public function changeTime(int $hour = -1, int $min = -1, int $sec = -1, int $ms = -1): void
+	{
 		$dateTime = $this -> dateTime;
 		
 		$cHour = $dateTime->format('H');
@@ -389,53 +405,64 @@ class Shomoy {
 		$dateTime -> setTime($hour, $min, $sec, $ms);
 	}
 
-	public function __toString(): string {
+	public function __toString(): string
+	{
 		return $this -> iso();
 	}
 
-	public function iso(): string {
+	public function iso(): string
+	{
 		return sprintf('%s %s', $this -> isoDate(), $this -> isoTime());
 	}
 
-	public function iso8601(): string {
+	public function iso8601(): string
+	{
 		return $this -> dateTime -> format('Y-m-d\TH:i:sO');
 	}
 
-	public function isoDate(): string {
+	public function isoDate(): string
+	{
 		return $this -> dateTime -> format('Y-m-d');
 	}
 
-	public function isoTime(): string {
+	public function isoTime(): string
+	{
 		return "{$this -> hour()}:{$this -> min()}:{$this -> sec()}";
 	}
 
-	public function year() : string {
+	public function year() : string
+	{
 		return $this -> dateTime -> format('Y');
 	}
 
-	public function month(bool $leadingZero = true) : string {
+	public function month(bool $leadingZero = true) : string
+	{
 		$month = $this -> dateTime -> format('m');
 		if ($leadingZero) return Number::leadingZero((int)$month);
 		return $month;
 	}
 
-	public function date(bool $leadingZero = true) : string {
+	public function date(bool $leadingZero = true) : string
+	{
 		$date = $this -> dateTime -> format('d');
 		if ($leadingZero) return Number::leadingZero((int)$date);
 		return $date;
 	}
 
-	public function day(bool $shortForm = true): string {
+	public function day(bool $shortForm = true): string
+	{
 		$format = $shortForm ? 'D' : 'l';
 		return $this -> dateTime -> format($format);
 	}
 
-	public function monthStr(bool $shortForm = true): string {
+	public function monthStr(bool $shortForm = true): string
+	{
 		$format = $shortForm ? 'M' : 'F';
 		return $this -> dateTime -> format($format);
 	}
 
-	public function hour(bool $twenty_four = true, bool $leadingZero = true): string {
+	public function hour(bool $twenty_four = true, bool $leadingZero = true): string
+	{
 		if ($twenty_four && $leadingZero) $format = 'H';
 		else if ($twenty_four && !$leadingZero) $format = 'G';
 		else if (!$twenty_four && $leadingZero) $format = 'h';
@@ -443,48 +470,58 @@ class Shomoy {
 		return $this -> dateTime -> format($format);
 	}
 
-	public function min(bool $leadingZero = true): string {
+	public function min(bool $leadingZero = true): string
+	{
 		$min = $this -> dateTime -> format('i');
 		return $leadingZero ? $min : (int) $min;
 	}
 
-	public function sec(bool $leadingZero = true): string {
+	public function sec(bool $leadingZero = true): string
+	{
 		$sec = $this -> dateTime -> format('s');
 		return $leadingZero ? $sec : (int) $sec;
 	}
 
-	public function ampm(bool $uppercase = true): string {
+	public function ampm(bool $uppercase = true): string
+	{
 		$format = $uppercase ? 'A' : 'a';
 		return $this -> dateTime -> format($format);
 	}
 
-	public function strDateTime(): string {
+	public function strDateTime(): string
+	{
 		return "{$this -> date()} {$this -> monthStr()} {$this -> year()}, {$this -> hour()}:{$this -> min()}";
 	}
 
-	public function echoDateTime(): void {
+	public function echoDateTime(): void
+	{
 		echo $this -> strDateTime();
 	}
 
-	public function strDate(bool $separated = false): string {
+	public function strDate(bool $separated = false): string
+	{
 		if ($separated) return "{$this -> date()}-{$this -> month()}-{$this -> year()}";
 		else return "{$this -> date()} {$this -> monthStr()}, {$this -> year()}";
 	}
 
-	public function echoDate(bool $separated = false): void {
+	public function echoDate(bool $separated = false): void
+	{
 		echo $this -> strDate($separated);
 	}
 
-	public function strTime24(bool $sec = true): string {
+	public function strTime24(bool $sec = true): string
+	{
 		if ($sec) return "{$this -> hour()}:{$this -> min()}:{$this -> sec()}";
 		else return "{$this -> hour()}:{$this -> min()}";
 	}
 
-	public function echoTime24($sec = true): void {
+	public function echoTime24($sec = true): void
+	{
 		echo $this -> strTime24($sec);
 	}
 
-	public function strTime(bool $sec = true, bool $ampm = true, bool $uppercase = true): string {
+	public function strTime(bool $sec = true, bool $ampm = true, bool $uppercase = true): string
+	{
 		if ($sec) {
 			if ($ampm)
 				return "{$this -> hour(false)}:{$this -> min()}:{$this -> sec()} {$this -> ampm($uppercase)}";
@@ -498,23 +535,28 @@ class Shomoy {
 		}
 	}
 
-	public function echoTime(bool $sec = true, bool $ampm = true, bool $uppercase = true): void	{
+	public function echoTime(bool $sec = true, bool $ampm = true, bool $uppercase = true): void
+	{
 		echo $this -> strTime($sec, $ampm, $uppercase);
 	}
 
-	public function getDateTime(): DateTime {
+	public function getDateTime(): DateTime
+	{
 		return $this -> dateTime;
 	}
 
-	public function getTimezone(): DateTimeZone {
+	public function getTimezone(): DateTimeZone
+	{
 		return $this -> dateTime -> getTimezone();
 	}
 
-	public function getTimestamp(): int {
+	public function getTimestamp(): int
+	{
 		return $this -> dateTime -> getTimestamp();
 	}
 
-	public function getMilliSeconds(): int {
+	public function getMilliSeconds(): int
+	{
 		return $this -> dateTime -> getTimestamp() * 1000;
 	}
 
@@ -523,7 +565,8 @@ class Shomoy {
 	 *
 	 * @return int the starting timestamp of the shomoy object.
 	 */
-	public function timestampStart(): int {
+	public function timestampStart(): int
+	{
 		return (date_create($this -> isoDate())) -> getTimestamp();
 	}
 
@@ -532,7 +575,8 @@ class Shomoy {
 	 *
 	 * @return int the ending timestamp of the shomoy object.
 	 */
-	public function timestampEnd(): int {
+	public function timestampEnd(): int
+	{
 		return $this -> timestampStart() - 1 + self::secInDay(1);
 	}
 
@@ -542,7 +586,8 @@ class Shomoy {
 	 * @param string $format The format
 	 * @return ?string the formatted shomoy; null when to print the shomoy.
 	 * */
-	public function format(string $format, bool $print = false): ?string {
+	public function format(string $format, bool $print = false): ?string
+	{
 		$shomoy = $this -> dateTime -> format($format);
 
 		if (!$print) return $shomoy;
@@ -553,16 +598,17 @@ class Shomoy {
 
 	/**
 	 * Formats the shomoy in human friendly style such as '1 day 4 hours' style. You
-	 * can then append ' ago' to the string to complete the sentence. The time difference
-	 * is always calculated from the current shomoy. A negitive sign in the string means,
-	 * the time comaparing to current time is ahread of the current time meaning it is a
+	 * can then append " ago" to the string to complete the sentence. The time difference
+	 * is always calculated from the current shomoy. A negative sign in the string means,
+	 * the time comparing to current time is ahead of the current time meaning it is a
 	 * future time.
 	 *
 	 * @param int $precision what component to show such as year, month, hour, min, sec
 	 * @param bool $print indicates whether to print or return the formatted string
 	 * @return ?string returns string or null based on print argument
 	 * */
-	public function formatInAgo(int $precision = 1, bool $print = false): ?string {
+	public function formatInAgo(int $precision = 1, bool $print = false): ?string
+	{
 		$str = self::formatTimeInAgo($this, $precision);
 		if (!$print) return $str;
 
@@ -590,7 +636,8 @@ class Shomoy {
 	 *
 	 * @throws Trunk If all the arguments are not of type integer
 	 * */
-	public static function addToNow(int $sec = 0, int $min = 0, int $hour = 0, int $day = 0): int {
+	public static function addToNow(int $sec = 0, int $min = 0, int $hour = 0, int $day = 0): int
+	{
 		if (!is_int($day) || !is_int($hour) || !is_int($min) || !is_int($sec))
 			throw new Trunk('Make sure day, hour and minute are of type int.');
 
@@ -604,21 +651,25 @@ class Shomoy {
 		return $now;
 	}
 
-	public static function secInMin(int $of): int {
+	public static function secInMin(int $of): int
+	{
 		return 60 * $of;
 	}
 
-	public static function secInHour(int $of): int {
+	public static function secInHour(int $of): int
+	{
 		return 60 * 60 * $of;
 	}
 
-	public static function secInDay(int $of): int {
+	public static function secInDay(int $of): int
+	{
 		return 60 * 60 * 24 * $of;
 	}
 
 	// This method either adds or removes interval to the datetime object
 	// based on the sign of the value is being added or subtracted.
-	private function adjustInterval(int $signed, $interval): void {
+	private function adjustInterval(int $signed, $interval): void
+	{
 		if ($signed < 0)
 			$interval = str_replace('-', '', $interval);
 
@@ -640,7 +691,8 @@ class Shomoy {
 	 *
 	 * @return void
 	 * */
-	public static function printTime(string $isoDatetime, bool $sec = true, bool $ampm = true, bool $uppercase = true): void {
+	public static function printTime(string $isoDatetime, bool $sec = true, bool $ampm = true, bool $uppercase = true): void
+	{
 		try {
 			$shomoy = new Shomoy($isoDatetime);
 			$shomoy -> echoTime($sec, $ampm, $uppercase);
@@ -656,7 +708,8 @@ class Shomoy {
 	 *
 	 * @return void
 	 * */
-	public static function printTime24(string $isoDatetime, bool $sec = true): void {
+	public static function printTime24(string $isoDatetime, bool $sec = true): void
+	{
 		try {
 			$shomoy = new Shomoy($isoDatetime);
 			$shomoy -> echoTime24($sec);
@@ -676,7 +729,8 @@ class Shomoy {
 	 *
 	 * @return void
 	 * */
-	public static function printDate(string $isoDatetime, bool $separated = false): void {
+	public static function printDate(string $isoDatetime, bool $separated = false): void
+	{
 		try {
 			$shomoy = new Shomoy($isoDatetime);
 			$shomoy -> echoDate($separated);
@@ -693,7 +747,8 @@ class Shomoy {
 	 *
 	 * @return void
 	 * */
-	public static function printDateTime(string $isoDatetime): void {
+	public static function printDateTime(string $isoDatetime): void
+	{
 		try {
 			$shomoy = new Shomoy($isoDatetime);
 			$shomoy -> echoDateTime();
@@ -709,7 +764,8 @@ class Shomoy {
 	 *
 	 * @return ?string formatted value as string if true; else it prints it out and returns null
 	 * */
-	public static function formatAs(string|int $time, string $format, bool $print = false): ?string {
+	public static function formatAs(string|int $time, string $format, bool $print = false): ?string
+	{
 
 		if (gettype($time) == 'integer') {
 			$shomoy = new Shomoy();
@@ -728,8 +784,8 @@ class Shomoy {
 
 	/**
 	 * A helper function allows easy formatting time difference in 'X Ago' style to display
-	 * in more user friendly way. The time difference is always calculated from the current shomoy.
-	 * A negitive sign in the string means, the time comaparing to current time is ahread of the
+	 * in more user-friendly way. The time difference is always calculated from the current shomoy.
+	 * A negative sign in the string means, the time comparing to current time is ahead of the
 	 * current time meaning it is a future time.
 	 *
 	 * @param Shomoy|int|float $time A shomoy object or the seconds to calculate in relative
@@ -737,7 +793,8 @@ class Shomoy {
 	 * @param int $precision The precision down to year, month, day, hour, minute, sec for the formatting
 	 * @return ?string in 'X Ago' style if print is false; otherwise it prints and returns null
 	 * */
-	public static function formatTimeInAgo(Shomoy|int|float $time, int $precision = 1, bool $print = false): ?string {
+	public static function formatTimeInAgo(Shomoy|int|float $time, int $precision = 1, bool $print = false): ?string
+	{
 		$shomoy = new Shomoy();
 
 		$timeAgo = $time instanceof Shomoy ? ($time -> getTimestamp()) : $time;
@@ -755,7 +812,8 @@ class Shomoy {
 	 * Helper method, returns the current datetime in ISO format
 	 * @return string
 	 * */
-	public static function datetimeISO(): string {
+	public static function datetimeISO(): string
+	{
 		$shomoy = new Shomoy();
 		return $shomoy -> iso();
 	}
@@ -764,7 +822,8 @@ class Shomoy {
 	 * Helper method, returns current date in ISO format
 	 * @return string
 	 * */
-	public static function dateISO(): string {
+	public static function dateISO(): string
+	{
 		$shomoy = new Shomoy();
 		return $shomoy -> isoDate();
 	}
@@ -773,7 +832,8 @@ class Shomoy {
 	 * Helper method, returns current time in ISO format
 	 * @return string
 	 * */
-	public static function timeISO(): string {
+	public static function timeISO(): string
+	{
 		$shomoy = new Shomoy();
 		return $shomoy -> isoTime();
 	}
@@ -782,7 +842,8 @@ class Shomoy {
 	 * Helper method, returns current datetime in ISO 8601 format
 	 * @return string
 	 * */
-	public static function datetimeISO8601(): string {
+	public static function datetimeISO8601(): string
+	{
 		$shomoy = new Shomoy();
 		return $shomoy -> iso8601();
 	}

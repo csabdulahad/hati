@@ -4,11 +4,10 @@ namespace hati\filter;
 
 /**
  * This enum class is used by {@link Filter::class}.
- *
- * @since 5.0.0
  * */
 
-enum FilterOut {
+enum FilterOut
+{
 
 	case EMPTY;
 
@@ -33,17 +32,7 @@ enum FilterOut {
 	case RANGE_FRACTION_ERROR;
 
 	case NOT_IN_OPTION;
-
-	/*
-	 * FilterOut cases returned by various filter methods
-	 * matching any of the above should considered fail!
-	 * */
-
+	
 	case OK;
-
-	case CONTENT_TYPE_INVALID;
-
-	case BAD_REQUEST_METHOD;
-
-	case INVALID_REQUEST_DATA;
+	
 }

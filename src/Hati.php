@@ -13,10 +13,11 @@ use Throwable;
  * This class initializes the library.
  * */
 
-abstract class Hati {
+abstract class Hati
+{
 
 	// version
-	private static string $version = '7.0.31-beta';
+	private static string $version = '7.0.32-beta';
 
 	private static float $BENCHMARK_START = 0;
 
@@ -51,9 +52,6 @@ abstract class Hati {
 		if(self::config(Key::DEV_API_BENCHMARK, 'bool')) {
 			self::$BENCHMARK_START = microtime(true);
 		}
-		
-		// Set the timezone
-		date_default_timezone_set(self::config(Key::TIME_ZONE));
 
 		/*
 		 * Adjust include paths

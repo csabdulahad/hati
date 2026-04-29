@@ -2,6 +2,8 @@
 
 namespace hati\filter;
 
+use DateTimeImmutable;
+
 /**
  * Filter class is very helpful and handy in situations where user inputs need to be
  * filtered and sanitized. It has many methods which are of different capabilities.
@@ -34,7 +36,8 @@ namespace hati\filter;
  * These patterns remove other characters from the input as specified.
  **/
 
-abstract class Filter {
+abstract class Filter
+{
 
 	/** Alphabets A-Z a-z */
 	public const SAN_A = '#[^a-zA-Z]#';
@@ -73,401 +76,352 @@ abstract class Filter {
 	public const SAN_ANSCD = '#[^a-zA-Z0-9\s,.]#';
 
 	/**
-	 * With Hati 5, filter functions can return various {@link FilterOut} enum values. To
+	 * Filter functions can return various {@link FilterOut} enum values. To
 	 * make simple whether a filter has passed and sanitized the input successfully, use
 	 * this function on the returned value by filter function.
 	 *
 	 * @param mixed $value value returned by any filter functions
 	 * @return bool true if the input was all ok based on type & sanitization. Otherwise, false.
 	 * */
-	public static function isOK(mixed $value): bool {
-		return !in_array($value, [
-			FilterOut::NULL, FilterOut::EMPTY, FilterOut::ILLEGAL, FilterOut::INVALID,
-			FilterOut::VAL_LEN_ERROR, FilterOut::VAL_LEN_UNDER_ERROR, FilterOut::VAL_LEN_OVER_ERROR,
-			FilterOut::RANGE_ERROR, FilterOut::RANGE_UNDER_ERROR, FilterOut::RANGE_OVER_ERROR,
-			FilterOut::RANGE_FRACTION_ERROR, FilterOut::NOT_IN_OPTION
-		]);
+	public static function isOK(mixed $value): bool
+	{
+		if (!$value instanceof FilterOut) {
+			return true;
+		}
+		
+		return $value === FilterOut::OK;
 	}
 
-	/**
-	 * A date input can be checked for ISO formatted date. This method first try to match
-	 * ISO date format in the input. Upon match, it removes the matched ISO date with
-	 * empty space. Then it counts the remaining characters. It was a valid formatted
-	 * ISO date then should have no remaining characters. Thus confirming a valid ISO
-	 * formatted date input.
-	 *
-	 * @param mixed $input the string to be checked for ISO date format.
-	 *
-	 * @return string|FilterOut returns the input if the input is a valid ISO formatted date. on failure
-	 * it can return one of these based on checks:
-	 * {@link FilterOutput::NULL}, {@link FilterOutput::EMPTY}, {@link FilterOutput::INVALID}
-	 * */
-	public static function checkISODate(mixed $input): string|FilterOut {
-
-		// check whether the input is null & empty
-		if ($input === null) {
-			return FilterOut::NULL;
-		}
-
-		// check whether we have empty input
-		if (strlen($input) < 1) {
-			return FilterOut::EMPTY;
-		}
-
-		// try to remove the YYYY-MM-DD match from the input if there is any
-		$date = self::sanitize($input, '#(\d{4}-\d{2}-\d{2})#');
-
-		// If it was a valid ISO formatted date then it should have no character
-		// remaining after the filter.
-		$pass = strlen($date) == 0;
-
-		return !$pass ? FilterOut::INVALID : $input;
-	}
-
-	public static function checkISOTime(mixed $input): string|FilterOut {
+	public static function checkISODate(mixed $input): string|FilterOut
+	{
 		// check whether the input is null & empty
 		if ($input === null) {
 			return FilterOut::NULL;
 		}
 		
+		if (!is_scalar($input)) {
+			return FilterOut::INVALID;
+		}
+		
+		$value = trim((string) $input);
+		
 		// check whether we have empty input
-		if (strlen($input) < 1) {
+		if ($value === '') {
 			return FilterOut::EMPTY;
 		}
 		
-		// try to remove the YYYY-MM-DD match from the input if there is any
-		$time = self::sanitize($input, '#(\d{2}:\d{2}:\d{2})#');
+		$date = DateTimeImmutable::createFromFormat('!Y-m-d', $value);
 		
-		// If it was a valid ISO formatted time then it should have no character
-		// remaining after the filter.
-		$pass = strlen($time) == 0;
+		if (!$date || $date->format('Y-m-d') !== $value) {
+			return FilterOut::INVALID;
+		}
 		
-		return !$pass ? FilterOut::INVALID : $input;
+		return $value;
+	}
+
+	public static function checkISOTime(mixed $input): string|FilterOut
+	{
+		// check whether the input is null & empty
+		if ($input === null) {
+			return FilterOut::NULL;
+		}
+		
+		if (!is_scalar($input)) {
+			return FilterOut::INVALID;
+		}
+		
+		$value = trim((string) $input);
+		
+		// check whether we have empty input
+		if ($value === '') {
+			return FilterOut::EMPTY;
+		}
+		
+		$time = DateTimeImmutable::createFromFormat('!H:i:s', $value);
+		
+		if (!$time || $time->format('H:i:s') !== $value) {
+			return FilterOut::INVALID;
+		}
+		
+		return $value;
 	}
 	
-	/**
-	 * Very similar to {@link Filter::checkISODate()}. It only validates input as a valid fully
-	 * qualified ISO datetime in YYYY-MM-DD HH:MM:SS format.
-	 *
-	 * @param mixed $input the string to be checked for ISO date format.
-	 *
-	 * @return string|FilterOut returns the input if the input is a valid ISO formatted date. on failure
-	 * it can return one of these output:
-	 * {@link FilterOutput::NULL}, {@link FilterOutput::EMPTY}, {@link FilterOutput::INVALID}
-	 * */
-	public static function checkISODatetime(mixed $input): string|FilterOut {
+	public static function checkISODatetime(mixed $input): string|FilterOut
+	{
 		// check whether the input is null & empty
 		if ($input === null) {
 			return FilterOut::NULL;
 		}
-
+		
+		if (!is_scalar($input)) {
+			return FilterOut::INVALID;
+		}
+		
+		$value = trim((string) $input);
+		
 		// check whether we have empty input
-		if (strlen($input) < 1) {
+		if ($value === '') {
 			return FilterOut::EMPTY;
 		}
-
-		// try to remove the YYYY-MM-DD match from the input if there is any
-		$date = self::sanitize($input, '#(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})#');
-
-		// If it was a valid ISO formatted date then it should have no character
-		// remaining after the filter.
-		$pass = strlen($date) == 0;
-
-		return !$pass ? FilterOut::INVALID : $input;
+		
+		$date = DateTimeImmutable::createFromFormat('!Y-m-d H:i:s', $value);
+		
+		if (!$date || $date->format('Y-m-d H:i:s') !== $value) {
+			return FilterOut::INVALID;
+		}
+		
+		return $value;
 	}
-
-	/**
-	 * This method can work with any {@link FilterOut} defined sanitizing patterns of client code defined
-	 * pattern as method argument. By default, upon matching the pattern it replaces with an empty
-	 * string.
-	 *
-	 * @param string $value the string, the subject of the pattern matching.
-	 * @param string $pattern any @link Filter defined or client code defined regular expression.
-	 * @param string $replacement to replace the matched patter.
-	 *
-	 * @return string it returns the replaced input as string upon matching the pattern.
-	 * */
-	public static function sanitize(string $value, string $pattern, string $replacement = ''): string {
+	
+	public static function sanitize(string $value, string $pattern, string $replacement = ''): string
+	{
 		return preg_replace($pattern, $replacement, $value);
 	}
 
-	/**
-	 * This method checks email. It first checks whether the email is valid or not.
-	 * If it is valid then it sanitize the email and returns.
-	 *
-	 * On invalid email argument, it behaves differently. If trigger error is set then
-	 * it throws HatiError. If not then it returns null value to indicate that the email
-	 * was failed to pass the check.
-	 *
-	 * @param mixed $input string containing email to be checked
-	 *
-	 * @return string|FilterOut sanitized email. On failure, it can return one of these:
-	 * {@link FilterOutput::NULL}, {@link FilterOutput::EMPTY}, {@link FilterOutput::INVALID}
-	 * */
-	public static function checkEmail(mixed $input): string|FilterOut {
+	public static function checkEmail(mixed $input): string|FilterOut
+	{
 		// check whether the input is null & empty
 		if ($input === null) {
 			return FilterOut::NULL;
 		}
-
+		
+		if (!is_scalar($input)) {
+			return FilterOut::INVALID;
+		}
+		
+		$value = trim((string) $input);
+		
 		// check whether we have empty input
-		if (empty($input)) {
+		if ($value === '') {
 			return FilterOut::EMPTY;
 		}
-
-		$isEmail = filter_var($input, FILTER_VALIDATE_EMAIL);
-		if (!$isEmail) return FilterOut::INVALID;
-
-		return  filter_var($input, FILTER_SANITIZE_EMAIL);
+		
+		$email = filter_var($value, FILTER_VALIDATE_EMAIL);
+		
+		if ($email === false) {
+			return FilterOut::INVALID;
+		}
+		
+		return $value;
 	}
-
-	/**
-	 * This method checks for integer. It first checks whether the input is a valid
-	 * integer or not. If it is valid then it sanitize the number and returns.
-	 *
-	 * On invalid argument, it behaves differently. If trigger error is set then it
-	 * throws HatiError. If not then it returns null value to indicate that the number
-	 * was failed to pass the check.
-	 *
-	 * @param mixed $input string or integer to be checked
-	 *
-	 * @return int|FilterOut sanitized integer. On failure, it can return one of these:
-	 * {@link FilterOutput::NULL}, {@link FilterOutput::EMPTY},
-	 * {@link FilterOutput::ILLEGAL}, {@link FilterOutput::INVALID}
-	 * */
-	public static function checkInt(mixed $input): int|FilterOut {
+	
+	public static function checkInt(mixed $input): int|FilterOut
+	{
 		// check whether the input is null & empty
 		if ($input === null) {
 			return FilterOut::NULL;
 		}
+		
+		if (is_int($input)) {
+			return $input;
+		}
+		
+		if (!is_string($input)) {
+			return FilterOut::INVALID;
+		}
+		
+		$value = trim($input);
 
 		// check whether we have empty input
-		if (empty($input) && $input != 0) {
+		if ($value === '') {
 			return FilterOut::EMPTY;
 		}
-
-		// let's see if we have got any illegal character in the input by removing a
-		// valid either signed or unsigned value from the input then assess the
-		// length of it. For a valid integer of either signed or unsigned it should
-		// have a length of zero after filtering.
-		$filter = strlen(preg_replace('#-?\d+#', '', $input));
-		if ($filter > 0) {
+		
+		if (!preg_match('/^[+-]?\d+$/', $value)) {
 			return FilterOut::ILLEGAL;
 		}
-
-		// capture absolute zero value as an integer
-		$input = (int) $input;
-		if ($input === 0) return $input;
-
-		$isInt = filter_var($input, FILTER_VALIDATE_INT);
-		if (!$isInt) return FilterOut::INVALID;
-
-		return filter_var($input, FILTER_SANITIZE_NUMBER_INT);
+		
+		$int = filter_var($value, FILTER_VALIDATE_INT);
+		
+		if ($int === false) {
+			return FilterOut::INVALID;
+		}
+		
+		return $int;
 	}
 
-	/**
-	 * This method checks for floating number. If the number is a floating number then
-	 * it just returns it.
-	 *
-	 * On invalid argument, it behaves differently. If trigger error is set then it
-	 * throws HatiError. If not then it returns null value to indicate that the number
-	 * was failed to pass the floating check.
-	 *
-	 * On any input given, it checks whether it has any dot in the number or the string.
-	 * If not found then it adds one with 0 at the end after the decimal point to make
-	 * it a valid decimal point number for the check logic to work.
-	 *
-	 * @param mixed $input string or number to be checked
-	 *
-	 * @return float|FilterOut sanitized floating number. On failure, it can return one of these:
-	 * {@link FilterOutput::NULL}, {@link FilterOutput::EMPTY},
-	 * {@link FilterOutput::ILLEGAL}, {@link FilterOutput::INVALID}
-	 * */
-	public static function checkFloat(mixed $input): float|FilterOut {
+	public static function checkFloat(mixed $input): float|FilterOut
+	{
 		// check whether the input is null & empty
 		if ($input === null) {
 			return FilterOut::NULL;
 		}
-
+		
+		if (is_float($input) || is_int($input)) {
+			return (float) $input;
+		}
+		
+		if (!is_string($input)) {
+			return FilterOut::INVALID;
+		}
+		
+		$value = trim($input);
+		
 		// check whether we have empty input
-		if (empty($input)) {
+		if ($value === '') {
 			return FilterOut::EMPTY;
 		}
-
-		// add the floating point place if it has not
-		if (!preg_match('#\.#', $input)) $input .= '.0';
-
-		// let's see if we have got any illegal character in the input by removing a
-		// valid either signed or unsigned value from the input then assess the
-		// length of it. For a valid floating of either signed or unsigned it should
-		// have a length of zero after filtering.
-		$filter = strlen(preg_replace('#-?\d+\.\d+#', '', $input));
-		if ($filter > 0) {
+		
+		if (!preg_match('/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/', $value)) {
 			return FilterOut::ILLEGAL;
 		}
-
-		$isFloat = filter_var($input, FILTER_VALIDATE_FLOAT);
-		if (!$isFloat) return FilterOut::INVALID;
-
-		return $input;
+		
+		$float = filter_var($value, FILTER_VALIDATE_FLOAT);
+		
+		if ($float === false) {
+			return FilterOut::INVALID;
+		}
+		
+		return $float;
 	}
-
-	/**
-	 * Any string can be sanitized by this method. This method sanitize special characters
-	 * from the string html tags brackets, double quotes, ampersand will be escaped with
-	 * html entities values.
-	 *
-	 * Additionally, it checks for empty string value. If an empty string is passed-in as
-	 * argument then it throws HatiError based on the setting.
-	 *
-	 * @param mixed $input string to be escaped
-	 * @param ?int $flag filter flag to pass to filter_var. If null, then no filter is performed.
-	 * @return string|FilterOut returns the escaped string. On failure, it can return one of these:
-	 * {@link FilterOutput::NULL}, {@link FilterOutput::EMPTY}
-	 * */
-	public static function checkString(mixed $input, ?int $flag = FILTER_SANITIZE_FULL_SPECIAL_CHARS): string|FilterOut {
+	
+	public static function checkString(mixed $input, ?int $flag = FILTER_SANITIZE_FULL_SPECIAL_CHARS): string|FilterOut
+	{
 		// check if we have empty
 		if ($input === null) {
 			return FilterOut::NULL;
 		}
-
-		$empty = empty($input);
-		if ($empty) return FilterOut::EMPTY;
-
-		if (empty($flag)) return $input;
 		
-		return filter_var($input, $flag);
+		if (!is_string($input)) {
+			return FilterOut::INVALID;
+		}
+		
+		$value = (string) $input;
+		
+		if (trim($value) === '') {
+			return FilterOut::EMPTY;
+		}
+		
+		if ($flag === null) {
+			return $value;
+		}
+		
+		$filtered = filter_var($value, $flag);
+		
+		if ($filtered === false) {
+			return FilterOut::INVALID;
+		}
+		
+		return $filtered;
 	}
 
-	/**
-	 * This method validates a string as url first then on successful validation it returns
-	 * sanitized url.
-	 *
-	 * @param mixed $input the url string for checking.
-	 *
-	 * @return string|FilterOut the sanitized url string. On failure, it can return one of these:
-	 * {@link FilterOutput::NULL}, {@link FilterOutput::EMPTY}, {@link FilterOutput::INVALID}
-	 */
-	public static function checkURL(mixed $input): string|FilterOut {
+	public static function checkURL(mixed $input): string|FilterOut
+	{
 		// check whether the input is null & empty
 		if ($input === null) {
 			return FilterOut::NULL;
 		}
+		
+		if (!is_scalar($input)) {
+			return FilterOut::INVALID;
+		}
+		
+		$value = trim((string) $input);
 
 		// check whether we have empty input
-		if (strlen($input) < 1) {
+		if ($value === '') {
 			return FilterOut::EMPTY;
 		}
-
-		$isUrl = filter_var($input, FILTER_VALIDATE_URL);
-		if (!$isUrl) return FilterOut::INVALID;
-
-		return filter_var($input, FILTER_SANITIZE_URL);
+		
+		$url = filter_var($value, FILTER_VALIDATE_URL);
+		
+		if ($url === false) {
+			return FilterOut::INVALID;
+		}
+		
+		return $value;
 	}
-
-	/**
-	 * This method uses the FILTER_VALIDATE_BOOLEAN as filter which can support many possible
-	 * values of boolean type in php such as On, 1, yes, true, false, no, 0, off. If the input
-	 * is not any of the above then it considers the input as invalid & throws
-	 * {@link FilterOut} type.
-	 *
-	 * @param mixed $input a string possible holding boolean value.
-	 *
-	 * @return bool|FilterOut the boolean value. On failure, it can return one of these:
-	 * {@link FilterOutput::NULL}, {@link FilterOutput::EMPTY}, {@link FilterOutput::INVALID}
-	 * */
-	public static function checkBool(mixed $input): bool|FilterOut {
+	
+	public static function checkBool(mixed $input): bool|FilterOut
+	{
 		// check whether the input is null & empty
 		if ($input === null) {
 			return FilterOut::NULL;
 		}
-
-		// check whether we have empty input
-		if (gettype($input) != 'boolean' && strlen($input) < 1) {
+		
+		if (is_bool($input)) {
+			return $input;
+		}
+		
+		if (!is_scalar($input)) {
+			return FilterOut::INVALID;
+		}
+		
+		$value = trim((string) $input);
+		
+		if ($value === '') {
 			return FilterOut::EMPTY;
 		}
-
-		$isBool = filter_var($input, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-		if ($isBool === null) return FilterOut::INVALID;
-
-		return $isBool;
+		
+		$bool = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+		
+		if ($bool === null) {
+			return FilterOut::INVALID;
+		}
+		
+		return $bool;
 	}
-
-	/**
-	 * Using this method, a string can be checked whether it is in a length or not. Both min and max
-	 * range arguments are optional. If they both are not set then no checking is performed and true
-	 * value is returned. If any range limit is set and trigger is set then it throws exception on
-	 * failure.
-	 *
-	 * The min and max argument are inclusive when checked.
-	 *
-	 * @param string $input the string has to be checked.
-	 * @param ?int $min the min length of the input.
-	 * @param ?int $max the max length of the input.
-	 *
-	 * @return string|FilterOut returns the input if it is within the range, otherwise it can return one of these:<br>
-	 * - {@link FilterOutput::RANGE_ERROR} : When input is not in preferred length<br>
-	 * - {@link FilterOutput::UNDER_ERROR} : When input is below the minimum length<br>
-	 * - {@link FilterOutput::OVER_ERROR}  : When input is over the maximum length
-	 */
-	public static function checkStrLen(string $input, ?int $min = null, ?int $max = null): string|FilterOut {
-		$minPass = false;
-		$maxPass = false;
-		if ($min != null) $minPass = strlen($input) >= $min;
-		if ($max != null) $maxPass = strlen($input) <= $max;
-
-		if ($min != null && $max != null && (!$minPass || !$maxPass)) {
+	
+	public static function checkStrLen(string $input, ?int $min = null, ?int $max = null): string|FilterOut
+	{
+		$length =
+			function_exists('mb_strlen')
+			? mb_strlen($input, 'UTF-8')
+			: strlen($input);
+		
+		$minPass = true;
+		$maxPass = true;
+		
+		if ($min !== null) {
+			$minPass = $length >= $min;
+		}
+		
+		if ($max !== null) {
+			$maxPass = $length <= $max;
+		}
+		
+		if ($min !== null && $max !== null && (!$minPass || !$maxPass)) {
 			return FilterOut::VAL_LEN_ERROR;
 		}
-
-		if ($min != null && !$minPass) {
+		
+		if ($min !== null && !$minPass) {
 			return FilterOut::VAL_LEN_UNDER_ERROR;
 		}
-
-		if ($max != null && !$maxPass) {
+		
+		if ($max !== null && !$maxPass) {
 			return FilterOut::VAL_LEN_OVER_ERROR;
 		}
-
+		
 		return $input;
 	}
 
-	/**
-	 * Using this method, an integer can be checked whether it is in range or not. Both min and max
-	 * range arguments are optional. If they both are not set then no checking is performed and true
-	 * value is returned. If any range limit is set and trigger is set then it throws exception on
-	 * failure.
-	 *
-	 * The min and max argument are inclusive when checked.
-	 *
-	 * @param int $input the integer has to be checked.
-	 * @param ?int $min the min limit of the input.
-	 * @param ?int $max the max limit of the input.
-	 *
-	 * @return int|FilterOut true if the input is within the range, otherwise it returns:.<br>
-	 *  - {@link FilterOutput::RANGE_ERROR} : When input is not in preferred value<br>
-	 *  - {@link FilterOutput::UNDER_ERROR} : When input is below the minimum value<br>
-	 *  - {@link FilterOutput::OVER_ERROR}  : When input is over the maximum value
-	 * **/
-	public static function checkIntLimit(int $input, ?int $min = null, ?int $max = null): int|FilterOut {
-		$haveBothRange = $min != null && $max != null;
-
-		$minPass = false;
-		$maxPass = false;
-		if ($min != null) $minPass = $input >= $min;
-		if ($max != null) $maxPass = $input <= $max;
-
+	public static function checkIntLimit(int $input, ?int $min = null, ?int $max = null): int|FilterOut
+	{
+		$haveBothRange = $min !== null && $max !== null;
+		
+		$minPass = true;
+		$maxPass = true;
+		
+		if ($min !== null) {
+			$minPass = $input >= $min;
+		}
+		
+		if ($max !== null) {
+			$maxPass = $input <= $max;
+		}
+		
 		if ($haveBothRange && (!$minPass || !$maxPass)) {
 			return FilterOut::RANGE_ERROR;
 		}
-
-		if ($min != null && !$minPass) {
+		
+		if ($min !== null && !$minPass) {
 			return FilterOut::RANGE_UNDER_ERROR;
 		}
-
-		if ($max != null && !$maxPass) {
+		
+		if ($max !== null && !$maxPass) {
 			return FilterOut::RANGE_OVER_ERROR;
 		}
-
+		
 		return $input;
 	}
 
@@ -479,7 +433,8 @@ abstract class Filter {
 	 * @param mixed $defVal
 	 * @return mixed
 	 * */
-	public static function int(mixed $value, mixed $defVal = 0): mixed {
+	public static function int(mixed $value, mixed $defVal = 0): mixed
+	{
 		$int = self::checkInt($value);
 		return self::isOK($int) ? $int : $defVal;
 	}
@@ -492,12 +447,14 @@ abstract class Filter {
 	 * @param mixed $defVal
 	 * @return mixed
 	 * */
-	public static function float(mixed $value, mixed $defVal = 0): mixed {
+	public static function float(mixed $value, mixed $defVal = 0): mixed
+	{
 		$int = self::checkFloat($value);
 		return self::isOK($int) ? $int : $defVal;
 	}
 	
-	public static function string(mixed $value, mixed $defVal = null): mixed {
+	public static function string(mixed $value, mixed $defVal = null): mixed
+	{
 		$string = self::checkString($value);
 		return self::isOK($string) ? $string : $defVal;
 	}
@@ -510,7 +467,8 @@ abstract class Filter {
 	 * @param mixed $defVal
 	 * @return mixed
 	 * */
-	public static function bool(mixed $value, mixed $defVal = false): mixed {
+	public static function bool(mixed $value, mixed $defVal = false): mixed
+	{
 		$int = self::checkBool($value);
 		return self::isOK($int) ? $int : $defVal;
 	}
@@ -523,7 +481,8 @@ abstract class Filter {
 	 * @param mixed $defVal
 	 * @return mixed
 	 * */
-	public static function email(mixed $value, mixed $defVal = null): mixed {
+	public static function email(mixed $value, mixed $defVal = null): mixed
+	{
 		$email = self::checkEmail($value);
 		return self::isOK($email) ? $email : $defVal;
 	}
@@ -536,7 +495,8 @@ abstract class Filter {
 	 * @param mixed $defVal
 	 * @return mixed
 	 * */
-	public static function url(mixed $value, mixed $defVal = null): mixed {
+	public static function url(mixed $value, mixed $defVal = null): mixed
+	{
 		$url = self::checkURL($value);
 		return self::isOK($url) ? $url : $defVal;
 	}
@@ -549,7 +509,8 @@ abstract class Filter {
 	 * @param mixed $defVal
 	 * @return mixed
 	 * */
-	public static function isoTime(mixed $value, mixed $defVal = null): mixed {
+	public static function isoTime(mixed $value, mixed $defVal = null): mixed
+	{
 		$isoDate = self::checkISOTime($value);
 		return self::isOK($isoDate) ? $isoDate : $defVal;
 	}
@@ -562,7 +523,8 @@ abstract class Filter {
 	 * @param mixed $defVal
 	 * @return mixed
 	 * */
-	public static function isoDate(mixed $value, mixed $defVal = null): mixed {
+	public static function isoDate(mixed $value, mixed $defVal = null): mixed
+	{
 		$isoDate = self::checkISODate($value);
 		return self::isOK($isoDate) ? $isoDate : $defVal;
 	}
@@ -575,7 +537,8 @@ abstract class Filter {
 	 * @param mixed $defVal
 	 * @return mixed
 	 * */
-	public static function isoDateTime(mixed $value, mixed $defVal = null): mixed {
+	public static function isoDateTime(mixed $value, mixed $defVal = null): mixed
+	{
 		$isoDateTime = self::checkISODateTime($value);
 		return self::isOK($isoDateTime) ? $isoDateTime : $defVal;
 	}

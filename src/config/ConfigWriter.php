@@ -2,16 +2,18 @@
 
 namespace hati\config;
 
-class ConfigWriter {
+class ConfigWriter
+{
 
 	// Add extra line break before these JSON keys
 	private static array $group = [
-		'project_dir_as_include_path', 'dev_API_benchmark', 'time_zone',
+		'project_dir_as_include_path', 'dev_API_benchmark',
 		'global_php', 'mailer_host', 'doc_config','img_config',
 		'video_config', 'audio_config'
 	];
 
-	private static function writeToConfigFile(array $config, string $path): bool {
+	private static function writeToConfigFile(array $config, string $path): bool
+	{
 		$json = self::beautifyAsJSON($config);
 		$hl = fopen("{$path}hati.json", 'w');
 
@@ -23,7 +25,8 @@ class ConfigWriter {
 		return true;
 	}
 
-	public static function write(string $rootPath, bool $createNew = false): array {
+	public static function write(string $rootPath, bool $createNew = false): array
+	{
 		/*
 		 * Get both the configuration files & decode it
 		 */
@@ -71,7 +74,8 @@ class ConfigWriter {
 	}
 
 	// Beautify the JSON output
-	private static function beautifyAsJSON(array $json): string {
+	private static function beautifyAsJSON(array $json): string
+	{
 		$output = json_encode($json, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 		$data = json_decode($output, true);
 		$jsonOutput = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);

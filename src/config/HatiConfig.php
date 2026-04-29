@@ -7,8 +7,6 @@ return [
 	'dev_API_benchmark'                 =>          false,
 	'dev_API_delay'                     =>          0, // sec in integer
 
-	'time_zone'                         =>          'Europe/London',
-
 	'global_php'                        =>          [],
 
 	'mailer_host'						=>			'smtp.gmail.com',

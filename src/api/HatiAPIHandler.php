@@ -1,15 +1,15 @@
 <?php
 
+/** @noinspection SpellCheckingInspection */
+
 namespace hati\api;
 
-use hati\config\Key;
-use hati\filter\Filter;
-use hati\Hati;
 use hati\Trunk;
-use hati\util\Arr;
 use hati\util\Request;
 use hati\util\Text;
 use ReflectionClass;
+use ReflectionException;
+use ReflectionMethod;
 use Throwable;
 
 /**
@@ -21,372 +21,603 @@ use Throwable;
  * @since 5.0.0
  * */
 
-final class HatiAPIHandler {
+final class HatiAPIHandler
+{
+
+	private const SUPPORTED_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+
+	private bool $debug;
 
 	/**
-	 * When set true, any php syntax/runtime error will be sent back
-	 * as API response message. Otherwise, simple error message will
-	 * be sent with 500 error code.
-	 * */
-	public static bool $DEBUG = false;
-
-	private static ?HatiAPIHandler $handler = null;
-
-	/** Internal buffer for API configurations */
+	 * Path-keyed route registry.
+	 *
+	 * [
+	 *     'v1/user' => [
+	 *         'path' => 'v1/user',
+	 *         'handler' => UserAPI::class,
+	 *         'methods' => ['GET' => true, 'POST' => true],
+	 *         'extensions' => ['reset-password' => 'resetPassword']
+	 *     ]
+	 * ]
+	 */
 	private array $apis = [];
-
-	private function __construct() {
-
-	}
-
-	private static function get(): HatiAPIHandler {
-		if (is_null(self::$handler)) {
-			self::$handler = new HatiAPIHandler();
-		}
-		return self::$handler;
-	}
-
+	
 	/**
-	 * Initialize the API handler. It performs various checks such as request method
-	 * validation and API path checks, calling appropriate handler with correct method.
-	 * To register APIs, use {@link HatiAPIHandler::register()} in 'api/hati_api_registry.php'
-	 * file.
+	 * Creates a new API handler instance. The handler owns its own API route registry.
 	 *
-	 * For any error while booting up, error message is written out as standard API response with
-	 * proper HTTP status code.
+	 * When debug mode is enabled, unexpected implementation errors are returned with
+	 * file and line information. When disabled, implementation errors are returned as
+	 * a generic 500 API response.
 	 *
-	 * <br> This method should only be called from the 'api/hati_api_handler.php' file or by the
-	 * Hati library internally for example HatiAPI class.
+	 * @param bool $debug Whether implementation errors should expose detailed debug information.
+	 */
+	public function __construct(bool $debug = false)
+	{
+		$this->debug = $debug;
+	}
+	
+	/**
+	 * Handles an API request and returns a response array.
 	 *
-	 * @param ?array $augment Array contains augmented values to call API by code.
-	 * */
-	public static function boot(?array $augment = null): ?array {
-		$res = new Response();
-		$cwd = getcwd();
-		
+	 * If no request array is provided, the handler builds one from the native PHP
+	 * request environment. If a request array is provided, it should contain the API
+	 * path, request method, query params, headers, cookies, and optional body data.
+	 *
+	 * Request array shape:
+	 * [
+	 *     'method' => 'GET|POST|PUT|PATCH|DELETE',
+	 *     'api' => 'v1/user/login?id=10',
+	 *     'params' => [],
+	 *     'headers' => [],
+	 *     'cookies' => [],
+	 *     'body' => null,
+	 *     'raw_body' => null
+	 * ]
+	 *
+	 * The handler resolves the registered API route, checks extension functions before
+	 * HTTP verb methods, injects request data into the API class, runs the API lifecycle,
+	 * and catches Trunk responses.
+	 *
+	 * Returned response array shape:
+	 * [
+	 *     'code' => 200,
+	 *     'headers' => [],
+	 *     'cookies' => [],
+	 *     'body' => ''
+	 * ]
+	 *
+	 * @param ?array $request Optional request array. If omitted, native PHP request data is used.
+	 * @return array Response array containing HTTP status code, headers, cookies, and body.
+	 */
+	public function handle(?array $request = null): array
+	{
 		try {
-			$handler = self::get();
-
-			// Is it an API thing?
-			if (empty($augment['api']) && empty($_GET['api'])) {
-				throw Trunk::error400('Bad request');
-			}
-
-			$path = Filter::checkString($augment['api'] ?? $_GET['api']);
-			if (!Filter::isOK($path)) {
-				throw Trunk::error400('Bad request');
-			}
-
-			// Check the request method
-			$method = strtoupper($augment['method'] ?? Request::method());
-
-			if (!in_array($method, ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])) {
-				throw Trunk::error405('Unacceptable request method');
-			}
-
-			$paths = $handler->apis[$method] ?? null;
-			if (empty($paths)) {
-				throw Trunk::error400('API is not supported');
-			}
-
-			// Calculate which API request it is
-			$path = trim($path, '/');
-			$paths = array_keys($paths);
-			$apiPathKey = null;
-
-			foreach ($paths as $apiPath) {
-				if (str_starts_with($path, $apiPath)) {
-					$apiPathKey = $apiPath;
-					break;
-				}
-			}
-
-			if (empty($apiPathKey)) {
-				throw Trunk::error400('Unknown API');
-			}
-
-			// Extract arguments from the request API path
-			$registeredAPIPathLen = strlen($apiPathKey);
-			$arguments = substr($path, $registeredAPIPathLen);
-			$arguments = trim($arguments, '/');
+			$request = $this->normalizeRequest($request);
 			
-			// Remove query params from the path including ? mark
-			$arguments = strtok($arguments, '?');
+			$route = $this->matchRoute($request['api']);
 			
-			$arguments = explode('/', $arguments);
-
-			// Build up the query params
-			$queryParams = $augment['params'] ?? $_REQUEST;
-			unset($queryParams['api']);
-
-			// Get the API endpoint details
-			$arr = $handler->apis[$method][$apiPathKey] ?? null;
-			if (is_null($arr)) {
-				throw Trunk::error500('Server failed to create a response');
+			if ($route === null) {
+				Trunk::http400('Unknown API');
 			}
-
-			// Load the API class file!
-			$class = $arr['handler'];
-			$class = new $class;
-
-			if (!$class instanceof HatiAPI) {
-				throw Trunk::error500('Unsupported API implementation');
-			}
-
-			// Invoke the right method
-			$functions = $arr['extension'] ?? [];
-			$func = null;
-			foreach ($functions as $f) {
-				foreach ($arguments as $a) {
-					// Do we need to make it camel cased function/method name?
-					if (str_contains($a, '-')) {
-						$a = Text::toCamelCase($a);
-					}
-					
-					if ($f == $a) {
-						$func = $f;
-						break 2;
-					}
-				}
-			}
-
-			// Adjust the arguments
-			if (!is_null($func)) {
-				$arguments = implode('/', $arguments);
-
-				/*
-				 * Let's try with camel case version
-				 * */
-				if (str_contains($arguments, Text::deCamelCase($func))) {
-					$caseNeutral = Text::deCamelCase($func);
-					$start = strpos($arguments, $caseNeutral);
-					$len = strlen($caseNeutral);
-				} else {
-					/*
-					 * path has the extension name as is in the API class
-					 * */
-					$start = strpos($arguments, $func);
-					$len = strlen($func);
-				}
-
-				$arguments = substr($arguments, $start + $len);
-				$arguments = trim($arguments, '/');
-				$arguments = explode('/', $arguments);
-
-				if (!method_exists($class, $func)) {
-					throw Trunk::error501('Unimplemented API');
-				}
-
-				$method = $func;
-			} else {
-				if (!method_exists($class, $method)) {
-					throw Trunk::error405('Unacceptable request method');
-				}
-			}
-
-			// Adjust empty segments
-			if (count($arguments) == 1 && empty($arguments[0])) {
-				$arguments = [];
-			}
-
-			// #1 Set various properties
-			$headers = array_merge(getallheaders(), $augment['headers'] ?? []);
-			$cookies = array_merge($_COOKIE ?? [], $augment['cookies'] ?? []);
 			
-			$class->setHeaders($headers);
-			$class->setCookies($cookies);
-			$class->setArgs($arguments);
-			$class->setParams($queryParams);
-
-			// #1.1 Set the handler as working directory
-			$reflection = new ReflectionClass($class);
-			$directory  = pathinfo($reflection->getFileName(), PATHINFO_DIRNAME);
-			chdir($directory);
-
-			// #2 Initialize the API
-			$class->init();
-
-			// #2.2 Prepare public methods
-			$class->publicMethod();
-
-			// #3 Check authentication
-			$privateMethod = $class->isPrivateMethod($method);
-
-			if ($privateMethod) {
-				$class->authenticate($method);
-			}
-
-			// #4 Ready to call the API serving method with a ready response object!
-			$disableReply = $augment['disable_reply'] ?? false;
-			if ($disableReply) $res->disableReply();
-
-			$class->$method($res);
+			$segments = $this->extraSegments($request['api'], $route['path']);
+			$target = $this->resolveTarget($route, $segments, $request['method']);
 			
-			// #5 Restore the CWD
-			chdir($cwd);
-
+			$api = $this->createAPI($route['handler']);
+			
+			$api->setHeaders($request['headers']);
+			$api->setCookies($request['cookies']);
+			$api->setArgs($target['args']);
+			$api->setParams($request['params']);
+			
+			$api->setRequestMethod($request['method']);
+			
+			if (method_exists($api, 'setBody')) {
+				$api->setBody($request['body']);
+			}
+			
+			if (method_exists($api, 'setRawBody')) {
+				$api->setRawBody($request['raw_body']);
+			}
+			
+			$api->init();
+			$api->publicMethod();
+			
+			if ($api->isPrivateMethod($target['auth_name'])) {
+				$api->authenticate($target['auth_name']);
+			}
+			
+			$response = new Response();
+			
+			$method = $target['target'];
+			$api->$method($response);
+			
+			Trunk::http501('API did not produce a response');
+			
+		} catch (Trunk $e) {
+			return $e->toArray();
+			
 		} catch (Throwable $e) {
-			// If it was an API implementation error then restore CWD
-			chdir($cwd);
-
-			if (!$e instanceof Trunk) {
-				$msg = self::$DEBUG ?  self::getFullErrorMsg($e) : 'Error in API implementation';
-				$e = Trunk::error500($msg);
-			}
-
-			$disableReply = $augment['disable_reply'] ?? false;
-			if (!$disableReply) $e->report();
-			
-			if ($e->getMessage() == 'HATI_API_CALL') {
-				return [
-					'headers' => $res->getHeaders(),
-					'cookies' => $res->getCookies(),
-					'body' => $res->getJSON()
-				];
-			}
-			
-			return [
-				'headers' => $e->getHeaders(),
-				'cookies' => $e->getCookies(),
-				'body' => $e->__toString()
-			];
+			return $this->internalError($e);
 		}
-
-		return null;
 	}
-
+	
 	/**
-	 * Registers API endpoints with handler. An API can be registered with various configurations.
-	 * Default Hati API handler supports the following HTTP verbs: GET, POST, PUT, PATCH, DELETE.
-	 * See below as an example:
+	 * Registers an API endpoint with this handler.
+	 *
+	 * Each API must define a path, a fully qualified handler class name, and one or
+	 * more supported HTTP methods. The handler class must exist, be instantiable, and
+	 * extend {@link HatiAPI}. File-path handlers are not supported.
+	 *
+	 * The `extension` value is optional and may be either a string or an array of
+	 * strings. Extensions are matched as the first path segment after the registered
+	 * API path and take precedence over HTTP verb dispatch.
+	 *
+	 * Extension names are registered as endpoint path segments. If an extension uses
+	 * kebab-case, it is converted to camelCase when resolving the PHP method name.
+	 *
+	 * Example:
 	 * <code>
-	 * HatiAPIHandler::register([
-	 * 	// HTTP verb the API wants the request method of.
-	 * 	// This can be an array of method such as: 'method' => ['GET', 'POST', 'PUT']
-	 * 	'method' => 'GET',
-	 *
-	 * 	// API endpoint path which can be called as: http://example.com/api/v1/test
-	 * 	'path' => 'v1/test',
-	 *
-	 * 	// Relative folder path found in the api folder; here 'v1' is the version folder.
-	 * 	'handler' => 'v1/TestAPI.php',
-	 *
-	 *  // Or it can be a fully qualified class name
-	 * 	'handler' => \YOUR\APP\SRC\TestAPI::class,
-	 *
-	 * 	// Any php function can be invoked via api.
-	 * 	// It can also be an array functions. For example: 'extension' => ['method1', 'method2']
-	 * 	// e.g: http://example.com/api/v1/test/testFun/arg1?param1=value1 will invoke
-	 * 	// 'testFun' public method in v1/TestAPI.php with argument array ['arg1'], and
-	 * 	// query parameters array ['param1' => 'value1'].
-	 * 	'extension' => 'testFun'
-	 * ]);
+	 * [
+	 *     'path' => 'v1/user',
+	 *     'handler' => \App\Api\UserAPI::class,
+	 *     'method' => ['GET', 'POST'],
+	 *     'extension' => ['login', 'reset-password']
+	 * ]
 	 * </code>
 	 *
-	 * Functions registered for the API and default methods for supported HTTP verb, will be invoked by HatiHandler.
+	 * This registers:
+	 * - GET/POST /v1/user to the get()/post() methods
+	 * - /v1/user/login to login()
+	 * - /v1/user/reset-password to resetPassword()
 	 *
-	 * The handler class file (for example TestAPI.php) must be an implementation of {@link HatiAPI} with the methods
-	 * defined by that 'extension' field.
+	 * Re-registering the same path with the same handler merges methods and extensions.
+	 * Re-registering the same path with a different handler is treated as a registry error.
 	 *
-	 * For any error while registering an API, this method throws error like an API response with 'API-Registry'
-	 * appended to error message and 500 as HTTP status code to indicate that the api registration failed to the
-	 * developer/tester.
-	 *
-	 * @param array $api The API endpoint configuration
-	 * */
-	public static function register(array $api): void {
-		try {
-			$handler = self::get();
-
-			$method = $api['method'] ?? null;
-			if (empty($method)) {
-				throw Trunk::error500('API-Registry: API must define a request method');
-			}
-
-			if (is_string($method)) {
-				$method = [$method];
-			}
-
-			if (!Arr::in_array($method, ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])) {
-				throw Trunk::error500('API-Registry: API request method must be of: GET, POST, PUT, PATCH, DELETE');
-			}
-
-			$path = $api['path'] ?? null;
-			if (empty($path)) {
-				throw Trunk::error500('API-Registry: API path is missing');
-			}
-
-			$file = $api['handler'] ?? null;
-			if (empty($file)) {
-				throw Trunk::error500('API-Registry: API must have a handler file');
-			}
-
-			/*
-			 * Check if the handler class/file exists
-			 * */
-			if (str_ends_with($file, '.php')) {
-				$filePath = getcwd() . DIRECTORY_SEPARATOR . $file;
-				$exists = file_exists($filePath);
-			} else {
-				$filePath = $file;
-				$exists = class_exists($filePath);
-			}
-
-			if (!$exists) {
-				throw Trunk::error500("API-Registry: Handler is missing for: " . Arr::strList($method) . " $path");
-			}
-
-			$func = $api['extension'] ?? null;
-			if (!empty($func)) {
-				$func = is_string($func) ? [$func] : $func;
-			}
-
-			// Register the API!
-			foreach ($method as $m) {
-				$handler->apis[$m][$path] = [
-					'handler' => $filePath,
-					'extension' => $func
-				];
-			}
-
-		} catch (Throwable $e) {
-
-			if (!$e instanceof Trunk) {
-				$msg = self::$DEBUG ? self::getFullErrorMsg($e) : 'Error in API implementation';
-				$e = Trunk::error500($msg);
-			}
-
-			$e->report();
+	 * @param array $api API endpoint configuration.
+	 * @return HatiAPIHandler Returns this handler for method chaining.
+	 */
+	public function register(array $api): HatiAPIHandler
+	{
+		$handlerClass = $api['handler'] ?? null;
+		
+		if (!is_string($handlerClass) || trim($handlerClass) === '') {
+			Trunk::http500('API-Registry: API must have a handler class');
 		}
+		
+		if (str_ends_with($handlerClass, '.php')) {
+			Trunk::http500('API-Registry: Handler must be a fully qualified class name, not a PHP file path');
+		}
+		
+		if (!class_exists($handlerClass)) {
+			Trunk::http500('API-Registry: Handler class does not exist: ' . $handlerClass);
+		}
+		
+		if (!is_subclass_of($handlerClass, HatiAPI::class)) {
+			Trunk::http500('API-Registry: Handler must extend ' . HatiAPI::class);
+		}
+		
+		try {
+			$reflection = new ReflectionClass($handlerClass);
+		} catch (ReflectionException $e) {
+			Trunk::http500('API-Registry: Failed to register API: ' . $e->getMessage());
+		}
+		
+		if (!$reflection->isInstantiable()) {
+			Trunk::http500('API-Registry: Handler class is not instantiable: ' . $handlerClass);
+		}
+		
+		$path = $this->normalizePath($api['path'] ?? '');
+		
+		if ($path === '') {
+			Trunk::http500('API-Registry: API path is missing');
+		}
+		
+		$methods = $this->normalizeMethods($api['method'] ?? null);
+		$extensions = $this->normalizeExtensions($handlerClass, $api['extension'] ?? null);
+		
+		if (isset($this->apis[$path])) {
+			$existing = $this->apis[$path];
+			
+			if ($existing['handler'] !== $handlerClass) {
+				Trunk::http500('API-Registry: API path already registered with a different handler: ' . $path);
+			}
+			
+			$this->apis[$path]['methods'] = array_values(array_unique([
+				...$existing['methods'],
+				...$methods
+			]));
+			
+			foreach ($extensions as $endpoint => $method) {
+				if (
+					isset($this->apis[$path]['extensions'][$endpoint]) &&
+					$this->apis[$path]['extensions'][$endpoint] !== $method
+				) {
+					Trunk::http500('API-Registry: Extension already registered differently: ' . $endpoint);
+				}
+				
+				$this->apis[$path]['extensions'][$endpoint] = $method;
+			}
+			
+			return $this;
+		}
+		
+		$this->apis[$path] = [
+			'path' => $path,
+			'handler' => $handlerClass,
+			'methods' => $methods,
+			'extensions' => $extensions
+		];
+		
+		return $this;
 	}
 
 	/**
-	 * Runs any function as HatiAPI.
+	 * Calls a registered API internally and returns the response array.
 	 *
-	 * @param callable $fun function to be invoked as api. It receives {@link Response} as `$res`
-	 * to allow easier API response.
-	 * */
-	public static function runAsAPI(callable $fun): void {
-		$res = new Response();
-		
+	 * This method is the internal-call equivalent of handling an HTTP request. It does
+	 * not use HTTP, does not emit output, and does not terminate the process. The call
+	 * is routed through the same handler logic as a normal request.
+	 *
+	 * The API path may contain a query string. Query params found in the API path are
+	 * merged with the provided params array, with explicitly provided params taking
+	 * precedence.
+	 *
+	 * @param string $method HTTP request method such as GET, POST, PUT, PATCH, or DELETE.
+	 * @param string $api API path, optionally including query string.
+	 * @param array $params Query parameters to inject into the API.
+	 * @param array $headers Request headers to inject into the API.
+	 * @param array $cookies Request cookies to inject into the API.
+	 * @param mixed $body Parsed request body value, if available.
+	 * @param ?string $rawBody Raw request body string, if available.
+	 * @return array Response array containing HTTP status code, headers, cookies, and body.
+	 */
+	public function call(string $method, string $api, array $params = [], array $headers = [], array $cookies = [], mixed $body = null, ?string $rawBody = null): array
+	{
+		return $this->handle([
+			'method' => $method,
+			'api' => $api,
+			'params' => $params,
+			'headers' => $headers,
+			'cookies' => $cookies,
+			'body' => $body,
+			'raw_body' => $rawBody
+		]);
+	}
+	
+	/**
+	 * Runs a callable as a Hati-style API action.
+	 *
+	 * The callable receives a {@link Response} object and is expected to finalize the
+	 * response by calling {@link Response::reply()}. If the callable does not produce
+	 * a response, a 501 API response is returned.
+	 *
+	 * This method is useful for small API-like tasks, tests, scripts, or adapters that
+	 * want the Hati response flow without registering a full API class and route.
+	 *
+	 * @param callable $fun Function to execute. It receives a Response object.
+	 * @return array Response array containing HTTP status code, headers, cookies, and body.
+	 */
+	public function run(callable $fun): array
+	{
 		try {
-			$fun($res);
-		} catch (Throwable $e) {
-			if (!$e instanceof Trunk) {
-				$msg = self::$DEBUG ?  self::getFullErrorMsg($e) : 'Error in API implementation';
-				$e = Trunk::error500($msg);
-			}
+			$response = new Response();
 			
-			$e->report();
+			$fun($response);
+			
+			Trunk::http501('API did not produce a response');
+			
+		} catch (Trunk $e) {
+			return $e->toArray();
+			
+		} catch (Throwable $e) {
+			return $this->internalError($e);
 		}
 	}
 	
 	private static function getFullErrorMsg(Throwable $e): string {
-		return sprintf("%s in %s at line %s",
-			ucfirst($e ->getMessage()),
+		return sprintf(
+			'%s in %s at line %s',
+			ucfirst($e->getMessage()),
 			$e->getFile(),
 			$e->getLine()
 		);
 	}
-
+	
+	private function normalizeMethods(mixed $methods): array {
+		if (empty($methods)) {
+			Trunk::http500('API-Registry: API must define a request method');
+		}
+		
+		if (is_string($methods)) {
+			$methods = [$methods];
+		}
+		
+		if (!is_array($methods)) {
+			Trunk::http500('API-Registry: API request method must be a string or array');
+		}
+		
+		$out = [];
+		
+		foreach ($methods as $method) {
+			if (!is_string($method)) {
+				Trunk::http500('API-Registry: API request method must be a string');
+			}
+			
+			$method = strtoupper(trim($method));
+			
+			if (!in_array($method, self::SUPPORTED_METHODS, true)) {
+				Trunk::http500('API-Registry: API request method must be one of: ' . implode(', ', self::SUPPORTED_METHODS));
+			}
+			
+			$out[] = $method;
+		}
+		
+		return array_values(array_unique($out));
+	}
+	
+	private function normalizeExtensions(string $handlerClass, mixed $extensions): array
+	{
+		if (empty($extensions)) {
+			return [];
+		}
+		
+		if (is_string($extensions)) {
+			$extensions = [$extensions];
+		}
+		
+		if (!is_array($extensions)) {
+			Trunk::http500('API-Registry: Extension must be a string or array');
+		}
+		
+		$map = [];
+		
+		foreach ($extensions as $extension) {
+			if (!is_string($extension)) {
+				Trunk::http500('API-Registry: Extension must be a string');
+			}
+			
+			$endpoint = trim($extension, '/');
+			
+			if ($endpoint === '') {
+				Trunk::http500('API-Registry: Extension cannot be empty');
+			}
+			
+			if (str_contains($endpoint, '/')) {
+				Trunk::http500('API-Registry: Extension must be a single path segment: ' . $endpoint);
+			}
+			
+			$method = str_contains($endpoint, '-')
+				? Text::toCamelCase($endpoint)
+				: $endpoint;
+			
+			if (!method_exists($handlerClass, $method)) {
+				Trunk::http500("API-Registry: Extension method is missing: $handlerClass::$method()");
+			}
+			
+			try {
+				$reflection = new ReflectionMethod($handlerClass, $method);
+			} catch (ReflectionException $e) {
+				Trunk::http500('API-Registry: Failed to register API: ' . $e->getMessage());
+			}
+			
+			if (!$reflection->isPublic()) {
+				Trunk::http500("API-Registry: Extension method must be public: $handlerClass::$method()");
+			}
+			
+			$map[$endpoint] = $method;
+		}
+		
+		return $map;
+	}
+	
+	private function normalizeRequest(?array $request): array
+	{
+		$request ??= $this->nativeRequest();
+		
+		[$api, $apiQueryParams] = $this->splitApiAndQuery($request['api'] ?? '');
+		
+		if ($api === '') {
+			Trunk::http400('Bad request');
+		}
+		
+		$method = strtoupper(trim((string) ($request['method'] ?? '')));
+		
+		if (!in_array($method, self::SUPPORTED_METHODS, true)) {
+			Trunk::http405('Unacceptable request method');
+		}
+		
+		$params = $request['params'] ?? [];
+		$headers = $request['headers'] ?? [];
+		$cookies = $request['cookies'] ?? [];
+		
+		if (!is_array($params)) {
+			Trunk::http400('Invalid request params');
+		}
+		
+		if (!is_array($headers)) {
+			Trunk::http400('Invalid request headers');
+		}
+		
+		if (!is_array($cookies)) {
+			Trunk::http400('Invalid request cookies');
+		}
+		
+		// Query params embedded in API path are supported for internal calls/tests.
+		// Explicit params win over query-string params.
+		$params = array_merge($apiQueryParams, $params);
+		
+		return [
+			'method' => $method,
+			'api' => $api,
+			'params' => $params,
+			'headers' => $headers,
+			'cookies' => $cookies,
+			'body' => $request['body'] ?? null,
+			'raw_body' => $request['raw_body'] ?? null
+		];
+	}
+	
+	private function normalizePath(mixed $path): string
+	{
+		if (!is_string($path)) {
+			return '';
+		}
+		
+		$path = trim($path);
+		$path = explode('?', $path, 2)[0];
+		$path = trim($path, '/');
+		$path = preg_replace('#/+#', '/', $path);
+		
+		return $path ?? '';
+	}
+	
+	private function nativeRequest(): array
+	{
+		$params = $_GET ?? [];
+		$api = $params['api'] ?? null;
+		unset($params['api']);
+		
+		return [
+			'method' => Request::method(),
+			'api' => $api,
+			'params' => $params,
+			'headers' => $this->nativeHeaders(),
+			'cookies' => $_COOKIE ?? [],
+			'body' => null,
+			'raw_body' => file_get_contents('php://input') ?: null
+		];
+	}
+	
+	private function nativeHeaders(): array
+	{
+		if (function_exists('getallheaders')) {
+			$headers = getallheaders();
+			
+			return is_array($headers) ? $headers : [];
+		}
+		
+		$headers = [];
+		
+		foreach ($_SERVER ?? [] as $key => $value) {
+			if (str_starts_with($key, 'HTTP_')) {
+				$name = substr($key, 5);
+				$name = str_replace('_', '-', strtolower($name));
+				$name = str_replace(' ', '-', ucwords(str_replace('-', ' ', $name)));
+				
+				$headers[$name] = $value;
+			}
+		}
+		
+		return $headers;
+	}
+	
+	private function matchRoute(string $path): ?array
+	{
+		$routes = $this->apis;
+		
+		uksort($routes, static fn(string $a, string $b): int => strlen($b) <=> strlen($a));
+		
+		foreach ($routes as $routePath => $route) {
+			if ($this->pathMatches($path, $routePath)) {
+				return $route;
+			}
+		}
+		
+		return null;
+	}
+	
+	private function pathMatches(string $path, string $routePath): bool
+	{
+		return $path === $routePath || str_starts_with($path, $routePath . '/');
+	}
+	
+	private function extraSegments(string $path, string $routePath): array
+	{
+		if ($path === $routePath) {
+			return [];
+		}
+		
+		$extra = trim(substr($path, strlen($routePath)), '/');
+		
+		if ($extra === '') {
+			return [];
+		}
+		
+		return explode('/', $extra);
+	}
+	
+	private function resolveTarget(array $route, array $segments, string $httpMethod): array
+	{
+		$firstSegment = $segments[0] ?? null;
+		
+		if ($firstSegment !== null && isset($route['extensions'][$firstSegment])) {
+			return [
+				'target' => $route['extensions'][$firstSegment],
+				'auth_name' => $route['extensions'][$firstSegment],
+				'args' => array_slice($segments, 1),
+				'is_extension' => true
+			];
+		}
+		
+		if (!in_array($httpMethod, $route['methods'], true)) {
+			Trunk::http405('Unacceptable request method');
+		}
+		
+		return [
+			'target' => strtolower($httpMethod),
+			'auth_name' => $httpMethod,
+			'args' => $segments,
+			'is_extension' => false
+		];
+	}
+	
+	private function internalError(Throwable $e): array
+	{
+		$msg =
+			$this->debug
+			? self::getFullErrorMsg($e)
+			: 'Error in API implementation';
+		
+		return (new Trunk(
+			msg: $msg,
+			httpStatusCode: 500,
+			status: Response::ERROR,
+			previous: $e
+		))->toArray();
+	}
+	
+	private function createAPI(string $handlerClass): HatiAPI
+	{
+		$api = new $handlerClass();
+		
+		if (!$api instanceof HatiAPI) {
+			Trunk::http500('Unsupported API implementation');
+		}
+		
+		return $api;
+	}
+	
+	private function splitApiAndQuery(mixed $api): array
+	{
+		if (!is_string($api)) {
+			return ['', []];
+		}
+		
+		$api = trim($api);
+		
+		[$path, $queryString] = array_pad(explode('?', $api, 2), 2, '');
+		
+		$queryParams = [];
+		
+		if ($queryString !== '') {
+			parse_str($queryString, $queryParams);
+		}
+		
+		return [
+			$this->normalizePath($path),
+			$queryParams
+		];
+	}
+	
 }

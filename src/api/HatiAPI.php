@@ -2,17 +2,17 @@
 
 namespace hati\api;
 
-use hati\Hati;
 use hati\Trunk;
 use hati\util\Arr;
 use hati\util\Request;
+use hati\util\Text;
 
 /**
  * An abstract implementation for APIs. Hati APIs must implement this class so that
  * the Hati API handler can invoke correct methods to server the API request.
  * It provides command useful methods needed while writing API implementations.
  *
- * The derived class must not have any namespace, as it will make the loader fail.
+ * API classes may be namespaced and should be registered with their fully qualified class name.
  *
  * @since 5.0.0
  * */
@@ -36,6 +36,9 @@ abstract class HatiAPI {
 
 	/** No authentication for API methods */
 	private array $noAuthFor = [];
+	
+	/** Tell which HTTP verb the API is handling */
+	private string $requestMethod = '';
 
 	/**
 	 * Initialize the API with necessary stuff. Any API that needs to be public,
@@ -43,7 +46,8 @@ abstract class HatiAPI {
 	 * Additionally, any query parameters & API path segments are accessible in
 	 * this method using {@link args()} & {@link queryParams()}
 	 * */
-	public function init(): void {
+	public function init(): void
+	{
 
 	}
 
@@ -57,7 +61,8 @@ abstract class HatiAPI {
 	 *
 	 * @param string $method Which method it is invoked for
 	 * */
-	public function authenticate(string $method): void {
+	public function authenticate(string $method): void
+	{
 
 	}
 
@@ -65,79 +70,71 @@ abstract class HatiAPI {
 	 * Register any method which you want to make public.
 	 * To register a method, call {@link openAccess()}.
 	 * */
-	public function publicMethod(): void {
+	public function publicMethod(): void
+	{
 
 	}
 
 	/**
 	 * Whitelist any API method, that can be accessed without authentication.
-	 * HatiAPIHandler respects this by listing APIs access in the {@link init()}
-	 * method as defined using {@link openAccess()} before calling authentication
-	 * on any API serving method [HTTP verbs or extension functions] invocation.
+	 * HatiAPIHandler calls publicMethod() before authentication, allowing APIs
+	 * to mark selected methods as public using openAccess().
 	 *
 	 * @param string|array $method HTTP verbs such as GET, POST, PUT, PATCH, DELETE
 	 * or any extension function
 	 * */
-	protected function openAccess(string|array ...$method): void {
-		$method = Arr::varargsAsArray($method);
-		$this->noAuthFor = array_merge($this->noAuthFor, $method);
-	}
-
-	/**
-	 * Helper method to load any resource file easily. By default, path
-	 * is relative to the API handler file.
-	 *
-	 * @param string $path the file path
-	 * @param bool $root when set true, resource is loaded relative to root
-	 * directory where the vendor folder is found. Otherwise, it is relative
-	 * to API handler file.
-	 *
-	 * @return mixed resource
-	 * */
-	protected function loadResource(string $path, bool $root = false): mixed {
-		if ($root) {
-			$path = Hati::root($path);
+	protected function openAccess(string|array ...$method): void
+	{
+		$methods = Arr::varargsAsArray($method);
+		
+		foreach ($methods as $m) {
+			if (!is_string($m)) {
+				continue;
+			}
+			
+			$m = trim($m);
+			
+			if ($m === '') {
+				continue;
+			}
+			
+			$m = str_contains($m, '-') ? Text::toCamelCase($m) : $m;
+			
+			$upper = strtoupper($m);
+			
+			if (in_array($upper, ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'], true)) {
+				$m = $upper;
+			}
+			
+			$this->noAuthFor[] = $m;
 		}
-
-		return (require $path);
+		
+		$this->noAuthFor = array_values(array_unique($this->noAuthFor));
 	}
 
 	/**
 	 * Indicates whether an API method is private or public.
 	 *
 	 * @param string $method The method to be checked whether it is private API method.
-	 * @return true if the API method is private, needing no authentication; false otherwise.
+	 * @return true if the API method is private and requires authentication
+	 * false if it is public/open-access
 	 * */
-	public function isPrivateMethod(string $method): bool {
-		return !in_array($method, $this->noAuthFor);
-	}
-
-	/**
-	 * Prevents direct access to the API handler file by checking whether
-	 * the HATI_API_CALL constant was defined by the hati_api_handler.php
-	 * file.
-	 *
-	 * This method should be the first call in the API handler files to
-	 * prevent direct access.
-	 * */
-	public static function noDirectAccess(): void {
-		if (!defined('HATI_API_CALL')) {
-			$trunk = Trunk::error403('No direct access');
-			$trunk->report();
-		}
+	public function isPrivateMethod(string $method): bool
+	{
+		return !in_array($method, $this->noAuthFor, true);
 	}
 
 	/**
 	 * Fetches the request body as either JSON or raw text.
 	 *
 	 * @param string $as The format the request body to be fetched in.
-	 * @return string|array|null array for JSON type, string for raw type.
+	 * @return mixed array for JSON type, string for raw type.
 	 * Otherwise, null is returned.
 	 * */
-	protected final function requestBody(string $as = 'json'): string|array|null {
-
-		if (!in_array($as, ['json', 'raw'])) {
-			throw Trunk::error400('Request body can only be fetched either as json or as raw value');
+	protected final function requestBody(string $as = 'json'): mixed
+	{
+		if (!in_array($as, ['json', 'raw'], true)) {
+			Trunk::http400('Request body can only be fetched either as json or as raw value');
 		}
 
 		if (array_key_exists($as, $this->reqBody)) {
@@ -153,38 +150,41 @@ abstract class HatiAPI {
 	/**
 	 * Default handler method for GET request for the API.
 	 * */
-	public function get(Response $res): void {
-		throw Trunk::error501('API is not implemented yet');
-	}
-
-	/**
-	 * Default handler method for GET request for the API.
-	 * */
-	public function post(Response $res): void {
-		throw Trunk::error501('API is not implemented yet');
+	public function get(Response $res): void
+	{
+		Trunk::http501('API is not implemented yet');
 	}
 
 	/**
 	 * Default handler method for POST request for the API.
-
 	 * */
-	public function put(Response $res): void {
-		throw Trunk::error501('API is not implemented yet');
+	public function post(Response $res): void
+	{
+		Trunk::http501('API is not implemented yet');
+	}
+
+	/**
+	 * Default handler method for PUT request for the API.
+	 * */
+	public function put(Response $res): void
+	{
+		Trunk::http501('API is not implemented yet');
 	}
 
 	/**
 	 * Default handler method for PATCH request for the API.
 	 * */
-	public function patch(Response $res): void {
-		throw Trunk::error501('API is not implemented yet');
+	public function patch(Response $res): void
+	{
+		Trunk::http501('API is not implemented yet');
 	}
 
 	/**
 	 * Default handler method for DELETE request for the API.
-
 	 * */
-	public function delete(Response $res): void {
-		throw Trunk::error501('API is not implemented yet');
+	public function delete(Response $res): void
+	{
+		Trunk::http501('API is not implemented yet');
 	}
 
 	/**
@@ -194,12 +194,10 @@ abstract class HatiAPI {
 	 * @param mixed $default if the header wasn't set in the request
 	 * @return mixed the header value
 	 * */
-	public function header(string $key, mixed $default = null): mixed {
-		return $this->headers[$key] ?? $default;
-	}
-
-	public function cookie(string $key, mixed $default = null): mixed {
-		return $this->cookies[$key] ?? $default;
+	public function header(string $key, mixed $default = null): mixed
+	{
+		$name = $this->findHeaderName($key);
+		return $name === null ? $default : $this->headers[$name];
 	}
 	
 	/**
@@ -208,8 +206,14 @@ abstract class HatiAPI {
 	 * @param string $key the header key
 	 * @return bool true if the header key exists in the request, false otherwise.
 	 * */
-	public function headerSet(string $key): bool {
-		return key_exists($key, $this->headers);
+	public function headerSet(string $key): bool
+	{
+		return $this->findHeaderName($key) !== null;
+	}
+	
+	public function cookie(string $key, mixed $default = null): mixed
+	{
+		return $this->cookies[$key] ?? $default;
 	}
 	
 	/**
@@ -218,16 +222,18 @@ abstract class HatiAPI {
 	 * @param string $key the cookie key
 	 * @return bool true if the cookie key exists in the request, false otherwise.
 	 * */
-	public function cookieSet(string $key): bool {
-		return key_exists($key, $this->cookies);
+	public function cookieSet(string $key): bool
+	{
+		return array_key_exists($key, $this->cookies);
 	}
 
 	/**
 	 * Returns an array containing any segments found after the API path.
 	 *
-	 * @reutrn array containing segments after in the API path
+	 * @return array containing segments after in the API path
 	 * */
-	public function args(): array {
+	public function args(): array
+	{
 		return $this->args;
 	}
 
@@ -235,9 +241,10 @@ abstract class HatiAPI {
 	 * Returns an array containing any query parameters found in the
 	 * request API URL.
 	 *
-	 * @reutrn array containing query parameters in the URL
+	 * @return array containing query parameters in the URL
 	 * */
-	public function queryParams(): array {
+	public function queryParams(): array
+	{
 		return $this->params;
 	}
 
@@ -249,7 +256,8 @@ abstract class HatiAPI {
 	 *
 	 * @return mixed The value by the key from the query parameter
 	 * */
-	protected function param(string $key, mixed $default = null): mixed {
+	protected function param(string $key, mixed $default = null): mixed
+	{
 		return $this->queryParams()[$key] ?? $default;
 	}
 
@@ -261,71 +269,87 @@ abstract class HatiAPI {
 	 * @param mixed $default The default value to return if the position is not set.
 	 * @return mixed The value at the specified position in the arguments array, or the default value.
 	 */
-	protected function arg(int $pos, mixed $default = null): mixed {
+	protected function arg(int $pos, mixed $default = null): mixed
+	{
 		return $this->args()[$pos] ?? $default;
 	}
 
-	public function setHeaders(array $headers): void {
+	public function setHeaders(array $headers): void
+	{
 		$this->headers = $headers;
 	}
 	
-	public function setCookies(array $cookies): void {
+	public function setCookies(array $cookies): void
+	{
 		$this->cookies = $cookies;
 	}
 
-	public function setArgs(array $args): void {
+	public function setArgs(array $args): void
+	{
 		$this->args = $args;
 	}
 
-	public function setParams(array $params): void {
+	public function setParams(array $params): void
+	{
 		$this->params = $params;
 	}
 	
-	/**
-	 * Any HatiApi can be invoked using this function as if it was invoked by an actual API request.
-	 *
-	 * @param string $method HTTP verb in upper case, one of these: GET, POST, PUT, PATCH, DELETE
-	 * @param string $path API endpoint path
-	 * @param array $params Query parameters required by the API
-	 * @param array $headers Headers required by the API. It should be an associative array.
-	 * @param array $cookies Cookies required by the API. It should be an associative array.
-	 *
-	 * @return array Returns the api response as an associative array. Contains headers, body keys.
-	 * */
-	public static function call(string $method, string $path, array $params = [], array $headers = [], array $cookies = []): array {
-		return HatiAPIHandler::boot([
-			'method' => $method,
-			'api' => $path,
-			'params' => $params,
-			'headers' => $headers,
-			'cookies' => $cookies,
-		]);
+	public function setRequestMethod(string $method): void
+	{
+		$this->requestMethod = strtoupper(trim($method));
 	}
 	
-	/**
-	 * Any HatiApi can be invoked using this function as if it was invoked by an actual API request. Internally,
-	 * it calls {@link call()} method. However, API response body is returned as JSON decoded associative
-	 * array, not as plain JSON.
-	 *
-	 * @param string $method HTTP verb in upper case, one of these: GET, POST, PUT, PATCH, DELETE
-	 * @param string $path API endpoint path
-	 * @param array $params Query parameters required by the API
-	 * @param array $headers Headers required by the API. It should be an associative array.
-	 * @param array $cookies Cookies required by the API. It should be an associative array.
-	 *
-	 * @return array Returns the api response as an associative array. Contains headers, body keys.
-	 * Body will be an empty array if there was problem parsing the API response body as JSON.
-	 * */
-	public static function callJSON(string $method, string $path, array $params = [], array $headers = [], array $cookies = []): array {
-		$output = self::call($method, $path, $params, $headers, $cookies);
-		
-		$response = json_decode($output['body'], true) ?? [];
-		
-		return [
-			'headers' => $output['headers'],
-			'cookies' => $output['cookies'],
-			'body' => $response
-		];
+	public function setBody(mixed $body): void
+	{
+		if ($body !== null) {
+			$this->reqBody['json'] = $body;
+		}
 	}
-
+	
+	public function setRawBody(?string $rawBody): void
+	{
+		if ($rawBody !== null) {
+			$this->reqBody['raw'] = $rawBody;
+		}
+	}
+	
+	public function requestMethod(): string
+	{
+		return $this->requestMethod;
+	}
+	
+	public function isMethod(string|array $methods): bool
+	{
+		if (is_string($methods)) {
+			$methods = [$methods];
+		}
+		
+		$methods = array_map(
+			static fn(string $method): string => strtoupper(trim($method)),
+			$methods
+		);
+		
+		return in_array($this->requestMethod, $methods, true);
+	}
+	
+	public function requireMethod(string|array $methods, string $msg = 'Unacceptable request method'): void
+	{
+		if (!$this->isMethod($methods)) {
+			Trunk::http405($msg);
+		}
+	}
+	
+	private function findHeaderName(string $key): ?string
+	{
+		$key = strtolower(trim($key));
+		
+		foreach ($this->headers as $name => $_) {
+			if (strtolower((string) $name) === $key) {
+				return (string) $name;
+			}
+		}
+		
+		return null;
+	}
+	
 }

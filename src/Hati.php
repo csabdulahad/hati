@@ -4,7 +4,6 @@
 
 namespace hati;
 
-use hati\config\Key;
 use RuntimeException;
 use Throwable;
 
@@ -17,9 +16,7 @@ abstract class Hati
 {
 
 	// version
-	private static string $version = '7.0.32-beta';
-
-	private static float $BENCHMARK_START = 0;
+	private static string $version = '7.0.33-beta';
 
 	// The project root directory [where the vendor folder is found]
 	private static ?string $DIR_ROOT = null;
@@ -47,34 +44,11 @@ abstract class Hati
 		// load the correct config JSON file
 		$configDir ??= 'config';
 		self::loadConfig($configDir);
-
-		// start the benchmark if Hati is set up to include dev benchmark
-		if(self::config(Key::DEV_API_BENCHMARK, 'bool')) {
-			self::$BENCHMARK_START = microtime(true);
-		}
-
-		/*
-		 * Adjust include paths
-		 * */
-		$projectDirAsInclude = self::config(Key::PROJECT_DIR_AS_INCLUDE_PATH, 'bool');
-		if ($projectDirAsInclude) {
-			set_include_path(get_include_path() . PATH_SEPARATOR . self::root());
-		}
-
-		// Load the global functions file
-		if (self::config(Key::USE_GLOBAL_FUNC, 'bool')) {
-			$path = self::fixSeparator(__DIR__ . '/global_func.php');
-			require_once $path;
-		}
-
-		// include global php code files for project
-		$globalPHP = self::config(Key::GLOBAL_PHP, 'arr');
-		foreach ($globalPHP as $file) {
-			$file = trim($file);
-			$file = str_replace('.php', '', $file);
-			$path = self::root("$file.php");
-			if (file_exists($path)) require_once $path;
-		}
+	}
+	
+	public static function getGlobalFuncPath(): string
+	{
+		return self::fixSeparator(__DIR__ . '/global_func.php');
 	}
 
 	/**
@@ -174,11 +148,6 @@ abstract class Hati
 	public static function version(): string
 	{
 		return self::$version;
-	}
-
-	public static function benchmarkStart(): float
-	{
-		return self::$BENCHMARK_START;
 	}
 
 	/**

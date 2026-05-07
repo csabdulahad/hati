@@ -79,7 +79,7 @@ function pop(string $key, array &$var, mixed $default = null): mixed {
  *
  * @return void
  */
-function mutate(bool $condition, &$var, mixed $val): void {
+function mutate(bool $condition, mixed &$var, mixed $val): void {
 	if (!$condition) return;
 	
 	if (!is_callable($val)) {
@@ -100,7 +100,7 @@ function mutate(bool $condition, &$var, mixed $val): void {
  *
  * @return void
  */
-function mutateIfNull(&$var, mixed $val): void {
+function mutateIfNull(mixed &$var, mixed $val): void {
 	mutate(is_null($var), $var, $val);
 }
 
@@ -114,7 +114,7 @@ function mutateIfNull(&$var, mixed $val): void {
  *
  * @return void
  */
-function mutateIfNotNull(&$var, mixed $val): void {
+function mutateIfNotNull(mixed &$var, mixed $val): void {
 	mutate(!is_null($var), $var, $val);
 }
 
@@ -128,7 +128,7 @@ function mutateIfNotNull(&$var, mixed $val): void {
  *
  * @return void
  */
-function mutateIfEmpty(&$var, mixed $val): void {
+function mutateIfEmpty(mixed &$var, mixed $val): void {
 	mutate(empty($var), $var, $val);
 }
 
@@ -142,7 +142,7 @@ function mutateIfEmpty(&$var, mixed $val): void {
  *
  * @return void
  */
-function mutateIfNotEmpty(&$var, mixed $val): void {
+function mutateIfNotEmpty(mixed &$var, mixed $val): void {
 	mutate(!empty($var), $var, $val);
 }
 

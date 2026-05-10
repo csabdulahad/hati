@@ -12,11 +12,10 @@ use function strlen;
 
 /**
  * A helper calss makes it easier to deal with text in PHP!
- *
- * @since 5.0.0
  * */
 
-abstract class Text {
+abstract class Text
+{
 
 	/**
 	 * Checks if a string is of multibyte or not
@@ -24,7 +23,8 @@ abstract class Text {
 	 * @param string $string the string to be checked
 	 * @return true if the sting is multibyte; false otherwise
 	 * */
-	public static function isMultibyte(string $string): bool {
+	public static function isMultibyte(string $string): bool
+	{
 		$length = strlen($string);
 
 		for ($i = 0; $i < $length; $i++) {
@@ -49,7 +49,8 @@ abstract class Text {
 	 *
 	 * @return ?string when the $return is set to false. Otherwise, the string is returned.
 	 * */
-	public static function table2D(array $titles, array $descriptions, int $gap = 5, int $desWidth = 50, bool $return = false): ?string {
+	public static function table2D(array $titles, array $descriptions, int $gap = 5, int $desWidth = 50, bool $return = false): ?string
+	{
 		$maxLen = max(array_map('strlen', $titles));
 
 		$terminalIO = new ConsoleIO();
@@ -85,7 +86,8 @@ abstract class Text {
 	 * @param string $string Input string
 	 * @return string Singular version of the noun input
 	 */
-	function singular(string $string): string {
+	function singular(string $string): string
+	{
 		$result = $string;
 
 		if (! self::isPluralizable($result)) {
@@ -140,7 +142,8 @@ abstract class Text {
 	 * @param string $string Input string
 	 * @return string Plural version of the input
 	 */
-	public static function plural(string $string): string {
+	public static function plural(string $string): string
+	{
 		$result = $string;
 
 		if (! self::isPluralizable($result)) {
@@ -186,7 +189,8 @@ abstract class Text {
 	 * @param string $word Word to check
 	 * @return bool true if so; false otherwise
 	 */
-	public static function isPluralizable(string $word): bool {
+	public static function isPluralizable(string $word): bool
+	{
 		$uncountables = in_array(
 			strtolower($word), [
 				'advice', 'bravery', 'butter', 'chaos', 'clarity', 'coal', 'courage', 'cowardice', 'curiosity',
@@ -207,7 +211,8 @@ abstract class Text {
 	 * @param string $string Input string
 	 * @return string camelized version of the input string
 	 */
-	public static function camelize(string $string): string {
+	public static function camelize(string $string): string
+	{
 		return lcfirst(str_replace(' ', '', ucwords(preg_replace('/[\s_]+/', ' ', $string))));
 	}
 	
@@ -226,7 +231,8 @@ abstract class Text {
 	 * toCamelCase("trans-typed-data");          // Returns: "transTypedData"
 	 * toCamelCase("trans_typed_data", "_");     // Returns: "transTypedData"
 	 */
-	public static function toCamelCase(string $string, string $separator = '-'): string {
+	public static function toCamelCase(string $string, string $separator = '-'): string
+	{
 		$camelCase = str_replace(' ', '', ucwords(str_replace($separator, ' ', $string)));
 		return lcfirst($camelCase);
 	}
@@ -246,7 +252,8 @@ abstract class Text {
 	 * deCamelCase("transTypedData");          // Returns: "trans-typed-data"
 	 * deCamelCase("transTypedData", "_");     // Returns: "trans_typed_data"
 	 */
-	public static function deCamelCase(string $string, string $separator = '-'): string {
+	public static function deCamelCase(string $string, string $separator = '-'): string
+	{
 		return strtolower(preg_replace('/([a-z])([A-Z])/', '$1' . $separator . '$2', $string));
 	}
 
@@ -258,7 +265,8 @@ abstract class Text {
 	 * @param string $endChar the end character. Usually an ellipsis
 	 * @return string string having limited words as specified
 	 */
-	public static function limitWord(string $str, int $limit = 100, string $endChar = '…'): string {
+	public static function limitWord(string $str, int $limit = 100, string $endChar = '…'): string
+	{
 		if (trim($str) === '') {
 			return $str;
 		}
@@ -281,7 +289,8 @@ abstract class Text {
 	 * @param string $endChar the end character. Usually an ellipsis
 	 * @return string string having limited characters as specified
 	 */
-	public static function limitChar(string $str, int $n = 500, string $endChar = '…'): string {
+	public static function limitChar(string $str, int $n = 500, string $endChar = '…'): string
+	{
 		if (mb_strlen($str) < $n) {
 			return $str;
 		}
@@ -315,7 +324,8 @@ abstract class Text {
 	 * @param int $charLimit the number of characters to wrap at
 	 * @return string
 	 */
-	public static function wrapWord(string $str, int $charLimit = 76): string {
+	public static function wrapWord(string $str, int $charLimit = 76): string
+	{
 		// Reduce multiple spaces
 		$str = preg_replace('| +|', ' ', $str);
 
@@ -391,7 +401,8 @@ abstract class Text {
 	 * @param string $ellipsis ellipsis ; Default '...'
 	 * @return string ellipsized string
 	 */
-	public static function ellipsize(string $str, int $maxLen, mixed $position = 1, string $ellipsis = '…'): string {
+	public static function ellipsize(string $str, int $maxLen, mixed $position = 1, string $ellipsis = '…'): string
+	{
 		// Strip tags
 		$str = trim(strip_tags($str));
 
@@ -423,7 +434,8 @@ abstract class Text {
 	 * @return string randomized string
 	 * @throws Exception
 	 */
-	public static function randomString(string $type = 'alnum', int $len = 8): string	{
+	public static function randomString(string $type = 'alnum', int $len = 8): string
+	{
 		switch ($type) {
 			case 'alnum':
 			case 'nozero':
@@ -466,7 +478,8 @@ abstract class Text {
 	 * The following function was derived from code of Symfony (v6.2.7 - 2023-02-28)
 	 * @throws Exception
 	 * */
-	private static function _from_random(int $length, string $pool): string	{
+	private static function _from_random(int $length, string $pool): string
+	{
 		if ($length <= 0) {
 			throw new InvalidArgumentException(
 				sprintf('A strictly positive length is expected, "%d" given.', $length)

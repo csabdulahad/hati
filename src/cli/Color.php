@@ -4,11 +4,10 @@ namespace hati\cli;
 
 /**
  * A helper class consisting color constants for CLI output.
- *
- * @since 5.0.0
  * */
 
-abstract class Color {
+abstract class Color
+{
 
 	/*
 	 * Support CLI foreground color

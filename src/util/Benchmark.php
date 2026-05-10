@@ -9,7 +9,8 @@ namespace hati\util;
  * call the {@link Benchmark::end()} method in order to calculate the execution time.
  * */
 
-class Benchmark {
+class Benchmark
+{
 
 	private static ?Benchmark $INS = null;
 
@@ -19,7 +20,8 @@ class Benchmark {
 	private function __construct() {}
 
 	// singleton pattern
-	private static function get(): Benchmark {
+	private static function get(): Benchmark
+	{
 		if (self::$INS == null) self::$INS = new Benchmark();
 		return self::$INS;
 	}
@@ -29,7 +31,8 @@ class Benchmark {
 	 *
 	 * @param string $name The name to start the benchmark for
 	 * */
-	public static function start(string $name): void {
+	public static function start(string $name): void
+	{
 		$ins = self::get();
 
 		// Reset if there already exists the same key!
@@ -43,7 +46,8 @@ class Benchmark {
 	 *
 	 * @param string $name The name to end the benchmark for
 	 */
-	public static function end(string $name): void {
+	public static function end(string $name): void
+	{
 		$ins = self::get();
 		$ins -> marks[$name][] = microtime(true);
 	}
@@ -53,7 +57,8 @@ class Benchmark {
 	 *
 	 * @return array containing associative array for benchmarks
 	 * */
-	public static function getMarkings(): array {
+	public static function getMarkings(): array
+	{
 		$ins = self::get();
 		return $ins -> marks;
 	}
@@ -65,7 +70,8 @@ class Benchmark {
 	 * @param string $name the name of the benchmark to be returned
 	 * @return string benchmark specified by the name
 	 * */
-	public static function getMark(string $name): string {
+	public static function getMark(string $name): string
+	{
 		$ins = self::get();
 
 		$data = $ins -> marks[$name] ?? [];
@@ -84,7 +90,8 @@ class Benchmark {
 	 * @param string $name The name for the benchmark
 	 * @param string $msg Any additional message to be appended to the benchmark
 	 * */
-	public static function print(string $name, string $msg = 'Execution time: '): void {
+	public static function print(string $name, string $msg = 'Execution time: '): void
+	{
 		$time = self::getMark($name);
 		if (!is_numeric($time))
 			echo sprintf("%s%s", $msg, $time);

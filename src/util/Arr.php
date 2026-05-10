@@ -6,11 +6,10 @@ use InvalidArgumentException;
 
 /**
  * A class containing helper functions to manipulate arrays in PHP.
- *
- * @since 5.0.0
  * */
 
-abstract class Arr {
+abstract class Arr
+{
 
 	/**
 	 * Returns whether an array is sub or full set of another array.
@@ -27,7 +26,8 @@ abstract class Arr {
 	 * @param array $haystack the array containing valid options
 	 * @return bool|array|int returns as specified
 	 * */
-	public static function in_array(array $needle, array $haystack, string $return = 'bool'): bool|array|int {
+	public static function in_array(array $needle, array $haystack, string $return = 'bool'): bool|array|int
+	{
 
 		if (!in_array($return, ['bool', 'array', 'int'])) {
 			throw new InvalidArgumentException('Return must be one of these: bool, array, int');
@@ -52,7 +52,8 @@ abstract class Arr {
 	 * @param bool $addBrackets If set to ture, the string will be wrapped by [] brackets
 	 * @return string comma separated string of array values
 	 * */
-	public static function strList(array $arr, bool $addBrackets = false): string {
+	public static function strList(array $arr, bool $addBrackets = false): string
+	{
 		$str = '';
 		foreach ($arr as $a) $str .= "$a, ";
 		$str = rtrim($str, ', ');
@@ -69,7 +70,8 @@ abstract class Arr {
 	 * @param array $array The multidimensional array to be flattened.
 	 * @return array The one-dimensional array resulting from flattening the input array.
 	 */
-	public static function flatten(array $array): array {
+	public static function flatten(array $array): array
+	{
 		$result = [];
 
 		foreach ($array as $element) {
@@ -94,7 +96,8 @@ abstract class Arr {
 	 * @param mixed $args the variable arguments
 	 * @return array one dimensional array containing all the items in the variable arguments
 	 * */
-	public static function varargsAsArray(mixed $args): array {
+	public static function varargsAsArray(mixed $args): array
+	{
 		$option = [];
 
 		foreach ($args as $col) {
@@ -117,7 +120,8 @@ abstract class Arr {
 	 * @param mixed $default The default value to be returned if not found
 	 * @return mixed depends on what the array contains
 	 */
-	public static function element(string $key, array $array, mixed $default = null): mixed {
+	public static function element(string $key, array $array, mixed $default = null): mixed
+	{
 		return array_key_exists($key, $array) ? $array[$key] : $default;
 	}
 
@@ -130,7 +134,8 @@ abstract class Arr {
 	 * @param mixed $default The default to be returned when key's value wasn't found
 	 * @return array depends on what the array contains
 	 */
-	public static function elements(array|string $items, array $array, mixed $default = null): array {
+	public static function elements(array|string $items, array $array, mixed $default = null): array
+	{
 		$return = [];
 
 		is_array($items) OR $items = array($items);
@@ -148,7 +153,8 @@ abstract class Arr {
 	 * @param array $array The array
 	 * @return mixed depends on what the array contains
 	 */
-	public static function randElement(array $array): mixed {
+	public static function randElement(array $array): mixed
+	{
 		return $array[array_rand($array)];
 	}
 
@@ -160,7 +166,8 @@ abstract class Arr {
 	 * @param array $array The array
 	 * @return mixed the value found by the index; otherwise null is returned
 	 */
-	public static function dotSearch(string $index, array $array): mixed {
+	public static function dotSearch(string $index, array $array): mixed
+	{
 		// See https://regex101.com/r/44Ipql/1
 		$segments = preg_split(
 			'/(?<!\\\\)\./',
@@ -201,7 +208,8 @@ abstract class Arr {
 	 * after and their sorting flags
 	 * @return bool true on success or false on failure
 	 */
-	public static function sortByMultiKeys(array &$array, array $sortColumns): bool {
+	public static function sortByMultiKeys(array &$array, array $sortColumns): bool
+	{
 		// Check if there really are columns to sort after
 		if (empty($sortColumns) || empty($array)) {
 			return false;
@@ -250,7 +258,8 @@ abstract class Arr {
 	 *
 	 * @return array The flattened array
 	 */
-	public static function flattenWithDots(iterable $array, string $id = ''): array {
+	public static function flattenWithDots(iterable $array, string $id = ''): array
+	{
 		$flattened = [];
 
 		foreach ($array as $key => $value) {
@@ -275,7 +284,8 @@ abstract class Arr {
 	 *
 	 * @return array Result array where rows are grouped together by indexes values.
 	 */
-	public static function groupBy(array $array, array $indexes, bool $includeEmpty = false): array {
+	public static function groupBy(array $array, array $indexes, bool $includeEmpty = false): array
+	{
 		if ($indexes === []) {
 			return $array;
 		}
@@ -316,7 +326,8 @@ abstract class Arr {
 	 *
 	 * @internal This should not be used on its own
 	 */
-	private static function _array_attach_indexed_value(array $result, array $row, array $indexes, bool $includeEmpty): array {
+	private static function _array_attach_indexed_value(array $result, array $row, array $indexes, bool $includeEmpty): array
+	{
 		if (($index = array_shift($indexes)) === null) {
 			$result[] = $row;
 
@@ -355,7 +366,8 @@ abstract class Arr {
 	 * @return mixed
 	 * @internal This should not be used on its own.
 	 */
-	private static function _array_search_dot(array $indexes, array $array): mixed {
+	private static function _array_search_dot(array $indexes, array $array): mixed
+	{
 		// If index is empty, returns null.
 		if ($indexes === []) {
 			return null;

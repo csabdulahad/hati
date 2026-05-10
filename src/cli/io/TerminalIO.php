@@ -636,7 +636,8 @@ abstract class TerminalIO
 	 *
 	 * @param ProgressIcon $icon progress icon style constant
 	 * */
-	public function setProgressIcon(ProgressIcon $icon): void {
+	public function setProgressIcon(ProgressIcon $icon): void
+	{
 		$this->icon = match ($icon) {
 			ProgressIcon::BRAILLE => self::$icons[0],
 			ProgressIcon::DOT_RUNNING_AROUND => self::$icons[2],
@@ -708,7 +709,8 @@ abstract class TerminalIO
 	 * @param string|null $background
 	 * @return void
 	 */
-	public function print(string $text = '', ?string $foreground = null, ?string $background = null): void {
+	public function print(string $text = '', ?string $foreground = null, ?string $background = null): void
+	{
 		if ($foreground || $background) {
 			$text = $this->color($text, $foreground, $background);
 		}
@@ -734,7 +736,8 @@ abstract class TerminalIO
 	 * Get the number of characters in string having encoded characters
 	 * and ignores styles set by the {@link color()} function
 	 */
-	public static function strlen(?string $string): int	{
+	public static function strlen(?string $string): int
+	{
 		if ($string === null) {
 			return 0;
 		}
@@ -801,7 +804,8 @@ abstract class TerminalIO
 		return $newText;
 	}
 	
-	private function getColoredText(string $text, string $foreground, ?string $background, ?string $format): string {
+	private function getColoredText(string $text, string $foreground, ?string $background, ?string $format): string
+	{
 		$string = "\033[" . ($this->foreground_colors[$foreground] ?? $foreground) . 'm';
 		
 		if ($background !== null) {
@@ -815,7 +819,8 @@ abstract class TerminalIO
 		return $string . $text . "\033[0m";
 	}
 	
-	public function streamSupports(string $function, $resource): bool {
+	public function streamSupports(string $function, $resource): bool
+	{
 		return function_exists($function) && @$function($resource);
 	}
 	

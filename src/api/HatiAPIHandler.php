@@ -17,8 +17,6 @@ use Throwable;
  * to build up APIs. It handles the API request routing to right class down to right
  * method. It validates request method and API path matching. For any error, it handles
  * the reporting back to the requester with correct HTTP status code & message.
- *
- * @since 5.0.0
  * */
 
 final class HatiAPIHandler
@@ -315,7 +313,8 @@ final class HatiAPIHandler
 		}
 	}
 	
-	private static function getFullErrorMsg(Throwable $e): string {
+	private static function getFullErrorMsg(Throwable $e): string
+	{
 		return sprintf(
 			'%s in %s at line %s',
 			ucfirst($e->getMessage()),
@@ -324,7 +323,8 @@ final class HatiAPIHandler
 		);
 	}
 	
-	private function normalizeMethods(mixed $methods): array {
+	private function normalizeMethods(mixed $methods): array
+	{
 		if (empty($methods)) {
 			Trunk::http500('API-Registry: API must define a request method');
 		}

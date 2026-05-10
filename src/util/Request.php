@@ -10,25 +10,31 @@ use InvalidArgumentException;
  * tag which can be very helpful in validating legitimate users.
  * */
 
-abstract class Request {
+abstract class Request
+{
 
-	public static function isGET(): bool {
+	public static function isGET(): bool
+	{
 		return $_SERVER['REQUEST_METHOD'] == 'GET';
 	}
 
-	public static function isPOST(): bool {
+	public static function isPOST(): bool
+	{
 		return $_SERVER['REQUEST_METHOD'] == 'POST';
 	}
 
-	public static function isPUT(): bool {
+	public static function isPUT(): bool
+	{
 		return $_SERVER['REQUEST_METHOD'] == 'PUT';
 	}
 
-	public static function isDELETE(): bool {
+	public static function isDELETE(): bool
+	{
 		return $_SERVER['REQUEST_METHOD'] == 'DELETE';
 	}
 
-	public static function method(): string {
+	public static function method(): string
+	{
 		return $_SERVER['REQUEST_METHOD'];
 	}
 
@@ -37,7 +43,8 @@ abstract class Request {
 	 *
 	 * @return bool true if the content type is set and, it is application/json, false otherwise.
 	 * */
-	public static function contentTypeJSON(): bool {
+	public static function contentTypeJSON(): bool
+	{
 		$headers = getallheaders();
 		return (isset($headers['Content-Type']) && $headers['Content-Type'] == 'application/json');
 	}
@@ -52,7 +59,8 @@ abstract class Request {
 	 * as specified. Returns associative array if it is parsed successfully for JSON data. Otherwise,
 	 * returns as string value.
 	 */
-	public static function body(string $as = 'json') : array|string|null {
+	public static function body(string $as = 'json') : array|string|null
+	{
 		if (!in_array($as, ['json', 'raw'])) {
 			throw new InvalidArgumentException('Argument must be either json or raw');
 		}
@@ -82,7 +90,8 @@ abstract class Request {
 	 *
 	 * @return string The client's IP address, or an empty string if not available or not safe to use.
 	 */
-	public static function ip(): string {
+	public static function ip(): string
+	{
 		$ip = '';
 
 		if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
@@ -121,8 +130,9 @@ abstract class Request {
 	 *
 	 * @return bool True if the request is made over HTTPS, false otherwise.
 	 */
-	function isHttps(): bool {
-		if ( ! empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off') {
+	function isHttps(): bool
+	{
+		if ( ! empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off'){
 			return true;
 		} elseif (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') {
 			return true;
@@ -139,7 +149,8 @@ abstract class Request {
 	 *
 	 * @return string os name.
 	 * */
-	public static function os(): string {
+	public static function os(): string
+	{
 		$userAgent = $_SERVER['HTTP_USER_AGENT'];
 		$os  = "Unknown OS";
 
@@ -182,7 +193,8 @@ abstract class Request {
 	 *
 	 * @return string browser name.
 	 */
-	public static function browser(): string {
+	public static function browser(): string
+	{
 		$userAgent =  $_SERVER['HTTP_USER_AGENT'];
 
 		$browserList = [
@@ -217,7 +229,8 @@ abstract class Request {
 	 *
 	 * @return string browser,os name will be returned.
 	 */
-	public static function systemTag(): string {
+	public static function systemTag(): string
+	{
 		return self::browser() . '/' . self::os();
 	}
 

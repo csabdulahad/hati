@@ -11,7 +11,8 @@ use hati\filter\Filter;
  * any money presentation in to numeric values.
  * */
 
-abstract class Number {
+abstract class Number
+{
 
 	// Currency signs for countries
 	public const SIGN_BD = '৳';
@@ -23,7 +24,7 @@ abstract class Number {
 	 * or a leading zero, decimal placed number format. The number can be either signed or
 	 * unsigned. It cleverly, add the currency signs before and in between the negative sign.
 	 *
-	 * Since it takes mixed as input type, there are many possibilities that it could fail to
+	 * Since it takes mixed as input type, there are many possibilities that it could fail
 	 * to format a number. It tries its best to format a number by forcefully casting the input
 	 * into float when both normal integer and float filtering fail. It prints out 0-0 on
 	 * encountering error while formatting the input.
@@ -37,7 +38,8 @@ abstract class Number {
 	 * @return ?string The formatted number as specified by the arguments or prints out based on
 	 * print argument
 	 * */
-	public static function format(mixed $input, string $sign = '', bool $leadZero = false, int $place = 2, bool $print = false): ?string {
+	public static function format(mixed $input, string $sign = '', bool $leadZero = false, int $place = 2, bool $print = false): ?string
+	{
 
 		// first see if it is an integer number or not
 		$num = Filter::checkInt($input);
@@ -107,7 +109,8 @@ abstract class Number {
 	 * // Mixed input with non-numeric characters
 	 * convertToBanglaNumber("Flight 370"); // Outputs: Flight ৩৭০
 	 */
-	public static function bdNum(mixed $englishNumber): string {
+	public static function bdNum(mixed $englishNumber): string
+	{
 		// Mapping of English digits to Bangla digits
 		$banglaDigits = [
 			'0' => '০', '1' => '১', '2' => '২', '3' => '৩',
@@ -142,7 +145,8 @@ abstract class Number {
 	 * @return string The Bengali ordinal representation of the given number.
 	 *                If the input is not within the predefined range, '০' (zero) is returned.
 	 */
-	public static function bdOrdinal(mixed $num): string {
+	public static function bdOrdinal(mixed $num): string
+	{
 		// Ensure $num is treated as an integer
 		$num = is_string($num) ? intval($num) : $num;
 		
@@ -172,7 +176,8 @@ abstract class Number {
 	 *
 	 * @return int|float Returns integer or floating representation based on the input.
 	 * */
-	public static function moneyToNum(mixed $input, string $sign): int | float {
+	public static function moneyToNum(mixed $input, string $sign): int | float
+	{
 		$input = (string) $input;
 		$val = str_replace($sign,'', $input);
 		$int = Filter::checkInt($val);
@@ -180,7 +185,7 @@ abstract class Number {
 	}
 
 	/**
-	 * A leading zero is added when the integer number is less than 10. Otherwise
+	 * A leading zero is added when the integer number is less than 10. Otherwise,
 	 * the input number is returned.
 	 *
 	 * @param mixed $int The input which needs a leading zero.
@@ -188,7 +193,8 @@ abstract class Number {
 	 * @return string A leading zero is added and returned as string, if the number
 	 * is less than 10. Otherwise the original input is returned as string.
 	 * */
-	public static function leadingZero(mixed $int): string {
+	public static function leadingZero(mixed $int): string
+	{
 		return ($int < 10) ? "0$int" : $int;
 	}
 
@@ -203,7 +209,8 @@ abstract class Number {
 	 *
 	 * @return string Formatted floating value to specified decimal point place.
 	 * */
-	public static function toFixed(int|float $number, int $place = 2): string {
+	public static function toFixed(int|float $number, int $place = 2): string
+	{
 		return number_format($number, $place);
 	}
 
@@ -214,7 +221,8 @@ abstract class Number {
 	 * @param int $precision The precision
 	 * @return string nicely formatted byte number in string
 	 */
-	public static function formatByte(mixed $num, int $precision = 1): string {
+	public static function formatByte(mixed $num, int $precision = 1): string
+	{
 
 		if ($num >= 1000000000000)
 		{
@@ -255,7 +263,8 @@ abstract class Number {
 	 * the formatting
 	 * @return string The formatted time value in string
 	 * */
-	public static function formatTime(int|float $secs, int $precision = 1): string {
+	public static function formatTime(int|float $secs, int $precision = 1): string
+	{
 		$secs = (int) floor($secs);
 
 		if (0 === $secs) {

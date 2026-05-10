@@ -8,7 +8,6 @@ use hati\util\Util;
  * The functions, this file contains are global. You can access them from anywhere within
  * the project.
  *
- * @since 5.0.0
  * */
 
 
@@ -18,7 +17,8 @@ use hati\util\Util;
  * @param mixed $var Any variable
  * @param bool $exit When set to true it exits the script after dumping the variable
  **/
-function vd(mixed $var, bool $exit = true): void {
+function vd(mixed $var, bool $exit = true): void
+{
 	if (is_object($var)) {
 		if (Util::isCLI()) var_dump($var);
 		else {
@@ -60,7 +60,8 @@ function vd(mixed $var, bool $exit = true): void {
  *
  * @return mixed The value associated with the specified key in the associative array.
  */
-function pop(string $key, array &$var, mixed $default = null): mixed {
+function pop(string $key, array &$var, mixed $default = null): mixed
+{
 	$value = $var[$key] ?? $default;
 	unset($var[$key]);
 	return $value;
@@ -79,7 +80,8 @@ function pop(string $key, array &$var, mixed $default = null): mixed {
  *
  * @return void
  */
-function mutate(bool $condition, mixed &$var, mixed $val): void {
+function mutate(bool $condition, mixed &$var, mixed $val): void
+{
 	if (!$condition) return;
 	
 	if (!is_callable($val)) {
@@ -100,7 +102,8 @@ function mutate(bool $condition, mixed &$var, mixed $val): void {
  *
  * @return void
  */
-function mutateIfNull(mixed &$var, mixed $val): void {
+function mutateIfNull(mixed &$var, mixed $val): void
+{
 	mutate(is_null($var), $var, $val);
 }
 
@@ -114,7 +117,8 @@ function mutateIfNull(mixed &$var, mixed $val): void {
  *
  * @return void
  */
-function mutateIfNotNull(mixed &$var, mixed $val): void {
+function mutateIfNotNull(mixed &$var, mixed $val): void
+{
 	mutate(!is_null($var), $var, $val);
 }
 
@@ -128,7 +132,8 @@ function mutateIfNotNull(mixed &$var, mixed $val): void {
  *
  * @return void
  */
-function mutateIfEmpty(mixed &$var, mixed $val): void {
+function mutateIfEmpty(mixed &$var, mixed $val): void
+{
 	mutate(empty($var), $var, $val);
 }
 
@@ -142,7 +147,8 @@ function mutateIfEmpty(mixed &$var, mixed $val): void {
  *
  * @return void
  */
-function mutateIfNotEmpty(mixed &$var, mixed $val): void {
+function mutateIfNotEmpty(mixed &$var, mixed $val): void
+{
 	mutate(!empty($var), $var, $val);
 }
 

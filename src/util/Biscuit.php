@@ -8,7 +8,8 @@ namespace hati\util;
  * methods that stores, delete and manipulate cookies.
  * */
 
-abstract class Biscuit {
+abstract class Biscuit
+{
 
 	/**
 	 * This method sets a cookie with specified set of arguments. It has a few default values in arguments.
@@ -46,7 +47,8 @@ abstract class Biscuit {
 	 * fail and return false. If setcookie successfully runs, it will return true.
 	 * This does not indicate whether the user accepted the cookie.
 	 */
-	public static function giveAway(string $name, string $value, int $expire = 0, bool $secure = true, bool $httpOnly = true, string $path = '/', string $domain = '', string $sameSite = 'Strict'): bool {
+	public static function giveAway(string $name, string $value, int $expire = 0, bool $secure = true, bool $httpOnly = true, string $path = '/', string $domain = '', string $sameSite = 'Strict'): bool
+	{
 		return setcookie($name, $value, [
 			'expires' => $expire,
 			'path' => $path,
@@ -72,7 +74,8 @@ abstract class Biscuit {
 	 * fail and return false. If setcookie successfully runs, it will return true.
 	 * This does not indicate whether the user accepted the cookie.
 	 * */
-	public static function delete(string $name, bool $secure = true, bool $httpOnly = true, string $path = '/', string $domain = ''): bool {
+	public static function delete(string $name, bool $secure = true, bool $httpOnly = true, string $path = '/', string $domain = ''): bool
+	{
 		return setcookie(
 			$name,
 			'',

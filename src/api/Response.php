@@ -229,7 +229,8 @@ class Response
 		return $this->trunk->getHeaders();
 	}
 	
-	public function getCookies(): array {
+	public function getCookies(): array
+	{
 		return $this->trunk->getCookies();
 	}
 	

@@ -6,10 +6,10 @@ namespace hati\cli;
  * A set of constants for setting various progress icons to
  * {@link HatiCLI::setProgressIcon()}
  *
- * @since 5.0.0
  * */
 
-enum ProgressIcon {
+enum ProgressIcon
+{
 	case BRAILLE;
 	case SNAKE;
 	case DOT_RUNNING_AROUND;

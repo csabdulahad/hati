@@ -8,11 +8,10 @@ use Exception;
 
 /**
  * A helper class consisting of helpful functions to deal with Date in PHP.
- *
- * @since 5.0.0
  * */
 
-abstract class Date {
+abstract class Date
+{
 
 	/**
 	 * Get "now" time
@@ -25,7 +24,8 @@ abstract class Date {
 	 * the function returns false.
 	 * @throws Exception If the timezone is invalid.
 	 */
-	public static function now(?string $timezone = 'local'): false|int {
+	public static function now(?string $timezone = 'local'): false|int
+	{
 
 		if (is_null($timezone) || $timezone === 'local' || $timezone === date_default_timezone_get()) {
 			return time();
@@ -47,7 +47,8 @@ abstract class Date {
 	 * @param ?int $year a numeric year. When null, then current year is used.
 	 * @return int The number of days for that specified month.
 	 */
-	public static function daysInMonth(int $month = 0, ?int $year = null): int {
+	public static function daysInMonth(int $month = 0, ?int $year = null): int
+	{
 		if ($month < 1 OR $month > 12) {
 			return 0;
 		} elseif ( ! is_numeric($year) OR strlen($year) !== 4) {
@@ -76,7 +77,8 @@ abstract class Date {
 	 * @return int|false returns the Unix timestamp of the arguments given. If the
 	 * arguments are invalid, the function returns false
 	 */
-	public static function localToGMT(?int $time = null): int|false {
+	public static function localToGMT(?int $time = null): int|false
+	{
 		if (is_null($time)) {
 			$time = time();
 		}
@@ -104,7 +106,8 @@ abstract class Date {
 	 * @return float|false|int
 	 * @throws Exception If the timezone is invalid.
 	 */
-	public static function gmtToLocal(?int $time = null, string $timezone = 'UTC', bool $dst = false): float|false|int {
+	public static function gmtToLocal(?int $time = null, string $timezone = 'UTC', bool $dst = false): float|false|int
+	{
 		if (is_null($time)) {
 			return self::now();
 		}
@@ -124,7 +127,8 @@ abstract class Date {
 	 * @return string|array Returns array containing timezones when the
 	 * tz is null. For specific timezone, it returns the offset.
 	 */
-	public static function timezones(string $tz = ''): string|array {
+	public static function timezones(string $tz = ''): string|array
+	{
 		// Note: Don't change the order of these even though
 		// some items appear to be in the wrong order
 

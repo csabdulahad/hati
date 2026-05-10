@@ -6,11 +6,10 @@ use InvalidArgumentException;
 
 /**
  * A utility class, containing helpful functions to perform cryptographic operations.
- *
- * @since 5.0.0
  * */
 
-abstract class Crypto {
+abstract class Crypto
+{
 
 	const ALGO_BCRYPT = '2y';
 	const ALGO_2Y = '2y';
@@ -26,7 +25,8 @@ abstract class Crypto {
 	 * @param string $algo The algorithm to be used for hashing
 	 * @return string Hashed value
 	 * */
-	public static function hash(string $value, string $algo = self::ALGO_BCRYPT): string {
+	public static function hash(string $value, string $algo = self::ALGO_BCRYPT): string
+	{
 		$allowed = [
 			self::ALGO_BCRYPT, self::ALGO_2Y, self::ALGO_ARGON2I,
 			self::ALGO_ARGONI2ID, self::ALGO_MD5

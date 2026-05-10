@@ -168,7 +168,8 @@ abstract class HatiCLI
 		return $this->optNameByAlias[$nameOrAlias] ?? null;
 	}
 	
-	private function getName(string $key, array $allowedArr): ?string {
+	private function getName(string $key, array $allowedArr): ?string
+	{
 		if (array_key_exists("$key", $allowedArr)) return $key;
 		
 		foreach ($allowedArr as $s => $l) {
@@ -215,7 +216,8 @@ abstract class HatiCLI
 	 * @param array $flag The flag
 	 * @throws RuntimeException if the short name is missing
 	 * */
-	public function addFlag(array $flag): void {
+	public function addFlag(array $flag): void
+	{
 		if (empty($flag['name'])) {
 			throw new RuntimeException("Flag must have a name");
 		}
@@ -269,7 +271,8 @@ abstract class HatiCLI
 	 * @param array $option The option
 	 * @throws RuntimeException if the short name is missing
 	 * */
-	public function addOption(array $option): void {
+	public function addOption(array $option): void
+	{
 		if (empty($option['name'])) {
 			throw new RuntimeException("Option must have a name");
 		}
@@ -439,7 +442,8 @@ abstract class HatiCLI
 		}
 	}
 	
-	private function validate(array $args): void {
+	private function validate(array $args): void
+	{
 		// Do you need help?
 		if (!empty($args) && ($args[0] === '-?' || $args[0] === '--help' || $args[0] === '-h')) {
 			$this->showHelp($args);
@@ -524,7 +528,8 @@ abstract class HatiCLI
 		}
 	}
 	
-	private function getHelp(string $type, ?string $key): ?array {
+	private function getHelp(string $type, ?string $key): ?array
+	{
 		$isOption = $type === 'option';
 		$array    = $isOption ? $this->allowedOptions : $this->allowedFlags;
 		
@@ -656,7 +661,8 @@ abstract class HatiCLI
 	 * @param mixed $default default value to be returned if the option value wasn't found in user input
 	 * @return mixed value for the option provided by the user
 	 * */
-	protected function getOptionValue(string $key, mixed $default = null): mixed {
+	protected function getOptionValue(string $key, mixed $default = null): mixed
+	{
 		$this->buildAliasIndexes();
 		
 		$key = ltrim($key, '-');

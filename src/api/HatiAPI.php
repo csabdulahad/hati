@@ -14,10 +14,10 @@ use hati\util\Text;
  *
  * API classes may be namespaced and should be registered with their fully qualified class name.
  *
- * @since 5.0.0
  * */
 
-abstract class HatiAPI {
+abstract class HatiAPI
+{
 
 	/** Catches the request body for JSON & raw */
 	private array $reqBody = [];

@@ -9,7 +9,8 @@ namespace hati\util;
  * as we discover many helper simple functions over time.
  */
 
-class Util {
+class Util
+{
 
 	/** Alternator index tracker */
 	private static array $altIndex = [];
@@ -22,7 +23,8 @@ class Util {
 	 * @param string $name The name required to track the internal alternator index count
 	 * @param mixed ...$values (as many parameters as needed)
 	 */
-	public static function alternate(string $name, mixed ...$values): mixed {
+	public static function alternate(string $name, mixed ...$values): mixed
+	{
 		if (!isset(self::$altIndex[$name]))
 			self::$altIndex[$name] = 0;
 
@@ -46,7 +48,8 @@ class Util {
 	 *
 	 * @return bool true if the environment is CLI, false otherwise
 	 * **/
-	public static function isCLI(): bool {
+	public static function isCLI(): bool
+	{
 		if (in_array(PHP_SAPI, ['cli', 'phpdbg'], true)) {
 			return true;
 		}
@@ -59,7 +62,8 @@ class Util {
 	 * Using this method the execution environment can be extracted.
 	 * @return string Returns 'cli' if it is running CLI, 'server' if running in Apache/CGI
 	 * **/
-	public static function getExecEnv(): string {
+	public static function getExecEnv(): string
+	{
 		return self::isCLI() ? 'cli' : 'server';
 	}
 
@@ -69,7 +73,8 @@ class Util {
 	 * @param string $dirPath The directory path
 	 * @return bool True if the directory is empty, false otherwise
 	 **/
-	public static function isDirEmpty(string $dirPath): bool {
+	public static function isDirEmpty(string $dirPath): bool
+	{
 		return count(glob($dirPath . '/*')) === 0;
 	}
 
@@ -82,7 +87,8 @@ class Util {
 	 * @param int $len The length of the token.
 	 * @return string A randomly generated token.
 	 */
-	public static function randToken(int $len = 11): string {
+	public static function randToken(int $len = 11): string
+	{
 		return substr(str_shuffle(md5(time())),0, $len);
 	}
 
@@ -94,7 +100,8 @@ class Util {
 	 *
 	 * @return string A unique string.
 	 * */
-	public static function uniqueId(string $prefix = ''): string {
+	public static function uniqueId(string $prefix = ''): string
+	{
 		return uniqid($prefix, true);
 	}
 

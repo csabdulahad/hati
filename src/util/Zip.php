@@ -7,11 +7,10 @@ use ZipArchive;
 
 /**
  * A helper class for creating ZIP file using concise API.
- *
- * @since 5.0.0
  * */
 
-class Zip {
+class Zip
+{
 
 	/** The physical path to the zip file created */
 	private string $zipPath;
@@ -29,7 +28,8 @@ class Zip {
 	 * @param string $zipPath The path to the zip file to be created
 	 * @throws Exception When it couldn't create the zip file
 	 */
-	private function __construct(string $zipPath) {
+	private function __construct(string $zipPath)
+	{
 		$this -> zip = new ZipArchive();
 
 		if ($this -> zip -> open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
@@ -45,7 +45,8 @@ class Zip {
 	 * @param string $zipPath The path to the zip file to be created
 	 * @throws Exception When it couldn't create the zip file
 	 */
-	public static function create(string $zipPath): Zip {
+	public static function create(string $zipPath): Zip
+	{
 		return new Zip($zipPath);
 	}
 
@@ -56,7 +57,8 @@ class Zip {
 	 * @param bool $keepFilePath Indicates whether th copy the same file structure for the file
 	 * @return bool true if the file addition to the archive successful; false otherwise
 	 * */
-	public function addFile(string $path, bool $keepFilePath = true): bool {
+	public function addFile(string $path, bool $keepFilePath = true): bool
+	{
 
 		if (!file_exists($path)) {
 			return false;
@@ -79,7 +81,8 @@ class Zip {
 	 * @param bool $keepFilePath Indicates whether th copy the same file structure for the file
 	 * @return bool true if the file addition to the archive successful; false otherwise
 	 * */
-	public function addDir(string $path, bool $keepFilePath = true): bool {
+	public function addDir(string $path, bool $keepFilePath = true): bool
+	{
 		$path = rtrim($path, '/\\').DIRECTORY_SEPARATOR;
 
 		if ( ! $fp = @opendir($path)) {
@@ -113,7 +116,8 @@ class Zip {
 	/**
 	 * Closes the zip archive.
 	 * */
-	public function close(): void {
+	public function close(): void
+	{
 		$this -> zip -> close();
 		$this -> closed = true;
 	}
@@ -126,7 +130,8 @@ class Zip {
 	 * @param bool $deleteArchive indicates whether to delete the zip file after downloading
 	 * @return bool returns true if the downloading was successful; false otherwise.
 	 * */
-	public function download(string $filename, bool $deleteArchive = false): bool {
+	public function download(string $filename, bool $deleteArchive = false): bool
+	{
 
 		try {
 			if (!$this -> closed) {

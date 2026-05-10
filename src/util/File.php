@@ -4,7 +4,6 @@ namespace hati\util;
 
 use Exception;
 use FilesystemIterator;
-use hati\cli\CLI;
 use hati\data\Mimes;
 use InvalidArgumentException;
 use RecursiveDirectoryIterator;
@@ -15,11 +14,10 @@ use Throwable;
 /**
  * A helper class consisting functions to deal with files of file system
  * easily in PHP!
- *
- * @since 5.0.0
  * */
 
-abstract class File {
+abstract class File
+{
 
 	/**
 	 * is_writable() returns TRUE on Windows servers when you really can't write to
@@ -30,9 +28,10 @@ abstract class File {
 	 *
 	 * @throws Exception
 	 * */
-	public static function isWriteable(string $file): bool {
+	public static function isWriteable(string $file): bool
+	{
 		// If we're on a Unix server we call is_writable
-		if (! CLI::isWindows()) {
+		if (! (PHP_OS_FAMILY === "Windows")) {
 			return is_writable($file);
 		}
 
@@ -73,7 +72,8 @@ abstract class File {
 	 *                               (0 = fully recursive, 1 = current dir, etc)
 	 * @param bool   $hidden         Whether to show hidden files
 	 */
-	public static function mapDir(string $sourceDir, int $dirDepth = 0, bool $hidden = false): array {
+	public static function mapDir(string $sourceDir, int $dirDepth = 0, bool $hidden = false): array
+	{
 		try {
 			$fp = opendir($sourceDir);
 
@@ -114,7 +114,8 @@ abstract class File {
 	 *
 	 * @throws InvalidArgumentException
 	 */
-	public static function copyDir(string $originDir, string $targetDir, bool $overwrite = true): void {
+	public static function copyDir(string $originDir, string $targetDir, bool $overwrite = true): void
+	{
 		if (! is_dir($originDir = rtrim($originDir, '\\/'))) {
 			throw new InvalidArgumentException(sprintf('The origin directory "%s" was not found.', $originDir));
 		}
@@ -192,7 +193,8 @@ abstract class File {
 	 * @param bool   $delDir Whether to delete any directories found in the path
 	 * @param bool   $hidden Whether to include hidden files (files beginning with a period)
 	 */
-	public static function delete(string $path, bool $delDir = false, bool $hidden = false): bool {
+	public static function delete(string $path, bool $delDir = false, bool $hidden = false): bool
+	{
 		$path = realpath($path) ?: $path;
 		$path = rtrim($path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
 
@@ -282,7 +284,8 @@ abstract class File {
 	 * @param bool   $topLevelOnly Look only at the top level directory specified?
 	 * @param bool   $recursion    Internal variable to determine recursion status - do not use in calls
 	 */
-	public static function getDirFileInfo(string $sourceDir, bool $topLevelOnly = true, bool $recursion = false): array {
+	public static function getDirFileInfo(string $sourceDir, bool $topLevelOnly = true, bool $recursion = false): array
+	{
 		static $fileData = [];
 		$relativePath    = $sourceDir;
 
@@ -327,7 +330,8 @@ abstract class File {
 	 * @return ?array
 	 * @throws Exception
 	 */
-	public static function getFileInfo(string $file, array|string $returnedValues = ['name', 'server_path', 'size', 'date']): ?array {
+	public static function getFileInfo(string $file, array|string $returnedValues = ['name', 'server_path', 'size', 'date']): ?array
+	{
 		if (! is_file($file)) {
 			return null;
 		}
@@ -386,7 +390,8 @@ abstract class File {
 	 * @param bool      $hidden      Whether to include hidden files (files beginning with a period)
 	 * @param bool      $includeDir  Whether to include directories
 	 */
-	public static function getFiles(string $sourceDir, ?bool $includePath = false, bool $hidden = false, bool $includeDir = true): array {
+	public static function getFiles(string $sourceDir, ?bool $includePath = false, bool $hidden = false, bool $includeDir = true): array
+	{
 		$files = [];
 
 		$sourceDir = realpath($sourceDir) ?: $sourceDir;
@@ -429,7 +434,8 @@ abstract class File {
 	 *
 	 * @param int $perms Permissions
 	 */
-	public static function symbolicPermission(int $perms): string {
+	public static function symbolicPermission(int $perms): string
+	{
 		if (($perms & 0xC000) === 0xC000) {
 			$symbolic = 's'; // Socket
 		} elseif (($perms & 0xA000) === 0xA000) {
@@ -474,7 +480,8 @@ abstract class File {
 	 *
 	 * @param int $perms Permissions
 	 */
-	public static function octalPermissions(int $perms): string {
+	public static function octalPermissions(int $perms): string
+	{
 		return substr(sprintf('%o', $perms), -3);
 	}
 
@@ -487,7 +494,8 @@ abstract class File {
 	 * @param mixed $data the data to be downloaded
 	 * @param bool $setMime whether to try and send the actual file MIME type
 	 */
-	public static function foreDownload(string $filename = '', mixed $data = '', bool $setMime = false): void {
+	public static function foreDownload(string $filename = '', mixed $data = '', bool $setMime = false): void
+	{
 		if ($filename === '' OR $data === '')
 		{
 			return;

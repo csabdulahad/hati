@@ -822,7 +822,7 @@ class DataFilter
 	private function defaultErrHandler(array $errList, DataFilter $filter): never
 	{
 		if (count($errList) > 1) {
-			throw Trunk::error400($this->getLocalization()->validationFailed());
+			Trunk::http400($this->getLocalization()->validationFailed());
 		}
 		
 		$err = reset($errList);
@@ -835,7 +835,7 @@ class DataFilter
 				? $err['message']
 				: $this->getLocalization()->unknownErr();
 		
-		throw Trunk::error400($message);
+		Trunk::http400($message);
 	}
 	
 }

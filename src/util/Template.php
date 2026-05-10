@@ -17,19 +17,20 @@ use hati\Trunk;
  * and {@link Template::w()}
  * */
 
-abstract class Template {
+abstract class Template
+{
 
 	// parameters buffer
 	private static array $params = [];
 
 	// no instantiation is allowed
-	private function __construct() {
-
+	private function __construct()
+	{
 	}
 
 	/**
 	 * Any PHP file can be used as template file. It is advised to keep the file extension
-	 * as '.tlp.php' to make it distinguishable from other php scripts file. Rendered output
+	 * as '.tlp.php' to make it distinguishable from other PHP scripts file. Rendered output
 	 * can be returned or written in the buffer by specifying print argument.
 	 *
 	 * @param string $filePath Path to the template file
@@ -38,7 +39,8 @@ abstract class Template {
 	 *
 	 * @return ?string Either returns or print out the rendered template file based on argument value.
 	 * */
-	public static function render(string $filePath, array $params = [], bool $print = false, bool $throwErr = false): ?string {
+	public static function render(string $filePath, array $params = [], bool $print = false, bool $throwErr = false): ?string
+	{
 		if (!file_exists($filePath)) {
 			if ($throwErr) throw new Trunk("Couldn't locate the template file at: $filePath");
 			return null;
@@ -70,7 +72,8 @@ abstract class Template {
 	 * @param string $key The key for the parameter.
 	 * @param mixed $defVal The value to be returned in case of undefined key.
 	 * */
-	public static function w(string $key, mixed $defVal = null): void {
+	public static function w(string $key, mixed $defVal = null): void
+	{
 		echo self::g($key, $defVal);
 	}
 
@@ -84,7 +87,8 @@ abstract class Template {
 	 *
 	 * @return mixed Returns the data for the key in the parameter buffer.
 	 * */
-	public static function g(string $key, mixed $defVal = null): mixed {
+	public static function g(string $key, mixed $defVal = null): mixed
+	{
 		return self::$params[$key] ?? $defVal;
 	}
 

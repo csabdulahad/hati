@@ -12,21 +12,24 @@ use hati\Trunk;
  * By default, it gets the current url from the $_SERVER global array.
  * */
 
-abstract class Url {
+abstract class Url
+{
 
 	/**
 	 * The page url can be calculated using various $_SERVER global array properties.
 	 *
 	 * @return string the full path of the current url.
 	 * */
-	public static function get(): string {
+	public static function get(): string
+	{
 		$protocol = ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off') || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
 		return $protocol . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
 	}
 
-	// Internal use for getting url. If urls are not specified by argument
+	// Internal use for getting url. If URLs are not specified by argument
 	// then it returns the current page url.
-	private static function getUrl(string $url): string {
+	private static function getUrl(string $url): string
+	{
 		return empty($url) ? self::get() : $url;
 	}
 
@@ -38,7 +41,8 @@ abstract class Url {
 	 * @param string $url the url whose scheme is to be extracted.
 	 * @return string the scheme of the url
 	 * */
-	public static function scheme(string $url = ''): string {
+	public static function scheme(string $url = ''): string
+	{
 		$url = self::getUrl($url);
 		return (string) parse_url($url, PHP_URL_SCHEME);
 	}
@@ -50,7 +54,8 @@ abstract class Url {
 	 * @param string $url the url whose path is to be extracted.
 	 * @return string The url path without forward slash.
 	 * */
-	public static function path(string $url = ''): string {
+	public static function path(string $url = ''): string
+	{
 		$url = self::getUrl($url);
 		return substr(parse_url($url, PHP_URL_PATH), 1);
 	}
@@ -63,7 +68,8 @@ abstract class Url {
 	 * @param string $url the url whose path is to be extracted.
 	 * @return string The last path fragment of the url.
 	 * */
-	public static function lastPath(string $url = ''): string {
+	public static function lastPath(string $url = ''): string
+	{
 		$url = self::path($url);
 		$lastIndex = strripos($url, '/') + 1;
 		return substr($url, $lastIndex);
@@ -82,7 +88,8 @@ abstract class Url {
 	 * @param $url string The url whose parameter is to be extracted.
 	 * @param $throwErr bool Indicates whether to throw error on not resolving the parameter.
 	 * */
-	public static function param(string $key, mixed $defVal = null, string $url = '', bool $throwErr = false): mixed {
+	public static function param(string $key, mixed $defVal = null, string $url = '', bool $throwErr = false): mixed
+	{
 		$returnValue = $defVal;
 
 		$url = self::getUrl($url);
@@ -109,7 +116,8 @@ abstract class Url {
 	 * @param $defVal mixed The default value is to be returned when the fragment is not found.
 	 * @param $throwErr bool Indicated whether to throw error on not finding the fragment.
 	 * */
-	public static function fragment(string $url, mixed $defVal = null, bool $throwErr = false): mixed {
+	public static function fragment(string $url, mixed $defVal = null, bool $throwErr = false): mixed
+	{
 		$value = parse_url($url, PHP_URL_FRAGMENT);
 
 		if (empty($value) && $throwErr) throw new Trunk('No fragment part was found in the url: ' . $url);

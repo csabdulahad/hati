@@ -13,7 +13,8 @@ namespace hati\util;
  * - {@link Console::error()} : Logs error message with red color
  * */
 
-abstract class Console {
+abstract class Console
+{
 
 	/**
 	 * Logs any type of variable into console/page with nice formatting.
@@ -21,7 +22,8 @@ abstract class Console {
 	 * @param mixed $value The value
 	 * @param int $numOfBreak Number of break to be added after the message
 	 * */
-	public static function log(mixed $value, int $numOfBreak = 1): void {
+	public static function log(mixed $value, int $numOfBreak = 1): void
+	{
 		self::println($value, $numOfBreak);
 	}
 
@@ -31,7 +33,8 @@ abstract class Console {
 	 * @param mixed $value The value
 	 * @param int $numOfBreak Number of break to be added after the message
 	 * */
-	public static function warn(mixed $value, int $numOfBreak = 1): void {
+	public static function warn(mixed $value, int $numOfBreak = 1): void
+	{
 		self::println($value, $numOfBreak, 'warn');
 	}
 
@@ -41,7 +44,8 @@ abstract class Console {
 	 * @param mixed $value The value
 	 * @param int $numOfBreak Number of break to be added after the message
 	 * */
-	public static function info(mixed $value, int $numOfBreak = 1): void {
+	public static function info(mixed $value, int $numOfBreak = 1): void
+	{
 		self::println($value, $numOfBreak, 'info');
 	}
 
@@ -51,7 +55,8 @@ abstract class Console {
 	 * @param mixed $value The value
 	 * @param int $numOfBreak Number of break to be added after the message
 	 * */
-	public static function success(mixed $value, int $numOfBreak = 1): void {
+	public static function success(mixed $value, int $numOfBreak = 1): void
+	{
 		self::println($value, $numOfBreak, 'success');
 	}
 
@@ -61,11 +66,13 @@ abstract class Console {
 	 * @param mixed $value The value
 	 * @param int $numOfBreak Number of break to be added after the message
 	 * */
-	public static function error(mixed $value, int $numOfBreak = 1): void {
+	public static function error(mixed $value, int $numOfBreak = 1): void
+	{
 		self::println($value, $numOfBreak, 'error');
 	}
 
-	private static function println(mixed $value, int $numOfBreak = 1, string $type = 'log'): void {
+	private static function println(mixed $value, int $numOfBreak = 1, string $type = 'log'): void
+	{
 		$b = Util::isCLI() ? "\n" : "<br>";
 
 		// Remove one extra break as pre tag adds one already

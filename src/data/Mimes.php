@@ -4,11 +4,10 @@ namespace hati\data;
 
 /**
  * A data class holding valid file mime types.
- *
- * @since 5.0.0
  * */
 
-abstract class Mimes {
+abstract class Mimes
+{
 
 	/**
 	 * A set of predefined fine mime types

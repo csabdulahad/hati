@@ -15,7 +15,8 @@ use Throwable;
  *
  * Trunk does not emit headers, cookies, body content, or terminate the PHP process.
  */
-class Trunk extends RuntimeException {
+class Trunk extends RuntimeException
+{
 
 	private const DEFAULT_MSG = 'An error occurred.';
 

@@ -11,7 +11,8 @@ namespace hati\util;
  * we discover over time.
  */
 
-abstract class Math {
+abstract class Math
+{
 
 	/**
 	 * The fractional part of any floating number can ba extracted by this method.
@@ -19,7 +20,8 @@ abstract class Math {
 	 * @param float $number The float value whose fraction is to be returned.
 	 * @return float The fraction of the float input.
 	 * */
-	public static function getDecimal(float $number): float {
+	public static function getDecimal(float $number): float
+	{
 		if (!str_contains($number, '.')) return 0;
 
 		return substr($number, strpos($number, '.'));
@@ -27,25 +29,27 @@ abstract class Math {
 
 	/**
 	 * Checks a number is a floating number for real. For example, 1.00 looks like a
-	 * floating number but it can be said to be a whole number. This method helps figuring
+	 * floating number, but it can be said to be a whole number. This method helps to figure
 	 * out this.
 	 *
 	 * @param int|float $number A number to be decided whether a floating number for real or not
 	 * @return true if the number can be said to be a whole number; false otherwise.
 	 * */
-	function isFloat(int|float $number): bool {
+	function isFloat(int|float $number): bool
+	{
 		return str_contains($number, '.');
 	}
 
 	/**
 	 * Checks a number is a whole number for real. For example, 1.00 looks like a
-	 * whole number but it can be said to be a whole number. This method helps figuring
+	 * whole number, but it can be said to be a whole number. This method helps to figure
 	 * out this.
 	 *
 	 * @param int|float $number A number to be decided whether a whole number for real or not
 	 * @return true if the number can be said to be a whole number; false otherwise.
 	 * */
-	public static function isWholeNumber(int|float $number): bool {
+	public static function isWholeNumber(int|float $number): bool
+	{
 		return !str_contains($number, '.');
 	}
 
@@ -57,7 +61,8 @@ abstract class Math {
 	 *
 	 * @return int|float The calculated percentage of the given number.
 	 * */
-	public static function percentage(int|float $of, int|float $percent): int|float {
+	public static function percentage(int|float $of, int|float $percent): int|float
+	{
 		if ($of == 0) return 0;
 		return ($of / 100) * $percent;
 	}
@@ -70,7 +75,8 @@ abstract class Math {
 	 *
 	 * @return int|float The calculated percentage for the share amount it is of the number.
 	 * */
-	public static function percentShare(int|float $amount, int|float $outOf): int|float {
+	public static function percentShare(int|float $amount, int|float $outOf): int|float
+	{
 		if ($outOf == 0) return 0;
 		$unit = $outOf / 100;
 		return $amount / $unit;
@@ -84,7 +90,8 @@ abstract class Math {
 	 *
 	 * @return int|float The average of the numbers.
 	 * */
-	public static function avg(...$number): int|float {
+	public static function avg(...$number): int|float
+	{
 		$total = 0;
 		$arg = func_get_args();
 		if (is_array($arg[0])) $number = $arg[0];
@@ -103,7 +110,8 @@ abstract class Math {
 	 *
 	 * @return int Randomly generated integer.
 	 * */
-	public static function rand(int $min, int $max, bool $inclusive = true): int {
+	public static function rand(int $min, int $max, bool $inclusive = true): int
+	{
 		if (!$inclusive) $max -= 1;
 		return rand($min, $max);
 	}

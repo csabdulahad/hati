@@ -14,13 +14,6 @@
         }
     ],
 
-    "funding": [
-        {
-            "type": "paypal",
-            "url": "https://paypal.me/rootdata21?country.x=GB&locale.x=en_GB"
-        }
-    ],
-
     "require": {
         "php": ">=8.1",
         "phpmailer/phpmailer": "^6.5",

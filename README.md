@@ -96,10 +96,6 @@ Hitting the API at: https://example.com/api/welcome/get
 }
 ```
 
-# Donation/Support
-If you find this project helpful then why don't you buy the developer a cup of tea? Any amount of donation is appreciated. Please follow the link to donate by using PayPal.
-[PayPal Payment](https://paypal.me/rootdata21?country.x=GB&locale.x=en_GB)
-
 # License
 
 This project is maintained under [MIT license](https://en.wikipedia.org/wiki/MIT_License).

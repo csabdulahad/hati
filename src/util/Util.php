@@ -2,7 +2,6 @@
 
 namespace hati\util;
 
-use hati\Hati;
 
 /**
  * Util class is a helper class which has many helpful methods that can easily deal with
@@ -97,33 +96,6 @@ class Util {
 	 * */
 	public static function uniqueId(string $prefix = ''): string {
 		return uniqid($prefix, true);
-	}
-
-	/**
-	 * This function can return the server root address. If the hati is inside
-	 * any folder then it also includes that as part of the host address.
-	 *
-	 * @param bool $secure When set to true, the host url is returned in HTTPS
-	 *
-	 * @return String the server address including folder if Hati has one defined
-	 * in HatiConfig file.
-	 * */
-	public static function host(bool $secure = true): string {
-		$root = Hati::root();
-
-		if (empty($_SERVER['HTTP_HOST'])) {
-			return $root;
-		}
-
-		$host = $_SERVER['HTTP_HOST'];
-		if ($host == 'localhost') {
-			$folder = explode(DIRECTORY_SEPARATOR, rtrim($root, DIRECTORY_SEPARATOR));
-			$folder = $folder[count($folder) - 1];
-			$host = 'localhost/' . $folder;
-		}
-
-		$protocol = $secure ? 'https' : 'http';
-		return sprintf("$protocol://%s/", $host);
 	}
 
 }

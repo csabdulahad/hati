@@ -1,129 +1,20 @@
 <?php
 
-/** @noinspection PhpUndefinedConstantInspection */
-
 namespace hati;
-
-use RuntimeException;
-use Throwable;
 
 /**
  * Hati, a speedy PHP library.
  * This class initializes the library.
  * */
-
 abstract class Hati
 {
 
 	// version
-	private static string $version = '7.0.33-beta';
-
-	// The project root directory [where the vendor folder is found]
-	private static ?string $DIR_ROOT = null;
-
-	// The hati configuration
-	private static array $CONFIG = [];
-
-	// The db configuration file is cached as JSON decoded array
-	private static ?array $DB_CONFIG = null;
-
-	/**
-	 * This is the first method call of the execution. It initializes the environment
-	 * as per configuration and resolve dependencies.
-	 *
-	 * @throws Throwable
-	 */
-	public static function start(string $rootDir, ?string $configDir = null): void
-	{
-		self::checkConstant();
-
-		// Set root directory
-		$rootDir = rtrim($rootDir, '\/') . DIRECTORY_SEPARATOR;
-		self::$DIR_ROOT = $rootDir;
-
-		// load the correct config JSON file
-		$configDir ??= 'config';
-		self::loadConfig($configDir);
-	}
+	private static string $version = '7.0.34-beta';
 	
 	public static function getGlobalFuncPath(): string
 	{
 		return self::fixSeparator(__DIR__ . '/global_func.php');
-	}
-
-	/**
-	 * Parse a specific JSON file as associative array and assigns it to the specified variable.
-	 * @throws RuntimeException If the file doesn't exist or the JSON is not properly formatted.
-	 * */
-	private static function parseConfigFile(string $fileName, string $path): array
-	{
-		if (!file_exists($path)) return [];
-
-		$config = file_get_contents($path);
-		$config = json_decode($config, true);
-		
-		if (json_last_error() != JSON_ERROR_NONE) {
-			throw new RuntimeException("$fileName couldn't not be parsed: $path");
-		}
-
-		return $config;
-	}
-
-	/**
-	 * Loads configuration files to set up Hati as defined by various JSON files
-	 *
-	 * @param string $configDir
-	 * */
-	private static function loadConfig(string $configDir): void
-	{
-		$ds = DIRECTORY_SEPARATOR;
-		
-		$configDir = rtrim($configDir, '\/') . $ds;
-		
-		// Check if config dir is absolute path
-		if (!file_exists($configDir)) {
-			// Try relative path
-			$configDir = self::root($configDir);
-			
-			if (!file_exists($configDir)) {
-				// Fallback to default path
-				$configDir = self::root("config$ds");
-			}
-		}
-
-		// Load hati configuration JSON object
-		$configFile = $configDir . HATI_CONFIG_FILE;
-		self::$CONFIG = self::parseConfigFile(HATI_CONFIG_FILE, $configFile);
-
-		// Load db configuration JSON object from root
-		$dbConfigFile =  $configDir . HATI_CONFIG_DB_FILE;
-		self::$DB_CONFIG = self::parseConfigFile(HATI_CONFIG_DB_FILE, $dbConfigFile);
-	}
-
-	/**
-	 * The hati/db.json file is parsed as array using {@link json_decode()} to be used by {@link Fluent}
-	 * to manage database configurations & connections
-	 *
-	 * @return ?array represents the database configuration object
-	 * */
-	public static function dbConfigObj(): ?array
-	{
-		return self::$DB_CONFIG;
-	}
-
-	/**
-	 * Returns the root path where the vendor folder is found as root folder!
-	 *
-	 * It is easier to refer to any file/folder from the root directory path,
-	 * avoid confusion and, it becomes very clear what the path is referring to.
-	 *
-	 * @param string $path Any path segment to be appended to the root path
-	 * @return string The path referring from the root directory
-	 * */
-	public static function root(string $path = ''): string
-	{
-		$path = ltrim($path, '\/');
-		return self::fixSeparator(self::$DIR_ROOT . $path);
 	}
 
 	/**
@@ -148,47 +39,6 @@ abstract class Hati
 	public static function version(): string
 	{
 		return self::$version;
-	}
-
-	/**
-	 * Fetches the config value from the hati configuration array.
-	 *
-	 * @param string $key The config key defined in the JSON configuration file
-	 * @param string $as How to cast the return value. Supported types are:<br>
-	 * - str: cast as string<br>
-	 * - arr: cast as array<br>
-	 * - bool: cast as boolean<br>
-	 * - int: cast as integer<br>
-	 * - float: cast as float
-	 * @return string|array|int|bool|float The value in required type
-	 * */
-	public static function config(string $key, string $as = 'str') : string|array|int|bool|float
-	{
-		if (!isset(self::$CONFIG[$key])) {
-			throw new RuntimeException("Config \"$key\" is missing");
-		}
-
-		$data = self::$CONFIG[$key];
-
-		if ($as == 'int') return (int) $data;
-		else if ($as == 'bool') return (bool) $data;
-		else if ($as == 'str') return (string) $data;
-		else if ($as == 'arr') return (array) $data;
-		return (float) $data;
-	}
-
-	private static function checkConstant(): void
-	{
-		$constants = [
-			'HATI_CONFIG_FILE' 		=> 'hati.json',
-			'HATI_CONFIG_DB_FILE' 	=> 'db.json',
-		];
-		
-		foreach ($constants as $c => $v) {
-			if (defined($c)) continue;
-			
-			define($c, $v);
-		}
 	}
 	
 }

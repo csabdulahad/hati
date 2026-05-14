@@ -1,6 +1,6 @@
 <?php
 
-namespace hati\data;
+namespace Hati\Data;
 
 /**
  * A data class holding valid file mime types.

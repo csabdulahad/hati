@@ -1,6 +1,6 @@
 <?php
 
-namespace hati\cli\io;
+namespace Hati\CLI\IO;
 
 final class TeeIO extends TerminalIO
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace hati\filter;
+namespace Hati\Filter;
 
 /**
  * This enum class is used by {@link Filter::class}.

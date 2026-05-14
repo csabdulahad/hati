@@ -1,6 +1,6 @@
 <?php
 
-namespace hati;
+namespace Hati;
 
 /**
  * Hati, a speedy PHP library.
@@ -10,7 +10,7 @@ abstract class Hati
 {
 
 	// version
-	private static string $version = '7.0.36-beta';
+	private static string $version = '7.0.37-beta';
 	
 	public static function getGlobalFuncPath(): string
 	{

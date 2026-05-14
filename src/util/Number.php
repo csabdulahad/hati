@@ -1,8 +1,8 @@
 <?php
 
-namespace hati\util;
+namespace Hati\Util;
 
-use hati\filter\Filter;
+use Hati\Filter\Filter;
 
 /**
  * Number class has various methods relating formatting number in many forms

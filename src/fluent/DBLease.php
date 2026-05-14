@@ -1,6 +1,6 @@
 <?php
 
-namespace hati\fluent;
+namespace Hati\Fluent;
 
 use PDO;
 

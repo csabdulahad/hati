@@ -1,6 +1,6 @@
 <?php
 
-namespace hati\util;
+namespace Hati\Util;
 
 /*
  * Biscuit class gets its name from the cookie. Biscuit is a word that is interchangeably used

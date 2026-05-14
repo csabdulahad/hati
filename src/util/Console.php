@@ -1,6 +1,6 @@
 <?php
 
-namespace hati\util;
+namespace Hati\Util;
 
 /**
  * A cool class help printing log messages with minimal effort. This class

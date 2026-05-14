@@ -1,10 +1,10 @@
 <?php
 
-namespace hati\util;
+namespace Hati\Util;
 
 use Exception;
 use FilesystemIterator;
-use hati\data\Mimes;
+use Hati\Data\Mimes;
 use InvalidArgumentException;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;

@@ -1,6 +1,6 @@
 <?php
 
-namespace hati\util;
+namespace Hati\Util;
 
 /**
  * Number class has very simple methods which eases the number processing such getting

@@ -1,6 +1,6 @@
 <?php
 
-namespace hati\cli;
+namespace Hati\CLI;
 
 /**
  * A helper class consisting color constants for CLI output.

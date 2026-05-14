@@ -1,8 +1,8 @@
 <?php
 
-namespace hati\cli;
+namespace Hati\CLI;
 
-use hati\cli\io\TerminalIO;
+use Hati\CLI\IO\TerminalIO;
 
 final class CLIContext
 {

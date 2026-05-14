@@ -59,7 +59,7 @@ Below an API is written using Fluent class to perform database query where sql i
  * Register the API in the "api/hati_api_registry.php" file using
  * HatiAPIHandler::register method.
  */
-\hati\api\HatiAPIHandler::register([
+\hati\Api\HatiAPIHandler::register([
 	'method' => 'GET',
 	'path' => 'welcome/get',
 	'handler' => 'v1/ExRate.php',

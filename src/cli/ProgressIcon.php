@@ -1,6 +1,6 @@
 <?php
 
-namespace hati\cli;
+namespace Hati\CLI;
 
 /**
  * A set of constants for setting various progress icons to

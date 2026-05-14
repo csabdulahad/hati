@@ -1,8 +1,8 @@
 <?php
 
-namespace hati\cli;
+namespace Hati\CLI;
 
-use hati\util\Arr;
+use Hati\Util\Arr;
 use InvalidArgumentException;
 
 final class CLIInputBuilder

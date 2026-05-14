@@ -2,10 +2,10 @@
 
 /** @noinspection SpellCheckingInspection */
 
-namespace hati\util;
+namespace Hati\Util;
 
 use Exception;
-use hati\cli\io\ConsoleIO;
+use Hati\CLI\IO\ConsoleIO;
 use InvalidArgumentException;
 use function ord;
 use function strlen;

@@ -1,8 +1,8 @@
 <?php /** @noinspection HttpUrlsUsage */
 
-namespace hati\util;
+namespace Hati\Util;
 
-use hati\Trunk;
+use Hati\Trunk;
 
 /**
  * All processing related with Url processing such scheme, host, query parameters etc.

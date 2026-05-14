@@ -1,11 +1,11 @@
 <?php
 
-namespace hati\api;
+namespace Hati\API;
 
-use hati\Trunk;
-use hati\util\Arr;
-use hati\util\Request;
-use hati\util\Text;
+use Hati\Trunk;
+use Hati\Util\Arr;
+use Hati\Util\Request;
+use Hati\Util\Text;
 
 /**
  * An abstract implementation for APIs. Hati APIs must implement this class so that

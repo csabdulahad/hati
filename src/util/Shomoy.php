@@ -1,22 +1,18 @@
 <?php
 
-namespace hati\util;
+namespace Hati\Util;
 
 use DateInterval;
 use DateTime;
 use DateTimeZone;
 use Exception;
-use hati\Hati;
-use hati\Trunk;
+use Hati\Trunk;
 use Throwable;
 
 /**
  * Shomoy class is a wrapper class around php's DateTime object class. It has many
  * helpful methods and constants to simplify date and time calculation in the client
- * code. It creates datetime of default timezone as how it is configured in the
- * hati.json file.
- *
- * See <b>hati.json</b> file for changing the default timezone.
+ * code. It creates datetime of server's default timezone.
  * */
 
 class Shomoy
@@ -59,9 +55,7 @@ class Shomoy
 	/**
 	 * When these methods compare itself with another date time object, it is considered
 	 * that the comparing date time object is in the same timezone as this shomoy date
-	 * time is. The  Shomoy gets its default timezone from the Hati by calling
-	 * {@link Hati::defaultTimezone()} method. It can be configured with other flags in
-	 * hati.json file.
+	 * time is. The Shomoy uses server's default timezone.
 	 *
 	 * For removing all the confusion and ambiguity in date time, please always store and
 	 * use one timezone in all persistent storage. Just convert the timezone into native

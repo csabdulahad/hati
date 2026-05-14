@@ -1,6 +1,6 @@
 <?php
 
-namespace hati\filter;
+namespace Hati\Filter;
 
 use DateTimeImmutable;
 

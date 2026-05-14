@@ -1,8 +1,8 @@
 <?php
 
-namespace hati\fluent;
+namespace Hati\Fluent;
 
-use hati\Trunk;
+use Hati\Trunk;
 
 /**
  * Describes one database connection profile for Hati Fluent.

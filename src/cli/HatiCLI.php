@@ -1,14 +1,14 @@
 <?php
 
-namespace hati\cli;
+namespace Hati\CLI;
 
-use hati\cli\io\BufferedIO;
-use hati\cli\io\ConsoleIO;
-use hati\cli\io\TeeIO;
-use hati\cli\io\TerminalIO;
-use hati\filter\Filter;
-use hati\util\Arr;
-use hati\util\Text;
+use Hati\CLI\IO\BufferedIO;
+use Hati\CLI\IO\ConsoleIO;
+use Hati\CLI\IO\TeeIO;
+use Hati\CLI\IO\TerminalIO;
+use Hati\Filter\Filter;
+use Hati\Util\Arr;
+use Hati\Util\Text;
 use JetBrains\PhpStorm\NoReturn;
 use RuntimeException;
 use Throwable;

@@ -1,6 +1,6 @@
 <?php
 
-namespace hati\util;
+namespace Hati\Util;
 
 use InvalidArgumentException;
 

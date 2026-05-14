@@ -2,7 +2,7 @@
 
 /** @noinspection PhpUnused */
 
-use hati\util\Util;
+use Hati\Util\Util;
 
 /**
  * The functions, this file contains are global. You can access them from anywhere within

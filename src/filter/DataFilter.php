@@ -1,9 +1,9 @@
 <?php
 
-namespace hati\filter;
+namespace Hati\Filter;
 
 use Closure;
-use hati\Trunk;
+use Hati\Trunk;
 use InvalidArgumentException;
 use RuntimeException;
 

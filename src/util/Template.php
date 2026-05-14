@@ -1,8 +1,8 @@
 <?php
 
-namespace hati\util;
+namespace Hati\Util;
 
-use hati\Trunk;
+use Hati\Trunk;
 
 /**
  * Templating in project sometimes are necessary to have. Hati provides a wonderful

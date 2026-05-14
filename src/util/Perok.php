@@ -1,8 +1,8 @@
 <?php
 
-namespace hati\util;
+namespace Hati\Util;
 
-use hati\Trunk;
+use Hati\Trunk;
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\PHPMailer;
 

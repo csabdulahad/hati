@@ -1,8 +1,8 @@
 <?php
 
-namespace hati\api;
+namespace Hati\API;
 
-use hati\Trunk;
+use Hati\Trunk;
 use InvalidArgumentException;
 use JsonException;
 use RuntimeException;

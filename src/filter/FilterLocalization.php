@@ -1,9 +1,9 @@
 <?php
 
-namespace hati\filter;
+namespace Hati\Filter;
 
-use hati\util\Arr;
-use hati\util\Text;
+use Hati\Util\Arr;
+use Hati\Util\Text;
 
 class FilterLocalization
 {

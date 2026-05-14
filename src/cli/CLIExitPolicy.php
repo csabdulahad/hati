@@ -1,6 +1,6 @@
 <?php
 
-namespace hati\cli;
+namespace Hati\CLI;
 
 enum CLIExitPolicy
 {

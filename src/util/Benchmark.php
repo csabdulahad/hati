@@ -1,6 +1,6 @@
 <?php
 
-namespace hati\util;
+namespace Hati\Util;
 
 /**
  * Hati provides very simple means of Benchmarking functionalities. This class uses

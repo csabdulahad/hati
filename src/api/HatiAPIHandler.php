@@ -2,11 +2,11 @@
 
 /** @noinspection SpellCheckingInspection */
 
-namespace hati\api;
+namespace Hati\API;
 
-use hati\Trunk;
-use hati\util\Request;
-use hati\util\Text;
+use Hati\Trunk;
+use Hati\Util\Request;
+use Hati\Util\Text;
 use ReflectionClass;
 use ReflectionException;
 use ReflectionMethod;

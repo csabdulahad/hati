@@ -1,8 +1,8 @@
 <?php
 
-namespace hati;
+namespace Hati;
 
-use hati\api\Response;
+use Hati\API\Response;
 use JsonException;
 use RuntimeException;
 use Throwable;

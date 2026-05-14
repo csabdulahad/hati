@@ -1,9 +1,9 @@
 <?php
 
-namespace hati\cli\io;
+namespace Hati\CLI\IO;
 
-use hati\cli\ProgressIcon;
-use hati\util\Util;
+use Hati\CLI\ProgressIcon;
+use Hati\Util\Util;
 use InvalidArgumentException;
 use Throwable;
 

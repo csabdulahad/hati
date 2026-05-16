@@ -7,6 +7,7 @@ namespace Hati\API;
 use Hati\Trunk;
 use Hati\Util\Request;
 use Hati\Util\Text;
+use InvalidArgumentException;
 use ReflectionClass;
 use ReflectionException;
 use ReflectionMethod;
@@ -25,6 +26,9 @@ final class HatiAPIHandler
 	private const SUPPORTED_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 
 	private bool $debug;
+	
+	// default casting policy for Response objects created by the handler
+	private string $responseCastBehavior = Response::CAST_DEFAULT;
 
 	/**
 	 * Path-keyed route registry.
@@ -48,10 +52,13 @@ final class HatiAPIHandler
 	 * a generic 500 API response.
 	 *
 	 * @param bool $debug Whether implementation errors should expose detailed debug information.
+	 * @param string $responseCastBehavior Default Response casting policy.
+	 *                                     Allowed: Response::CAST_DEFAULT, Response::CAST_AUTO.
 	 */
-	public function __construct(bool $debug = false)
+	public function __construct(bool $debug = false, string $responseCastBehavior = Response::CAST_DEFAULT)
 	{
 		$this->debug = $debug;
+		$this->setDefaultResponseCasting($responseCastBehavior);
 	}
 	
 	/**
@@ -125,7 +132,7 @@ final class HatiAPIHandler
 				$api->authenticate($target['auth_name']);
 			}
 			
-			$response = new Response();
+			$response = $this->createResponse();
 			
 			$method = $target['target'];
 			$api->$method($response);
@@ -299,7 +306,7 @@ final class HatiAPIHandler
 	public function run(callable $fun): array
 	{
 		try {
-			$response = new Response();
+			$response = $this->createResponse();
 			
 			$fun($response);
 			
@@ -311,6 +318,36 @@ final class HatiAPIHandler
 		} catch (Throwable $e) {
 			return $this->internalError($e);
 		}
+	}
+	
+	/**
+	 * Sets the default casting policy for Response objects created by this handler.
+	 *
+	 * This affects responses created inside handle() and run(). Only response-level
+	 * policies are allowed; explicit scalar casts such as CAST_INT, CAST_FLOAT,
+	 * CAST_BOOL, and CAST_STRING remain per-value Response rules.
+	 *
+	 * @param string $responseCastBehavior Response::CAST_DEFAULT or Response::CAST_AUTO.
+	 * @return HatiAPIHandler
+	 *
+	 * @throws InvalidArgumentException If the casting policy is invalid.
+	 */
+	public function setDefaultResponseCasting(string $responseCastBehavior): HatiAPIHandler
+	{
+		if (!in_array($responseCastBehavior, [Response::CAST_DEFAULT, Response::CAST_AUTO], true)) {
+			throw new InvalidArgumentException('Invalid response cast behavior.');
+		}
+		
+		$this->responseCastBehavior = $responseCastBehavior;
+		return $this;
+	}
+	
+	/**
+	 * Returns the default casting policy for Response objects created by this handler.
+	 */
+	public function getDefaultResponseCasting(): string
+	{
+		return $this->responseCastBehavior;
 	}
 	
 	private static function getFullErrorMsg(Throwable $e): string
@@ -618,6 +655,11 @@ final class HatiAPIHandler
 			$this->normalizePath($path),
 			$queryParams
 		];
+	}
+	
+	private function createResponse(): Response
+	{
+		return new Response($this->responseCastBehavior);
 	}
 	
 }

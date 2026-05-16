@@ -8,13 +8,16 @@ use JsonException;
 use RuntimeException;
 
 /**
- * Response builds a Hati API JSON response.
+ * Builds a buffered JSON API response.
  *
- * It buffers JSON output data, headers, cookies, and HTTP status code.
- * It does not emit headers, cookies, body content, or terminate the PHP process.
+ * Response stores output data, headers, cookies, and HTTP status code.
+ * It does not emit anything directly. Calling reply() finalizes the body
+ * and throws Trunk for the top-level handler/emitter.
  *
- * Calling {@link reply()} finalizes the response and throws Trunk.
- * Exception handler catches Trunk and returns the response array.
+ * Casting:
+ * - Object policy: CAST_DEFAULT or CAST_AUTO.
+ * - Single-value methods use optional $castAs.
+ * - Map methods use optional $castMap for per-field casting.
  */
 class Response
 {
@@ -24,178 +27,140 @@ class Response
 	const WARNING = 0;
 	const SUCCESS = 1;
 	const INFO = 2;
+	
+	// response value casting policies
+	public const CAST_DEFAULT = 'default'; // no casting
+	public const CAST_AUTO = 'auto';       // smart casting
+
+	// explicit per-field casting types
+	public const CAST_INT = 'int';
+	public const CAST_FLOAT = 'float';
+	public const CAST_BOOL = 'bool';
+	public const CAST_STRING = 'string';
 
 	// buffer for JSON output
 	private array $output = [];
 	
 	private Trunk $trunk;
 	
-	public function __construct()
+	private string $castBehavior = self::CAST_DEFAULT;
+	
+	/**
+	 * Creates a response with HTTP 200, SUCCESS status, and the given casting policy.
+	 *
+	 * @param string $castBehavior CAST_DEFAULT or CAST_AUTO.
+	 */
+	public function __construct(string $castBehavior = self::CAST_DEFAULT)
 	{
 		$this->trunk = new Trunk(msg: '', httpStatusCode: 200, status: self::SUCCESS);
+		$this->setAutoCasting($castBehavior);
 	}
 	
-	public function addKey(string $key): Response
-	{
-		if (!array_key_exists($key, $this->output)) $this->output[$key] = null;
-		
-		return $this;
-	}
-
-	public function add(string $key, $value): Response
-	{
-		$this->output[$key] = $value;
-		
-		return $this;
-	}
-	
-	public function addAll($keys, $values): Response
-	{
-		$keyCount = count($keys);
-		if ($keyCount != count($values)) throw new InvalidArgumentException('Keys and values are not of same length.');
-
-		for ($i = 0; $i < $keyCount; $i++) $this->add($keys[$i], $values[$i]);
-		
-		return $this;
-	}
-
 	/**
-	 * This method add the passed argument to the array specified by the key. This method
-	 * first checks whether the array has already been defined or not. If not, then it creates
-	 * the array and then add the value to the end of the array.
+	 * Adds or replaces a top-level value.
 	 *
-	 * @param string $arrKey <p>the name of the array</p>
-	 * @param mixed $val <p>any value you want to add to the array. passed value will be parsed
-	 * to obtain the right type.</p>
-	 * @return Response returns this object for further method chaining
+	 * If $castAs is null, the object casting policy is used.
 	 *
-	 * @noinspection PhpUnused
-	 * */
-	public function addToArray(string $arrKey, mixed $val): Response
+	 * @param string $key Top-level output key.
+	 * @param mixed $value Value to store.
+	 * @param ?string $castAs Optional cast override.
+	 */
+	public function add(string $key, mixed $value, ?string $castAs = null): Response
+	{
+		$this->output[$key] = $this->castValue($value, $castAs, $key);
+		
+		return $this;
+	}
+	
+	/**
+	 * Appends one item to a top-level array.
+	 *
+	 * If the array does not exist, it is created. Array/map values are appended
+	 * as one item, not expanded.
+	 *
+	 * @param string $arrKey Top-level array key.
+	 * @param mixed $val Item to append.
+	 * @param ?string $castAs Optional cast override.
+	 */
+	public function addToArray(string $arrKey, mixed $val, ?string $castAs = null): Response
 	{
 		// first define the array with given key if we don't have already
 		$this->addKey($arrKey);
 		if (!is_array($this->output[$arrKey])) $this->output[$arrKey] = [];
-
-		// check whether the value is an array of map; if yes then add them iteratively
-		if (is_array($val)) foreach ($val as $map) $this->addToArr($arrKey, $map);
-
-		// otherwise add the value normally
-		else $this->addToArr($arrKey, $val);
 		
-		return $this;
-	}
-
-	private function addToArr(string $arrKey, $val): void
-	{
-		$this->output[$arrKey][] =  $val;
-	}
-
-	/**
-	 * This method can take a map or object and add the keys and the values in the JSON output
-	 * buffer iteratively. Every property of the passed object will be the direct properties
-	 * of the final JSON output object. Existing property value of the main JSON output object
-	 * will be overridden by latest property value.
-	 *
-	 * @param array|object $map The map(array/object) you want to add directly to the JSON output object.
-	 * @return Response returns this object for further method chaining
-	 */
-	public function addFromMap(array|object $map): Response
-	{
-		$this->checkMap($map);
-		foreach ($map as $key => $value) $this->add($key, $value);
-		
-		return $this;
-	}
-
-	/**
-	 * This method internally calls on {@link addFromMap} on the argument map array iteratively. This method
-	 * will override the existing property value if any presents already in the JSON output object.
-	 *
-	 * @param $maps <p>It must be an array containing maps(array/object).</p>
-	 * @return Response returns this object for further method chaining
-	 *
-	 * @noinspection PhpUnused
-	 * */
-	public function addFromMaps($maps): Response
-	{
-		if (!is_array($maps)) throw new InvalidArgumentException('The value has to be an array of maps');
-		foreach ($maps as $map) $this->addFromMap($map);
-		
-		return $this;
-	}
-
-	/**
-	 * This method checks whether a value is either a map of array or object. If not then
-	 * it throw an InvalidArgumentException.
-	 *
-	 * @param mixed $val The value which has to be a map
-	 * @return void
-	 * */
-	private function checkMap(mixed $val): void
-	{
-		if (!is_object($val) && !is_array($val))
-			throw new InvalidArgumentException('The value has to be a map of either array or object.');
-	}
-
-	/**
-	 * Using this method, we can add any key-value pair as property of specified object of JSON
-	 * output object. Each key-value pair or property will go under the map key of JSON output
-	 * object.
-	 *
-	 * @param string $mapKey The name of the property of the JSON output object which will hold
-	 * key-value pari property.
-	 * @param string $key The name of the property.
-	 * @param mixed $val The value of the property
-	 *
-	 * @return Response returns this object for further method chaining
-	 */
-	public function addToMap(string $mapKey, string $key, mixed $val): Response
-	{
-		$this->addKey($mapKey);
-		if ($this->output[$mapKey] == null) $this->output[$mapKey] = [];
-		$this->output[$mapKey][$key] = $val;
-		
-		return $this;
-	}
-
-	/**
-	 * This method takes a map/object and put their properties with values under a direct property
-	 * of the JSON output object. It checks whether passed map is an actual map or not. It then
-	 * internally call {@link addToMap} iteratively to add all the properties of the given map to the
-	 * specified map/object of the JSON output object.
-	 *
-	 * @param string $mapKey The property of JSON output object which will hold each property of given
-	 * map.
-	 * @param array|object $map The map(array/object) whose properties will be copied to the property-object of
-	 * JSON output object.
-	 * @return Response returns this object for further method chaining
-	 */
-	public function addMapToMap(string $mapKey, array|object $map): Response
-	{
-		$this->checkMap($map);
-		foreach ($map as $key => $value) $this->addToMap($mapKey, $key, $value);
-		
-		return $this;
-	}
-
-	/**
-	 * This method iteratively calls on
-	 * @param string $mapKey The property of JSON output object which will hold each property of given
-	 * map.
-	 * @param mixed $mapArray The array which contains the maps of arrays or objects
-	 * @return Response returns this object for further method chaining
-	 *
-	 * @noinspection PhpUnused
-	 */
-	public function addMapsToMap(string $mapKey, mixed $mapArray): Response
-	{
-		if (!is_array($mapArray)) throw new InvalidArgumentException('an array of maps is required.');
-		foreach ($mapArray as $map) $this->addMapToMap($mapKey, $map);
+		// add the passed value as ONE array item
+		$this->addToArr($arrKey, $val, $castAs);
 		
 		return $this;
 	}
 	
+	/**
+	 * Copies map/object properties to the top-level output.
+	 *
+	 * Existing keys are overwritten. $castMap may define per-field cast rules.
+	 * Fields missing from $castMap use the object casting policy.
+	 *
+	 * @param array|object $map Source map/object.
+	 * @param array<string|int, string>|null $castMap Optional field cast rules.
+	 */
+	public function addFromMap(array|object $map, ?array $castMap = null): Response
+	{
+		$this->checkMap($map);
+		
+		foreach ($map as $key => $value) {
+			$castAs = $castMap === null ? null : $this->getMapCastType($castMap, $key);
+			$this->add((string) $key, $value, $castAs);
+		}
+		
+		return $this;
+	}
+	
+	/**
+	 * Adds or replaces one property inside a nested object.
+	 *
+	 * If the nested object does not exist, it is created.
+	 *
+	 * @param string $mapKey Top-level object key.
+	 * @param string $key Nested property key.
+	 * @param mixed $val Value to store.
+	 * @param ?string $castAs Optional cast override.
+	 */
+	public function addToMap(string $mapKey, string $key, mixed $val, ?string $castAs = null): Response
+	{
+		$this->addKey($mapKey);
+		if ($this->output[$mapKey] == null) $this->output[$mapKey] = [];
+		$this->output[$mapKey][$key] = $this->castValue($val, $castAs, $key);
+		
+		return $this;
+	}
+	
+	/**
+	 * Copies map/object properties into a nested object.
+	 *
+	 * Existing nested keys are overwritten. $castMap may define per-field cast rules.
+	 * Fields missing from $castMap use the object casting policy.
+	 *
+	 * @param string $mapKey Top-level object key.
+	 * @param array|object $map Source map/object.
+	 * @param array<string|int, string>|null $castMap Optional field cast rules.
+	 */
+	public function addMapToMap(string $mapKey, array|object $map, ?array $castMap = null): Response
+	{
+		$this->checkMap($map);
+		
+		foreach ($map as $key => $value) {
+			$castAs = $castMap === null ? null : $this->getMapCastType($castMap, $key);
+			$this->addToMap($mapKey, (string) $key, $value, $castAs);
+		}
+		
+		return $this;
+	}
+	
+	/**
+	 * Sets the HTTP status code.
+	 *
+	 * @throws InvalidArgumentException If the code is outside 100-599.
+	 */
 	public function httpStatus(int $code): Response
 	{
 		if ($code < 100 || $code > 599) {
@@ -294,5 +259,153 @@ class Response
 		
 		throw $this->trunk;
 	}
-
+	
+	/**
+	 * Sets the object-level casting policy.
+	 *
+	 * Only CAST_DEFAULT and CAST_AUTO are allowed. Explicit scalar casts are
+	 * per-value rules, not response-wide policies.
+	 *
+	 * @throws InvalidArgumentException If the policy is invalid.
+	 */
+	public function setAutoCasting(string $castBehavior): Response
+	{
+		if (!in_array($castBehavior, [self::CAST_DEFAULT, self::CAST_AUTO], true)) {
+			throw new InvalidArgumentException('Invalid response cast behavior.');
+		}
+		
+		$this->castBehavior = $castBehavior;
+		
+		return $this;
+	}
+	
+	public function getAutoCasting(): string
+	{
+		return $this->castBehavior;
+	}
+	
+	private function addKey(string $key): void
+	{
+		if (!array_key_exists($key, $this->output)) $this->output[$key] = null;
+	}
+	
+	/**
+	 * This method checks whether a value is either a map of array or object. If not then
+	 * it throw an InvalidArgumentException.
+	 *
+	 * @param mixed $val The value which has to be a map
+	 * @return void
+	 * */
+	private function checkMap(mixed $val): void
+	{
+		if (!is_object($val) && !is_array($val))
+			throw new InvalidArgumentException('The value has to be a map of either array or object.');
+	}
+	
+	private function addToArr(string $arrKey, mixed $val, ?string $castAs = null): void
+	{
+		$this->output[$arrKey][] = $this->castValue($val, $castAs, $arrKey);
+	}
+	
+	private function castValue(mixed $value, ?string $castAs = null, ?string $key = null): mixed
+	{
+		$castAs ??= $this->castBehavior;
+		
+		return match ($castAs) {
+			self::CAST_DEFAULT => $value,
+			self::CAST_AUTO => $this->autoCastValue($value, $key),
+			self::CAST_INT => $this->castDeep($value, fn(mixed $v): ?int => $v === null ? null : (int) $v),
+			self::CAST_FLOAT => $this->castDeep($value, fn(mixed $v): ?float => $v === null ? null : (float) $v),
+			self::CAST_BOOL => $this->castDeep($value, fn(mixed $v): ?bool => $this->castBool($v)),
+			self::CAST_STRING => $this->castDeep($value, fn(mixed $v): ?string => $v === null ? null : (string) $v),
+			default => throw new InvalidArgumentException('Invalid response cast type.'),
+		};
+	}
+	
+	private function castDeep(mixed $value, callable $caster): mixed
+	{
+		if (is_array($value)) {
+			foreach ($value as $k => $v) {
+				$value[$k] = $this->castDeep($v, $caster);
+			}
+			
+			return $value;
+		}
+		
+		if (is_object($value)) {
+			return $value;
+		}
+		
+		return $caster($value);
+	}
+	
+	private function autoCastValue(mixed $value, ?string $key = null): mixed
+	{
+		if (is_array($value)) {
+			foreach ($value as $k => $v) {
+				$value[$k] = $this->autoCastValue($v, is_string($k) ? $k : null);
+			}
+			
+			return $value;
+		}
+		
+		if (!is_string($value)) {
+			return $value;
+		}
+		
+		$raw = $value;
+		$value = trim($value);
+		
+		if ($value === '') {
+			return $raw;
+		}
+		
+		// Keep common numeric-looking string fields safe.
+		if ($key !== null && preg_match('/(?:phone|mobile|postcode|zipcode|zip|code|otp|pin|token|secret|password|hash|uuid|slug)$/i', $key)) {
+			return $raw;
+		}
+		
+		// Safe integer. No leading zero except "0".
+		if (preg_match('/^-?(?:0|[1-9][0-9]*)$/', $value)) {
+			$int = filter_var($value, FILTER_VALIDATE_INT);
+			return $int === false ? $raw : $int;
+		}
+		
+		// Conservative decimal float. No exponent notation.
+		if (preg_match('/^-?(?:0|[1-9][0-9]*)\.[0-9]+$/', $value)) {
+			return (float) $value;
+		}
+		
+		return $raw;
+	}
+	
+	private function castBool(mixed $value): ?bool
+	{
+		if ($value === null) {
+			return null;
+		}
+		
+		if (is_bool($value)) {
+			return $value;
+		}
+		
+		if (is_int($value) || is_float($value)) {
+			return $value != 0;
+		}
+		
+		if (is_string($value)) {
+			return match (strtolower(trim($value))) {
+				'0', 'false', 'no', 'off', '' => false,
+				default => true,
+			};
+		}
+		
+		return (bool) $value;
+	}
+	
+	private function getMapCastType(array $castMap, string|int $key): ?string
+	{
+		return array_key_exists($key, $castMap) ? $castMap[$key] : null;
+	}
+	
 }

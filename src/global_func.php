@@ -14,10 +14,11 @@ use Hati\Util\Util;
 /**
  * Var dump any type of variable for debugging.
  *
- * @param mixed $var Any variable
- * @param bool $exit When set to true it exits the script after dumping the variable
+ * @param mixed $var 	 Any variable
+ * @param bool $exit 	 When set to true it exits the script after dumping the variable
+ * @param bool $showFile Controls whether to show the file:line-number from where it is invoked
  **/
-function vd(mixed $var, bool $exit = true): void
+function vd(mixed $var, bool $exit = true, bool $showFile = true): void
 {
 	if (is_object($var)) {
 		if (Util::isCLI()) var_dump($var);
@@ -39,14 +40,16 @@ function vd(mixed $var, bool $exit = true): void
 	if (Util::isCLI()) echo $var;
 	else echo "<pre>$var</pre>";
 	
-	$trace  = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
-	$file   = $trace['file'] ?? '';
-	$line   = $trace['line'] ?? '';
-	$line   = empty($line) ? '' : ":$line";
-	
-	$calledAt = "$file$line";
-	$calledAt = Util::isCLI() ? "\n$calledAt" : $calledAt;
-	echo $calledAt;
+	if ($showFile) {
+		$trace  = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+		$file   = $trace['file'] ?? '';
+		$line   = $trace['line'] ?? '';
+		$line   = empty($line) ? '' : ":$line";
+		
+		$calledAt = "$file$line";
+		$calledAt = Util::isCLI() ? "\n$calledAt" : $calledAt;
+		echo $calledAt;
+	}
 
 	if ($exit) exit;
 }

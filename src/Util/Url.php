@@ -56,8 +56,10 @@ abstract class Url
 	 * */
 	public static function path(string $url = ''): string
 	{
-		$url = self::getUrl($url);
-		return substr(parse_url($url, PHP_URL_PATH), 1);
+		$url  = self::getUrl($url);
+		$path = parse_url($url, PHP_URL_PATH);
+		
+		return $path === null || $path === false ? '' : substr($path, 1);
 	}
 
 	/**
@@ -90,22 +92,35 @@ abstract class Url
 	 * */
 	public static function param(string $key, mixed $defVal = null, string $url = '', bool $throwErr = false): mixed
 	{
-		$returnValue = $defVal;
-
 		$url = self::getUrl($url);
-		$params = explode('&', parse_url($url, PHP_URL_QUERY));
-		foreach ($params as $v) {
-			$param = explode('=', $v);
-			if ($key == $param[0]) {
-				$returnValue = $param[1];
-				break;
+		
+		$query = parse_url($url, PHP_URL_QUERY);
+		
+		if ($query === null || $query === false || $query === '') {
+			if ($throwErr) {
+				throw new Trunk(sprintf('Key %s was not found in the url: %s', $key, $url));
+			}
+			
+			return $defVal;
+		}
+		
+		foreach (explode('&', $query) as $pair) {
+			if ($pair === '') {
+				continue;
+			}
+			
+			[$paramKey, $paramValue] = array_pad(explode('=', $pair, 2), 2, '');
+			
+			if (urldecode($paramKey) === $key) {
+				return urldecode($paramValue);
 			}
 		}
-
-		if ($returnValue == $defVal && $throwErr)
+		
+		if ($throwErr) {
 			throw new Trunk(sprintf('Key %s was not found in the url: %s', $key, $url));
-
-		return $returnValue;
+		}
+		
+		return $defVal;
 	}
 
 	/**

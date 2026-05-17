@@ -25,7 +25,7 @@ class Shomoy
 
 	// During construction of shomoy object, it created the internal datetime
 	// object with server's default timezone.
-	public function __construct(string $time = 'now', string $timezone = null)
+	public function __construct(string $time = 'now', ?string $timezone = null)
 	{
 		try {
 			$timezone = $timezone ?? date_default_timezone_get();

@@ -165,8 +165,10 @@ class DataFilter
 	/**
 	 * Validates the source and calls error handler if validation fails.
 	 */
-	public function validate(array $source, ?callable $errHandler = null): void
+	public function validate(?array $source, ?callable $errHandler = null): void
 	{
+		$source ??= [];
+		
 		if ($errHandler !== null) {
 			$this->setErrHandler($errHandler);
 		}

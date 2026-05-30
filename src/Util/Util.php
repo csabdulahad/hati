@@ -3,6 +3,8 @@
 namespace Hati\Util;
 
 
+use Random\RandomException;
+
 /**
  * Util class is a helper class which has many helpful methods that can easily deal with
  * session, cookie and other aspect of a project. This class is under continuous improvement
@@ -120,7 +122,85 @@ class Util
 	 */
 	public static function randToken(int $len = 11): string
 	{
-		return substr(str_shuffle(md5(time())),0, $len);
+		$ts = (string) time();
+		
+		return $ts
+				|> md5(...)
+				|> str_shuffle(...)
+				|> (fn($x) => substr($x, 0, $len));
+	}
+	
+	/**
+	 * Generate a random integer with the requested digit length.
+	 *
+	 * The length is clamped between 1 and the maximum safe integer digit length.
+	 * Uses random_int() first. If secure random generation fails, falls back to
+	 * mt_rand(), which is less secure but avoids throwing an exception.
+	 *
+	 * This does not guarantee uniqueness; use a database UNIQUE constraint for that.
+	 *
+	 * @param int $length Number of digits to generate.
+	 * @return int Random integer with the requested digit length where possible.
+	 */
+	public static function randomInt(int $length): int
+	{
+		$maxLength = strlen((string) PHP_INT_MAX);
+		$length = self::clamp($length, 1, $maxLength);
+		
+		$min = $length === 1 ? 0 : 10 ** ($length - 1);
+		$max = $length === $maxLength
+			? PHP_INT_MAX
+			: (10 ** $length) - 1;
+		
+		try {
+			return random_int($min, $max);
+		} catch (RandomException) {
+			return self::fallbackRandomInt($length);
+		}
+	}
+	
+	/**
+	 * Generate a fallback random integer using mt_rand().
+	 *
+	 * This is only used when random_int() fails.
+	 *
+	 * @param int $length Number of digits to generate.
+	 * @return int Fallback random integer.
+	 */
+	private static function fallbackRandomInt(int $length): int
+	{
+		$maxIntString = (string) PHP_INT_MAX;
+		
+		do {
+			$number = '';
+			
+			for ($i = 0; $i < $length; $i++) {
+				$minDigit = ($i === 0 && $length > 1) ? 1 : 0;
+				$number .= mt_rand($minDigit, 9);
+			}
+		} while (
+			strlen($number) === strlen($maxIntString)
+			&& strcmp($number, $maxIntString) > 0
+		);
+		
+		return (int) $number;
+	}
+	
+	/**
+	 * Clamp an integer between a minimum and maximum value.
+	 *
+	 * @param int $value The value to clamp.
+	 * @param int $min Minimum allowed value.
+	 * @param int $max Maximum allowed value.
+	 * @return int The clamped value.
+	 */
+	public static function clamp(int $value, int $min, int $max): int
+	{
+		if ($min > $max) {
+			[$min, $max] = [$max, $min];
+		}
+		
+		return max($min, min($value, $max));
 	}
 
 	/**

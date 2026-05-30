@@ -59,15 +59,6 @@ class Util
 	}
 
 	/**
-	 * Using this method the execution environment can be extracted.
-	 * @return string Returns 'cli' if it is running CLI, 'server' if running in Apache/CGI
-	 * **/
-	public static function getExecEnv(): string
-	{
-		return self::isCLI() ? 'cli' : 'server';
-	}
-
-	/**
 	 * Figures out whether a directory is empty or not.
 	 *
 	 * @param string $dirPath The directory path
@@ -76,6 +67,46 @@ class Util
 	public static function isDirEmpty(string $dirPath): bool
 	{
 		return count(glob($dirPath . '/*')) === 0;
+	}
+	
+	/**
+	 * Check whether the given string is a valid email address.
+	 * This only validates the email format.
+	 *
+	 * @param string $value The string to validate.
+	 * @return bool True if the string is a valid email address, false otherwise.
+	 */
+	public static function isEmail(string $value): bool
+	{
+		return filter_var(trim($value), FILTER_VALIDATE_EMAIL) !== false;
+	}
+	
+	/**
+	 * Check whether the current request appears to come from a mobile/tablet device.
+	 *
+	 * This uses the browser's User-Agent header to detect common mobile devices
+	 * such as Android, iPhone, iPad, and iPod. It is intended for lightweight UI
+	 * decisions only, not for security or critical business logic.
+	 *
+	 * @param string|null $httpUserAgentString Optional User-Agent string to check.
+	 *                                         If null, $_SERVER['HTTP_USER_AGENT'] is used.
+	 *
+	 * @return bool True if the User-Agent looks like a mobile/tablet device, false otherwise.
+	 */
+	public static function isMobile(?string $httpUserAgentString = null): bool
+	{
+		$ua = $httpUserAgentString ?? $_SERVER['HTTP_USER_AGENT'] ?? '';
+		
+		return preg_match('/Mobile|Android|iPhone|iPad|iPod/i', $ua) === 1;
+	}
+	
+	/**
+	 * Using this method the execution environment can be extracted.
+	 * @return string Returns 'cli' if it is running CLI, 'server' if running in Apache/CGI
+	 * **/
+	public static function getExecEnv(): string
+	{
+		return self::isCLI() ? 'cli' : 'server';
 	}
 
 	/**

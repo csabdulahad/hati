@@ -75,10 +75,10 @@ class Util
 	 * Check whether the given string is a valid email address.
 	 * This only validates the email format.
 	 *
-	 * @param string $value The string to validate.
+	 * @param mixed $value The string to validate.
 	 * @return bool True if the string is a valid email address, false otherwise.
 	 */
-	public static function isEmail(string $value): bool
+	public static function isEmail(mixed $value): bool
 	{
 		return filter_var(trim($value), FILTER_VALIDATE_EMAIL) !== false;
 	}

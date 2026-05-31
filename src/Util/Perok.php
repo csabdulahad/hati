@@ -182,10 +182,11 @@ class Perok
 	 *
 	 * @param string $msg Plain text email body.
 	 */
-	public function composeText(string $msg): void
+	public function composeText(string $msg): self
 	{
 		$this->phpMailer->isHTML(false);
 		$this->phpMailer->Body = $msg;
+		return $this;
 	}
 	
 	/**
@@ -195,10 +196,11 @@ class Perok
 	 *
 	 * @param string $msg HTML email body.
 	 */
-	public function composeHtml(string $msg): void
+	public function composeHtml(string $msg): self
 	{
 		$this->phpMailer->isHTML();
 		$this->phpMailer->Body = $msg;
+		return $this;
 	}
 	
 	/**

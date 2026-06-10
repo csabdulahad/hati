@@ -10,7 +10,7 @@ abstract class Hati
 {
 
 	// version
-	private static string $version = '7.0.50-beta';
+	private static string $version = '7.0.51-beta';
 	
 	public static function getGlobalFuncPath(): string
 	{

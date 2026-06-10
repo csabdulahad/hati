@@ -3,6 +3,8 @@
 namespace Hati\Util;
 
 use InvalidArgumentException;
+use Random\RandomException;
+use RuntimeException;
 
 /**
  * A utility class, containing helpful functions to perform cryptographic operations.
@@ -46,6 +48,23 @@ abstract class Crypto
 	public static function md5(string $value): string
 	{
 		return md5($value);
+	}
+	
+	public static function randomBytes(int $length): string
+	{
+		try {
+			return random_bytes($length);
+		} catch (RandomException $e) {
+			throw new RuntimeException(
+				message:'Secure random byte generation failed.',
+				previous: $e
+			);
+		}
+	}
+	
+	public static function randomHex(int $bytes = 32): string
+	{
+		return bin2hex(self::randomBytes($bytes));
 	}
 	
 }

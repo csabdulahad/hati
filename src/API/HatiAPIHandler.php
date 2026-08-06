@@ -24,8 +24,17 @@ final class HatiAPIHandler
 {
 
 	private const SUPPORTED_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+	
+	private const VERSION_PATTERN = '/^[0-9]+(?:\.[0-9]+)*$/';
+	private const URL_VERSION_PATTERN = '/^v([0-9]+(?:\.[0-9]+)*)$/i';
 
 	private bool $debug;
+	
+	/** Whether URL-based API versioning is enabled. */
+	private bool $useVersioning = false;
+
+	/** Highest API version clients are allowed to request. */
+	private ?string $maxApiVersion = null;
 	
 	// default casting policy for Response objects created by the handler
 	private string $responseCastBehavior = Response::CAST_DEFAULT;
@@ -34,8 +43,8 @@ final class HatiAPIHandler
 	 * Path-keyed route registry.
 	 *
 	 * [
-	 *     'v1/user' => [
-	 *         'path' => 'v1/user',
+	 *     'user' => [
+	 *         'path' => 'user',
 	 *         'handler' => UserAPI::class,
 	 *         'methods' => ['GET' => true, 'POST' => true],
 	 *         'extensions' => ['reset-password' => 'resetPassword']
@@ -71,7 +80,7 @@ final class HatiAPIHandler
 	 * Request array shape:
 	 * [
 	 *     'method' => 'GET|POST|PUT|PATCH|DELETE',
-	 *     'api' => 'v1/user/login?id=10',
+	 *     'api' => 'v1/user/login?id=10', // when versioning is enabled
 	 *     'params' => [],
 	 *     'headers' => [],
 	 *     'cookies' => [],
@@ -99,6 +108,9 @@ final class HatiAPIHandler
 		try {
 			$request = $this->normalizeRequest($request);
 			
+			$versionRequest = $this->extractVersionRequest($request['api']);
+			$request['api'] = $versionRequest['path'];
+			
 			$route = $this->matchRoute($request['api']);
 			
 			if ($route === null) {
@@ -109,6 +121,12 @@ final class HatiAPIHandler
 			$target = $this->resolveTarget($route, $segments, $request['method']);
 			
 			$api = $this->createAPI($route['handler']);
+			$versionContext = $this->resolveVersionContext($api, $versionRequest['requested_version']);
+			
+			$api->setAPIVersions(
+				$versionContext['request_version'],
+				$versionContext['version']
+			);
 			
 			$api->setHeaders($request['headers']);
 			$api->setCookies($request['cookies']);
@@ -133,15 +151,16 @@ final class HatiAPIHandler
 			}
 			
 			$response = $this->createResponse();
+			$this->appendVersionContextInfo($response, $versionContext);
 			
 			$method = $target['target'];
 			$api->$method($response);
 			
-			Trunk::http501('API did not produce a response');
-			
+			$response
+				->httpStatus(501)
+				->reply('API did not produce a response', Response::ERROR);
 		} catch (Trunk $e) {
 			return $e->toArray();
-			
 		} catch (Throwable $e) {
 			return $this->internalError($e);
 		}
@@ -164,7 +183,7 @@ final class HatiAPIHandler
 	 * Example:
 	 * <code>
 	 * [
-	 *     'path' => 'v1/user',
+	 *     'path' => 'user',
 	 *     'handler' => \App\Api\UserAPI::class,
 	 *     'method' => ['GET', 'POST'],
 	 *     'extension' => ['login', 'reset-password']
@@ -172,9 +191,12 @@ final class HatiAPIHandler
 	 * </code>
 	 *
 	 * This registers:
+	 * With versioning enabled, this registers:
 	 * - GET/POST /v1/user to the get()/post() methods
 	 * - /v1/user/login to login()
 	 * - /v1/user/reset-password to resetPassword()
+	 *
+	 * The version segment is resolved and removed before matching the registered path.
 	 *
 	 * Re-registering the same path with the same handler merges methods and extensions.
 	 * Re-registering the same path with a different handler is treated as a registry error.
@@ -254,6 +276,22 @@ final class HatiAPIHandler
 			'extensions' => $extensions
 		];
 		
+		return $this;
+	}
+
+	/**
+	 * Enables URL-based API versioning.
+	 *
+	 * The first API path segment must then be a version such as v2 or v3.0.1.
+	 * The supplied value is the highest version clients are allowed to request.
+	 *
+	 * @param string $maxVersion Maximum requestable API version.
+	 */
+	public function enableVersioning(string $maxVersion): HatiAPIHandler
+	{
+		$this->maxApiVersion = $this->normalizeVersion($maxVersion, 'enableVersioning');
+		$this->useVersioning = true;
+
 		return $this;
 	}
 
@@ -358,6 +396,340 @@ final class HatiAPIHandler
 			$e->getFile(),
 			$e->getLine()
 		);
+	}
+	
+	/**
+	 * Extracts and removes the leading URL version segment when versioning is enabled.
+	 *
+	 * @return array{path: string, requested_version: ?string}
+	 */
+	private function extractVersionRequest(string $path): array
+	{
+		if (!$this->useVersioning) {
+			return [
+				'path' => $path,
+				'requested_version' => null
+			];
+		}
+
+		$segments = explode('/', $path);
+		$versionSegment = $segments[0] ?? '';
+
+		if (!preg_match(self::URL_VERSION_PATTERN, $versionSegment, $matches)) {
+			Trunk::http400('Missing API version');
+		}
+		
+		$requestedVersion = $matches[1];
+
+		if (
+			$this->maxApiVersion === null ||
+			version_compare($requestedVersion, $this->maxApiVersion, '>')
+		) {
+			Trunk::http400('Unknown API version ' . $requestedVersion);
+		}
+
+		array_shift($segments);
+		
+		return [
+			'path' => implode('/', $segments),
+			'requested_version' => $requestedVersion
+		];
+	}
+		
+	/**
+	 * Resolves the version that will actually serve the request for the matched API.
+	 *
+	 * @return array{
+	 *     request_version: ?string,
+	 *     version: ?string,
+	 *     state: string,
+	 *     message: ?string,
+	 *     suggested_version: ?string
+	 * }
+	 */
+	private function resolveVersionContext(HatiAPI $api, ?string $requestedVersion): array
+	{
+		if (!$this->useVersioning) {
+			return [
+				'request_version' => null,
+				'version' => null,
+				'state' => 'disabled',
+				'message' => null,
+				'suggested_version' => null
+			];
+		}
+
+		if ($requestedVersion === null) {
+			Trunk::http400('Missing API version');
+		}
+
+		$map = $api->versionMap();
+
+		if ($map === null) {
+			return [
+				'request_version' => $requestedVersion,
+				'version' => $requestedVersion,
+				'state' => HatiAPI::VERSION_ACTIVE,
+				'message' => null,
+				'suggested_version' => null
+			];
+		}
+				
+		$map = $this->normalizeVersionMap($map, $api::class);
+		$versions = $this->sortVersions(array_keys($map));
+		$smallestVersion = $versions[0];
+
+		if (version_compare($requestedVersion, $smallestVersion, '<')) {
+			Trunk::http400('Unknown API version ' . $requestedVersion);
+		}
+
+		$matchedVersion = $this->findEquivalentVersion($versions, $requestedVersion);
+
+		if ($matchedVersion !== null) {
+			$status = $map[$matchedVersion];
+
+			if ($status === HatiAPI::VERSION_RETIRED) {
+				$suggestedVersion = $this->findSuggestedActiveVersion($map, $requestedVersion);
+				Trunk::http400($this->retiredVersionMessage($matchedVersion, $suggestedVersion));
+			}
+		
+			if ($status === HatiAPI::VERSION_DEPRECATED) {
+				$suggestedVersion = $this->findSuggestedActiveVersion($map, $requestedVersion);
+
+				return [
+					'request_version' => $requestedVersion,
+					'version' => $matchedVersion,
+					'state' => HatiAPI::VERSION_DEPRECATED,
+					'message' => $this->deprecatedVersionMessage($matchedVersion, $suggestedVersion),
+					'suggested_version' => $suggestedVersion
+				];
+			}
+				
+			return [
+				'request_version' => $requestedVersion,
+				'version' => $matchedVersion,
+				'state' => HatiAPI::VERSION_ACTIVE,
+				'message' => null,
+				'suggested_version' => null
+			];
+		}
+
+		$fallbackVersion = $this->findGreatestActiveVersionAtOrBelow($map, $requestedVersion);
+
+		if ($fallbackVersion === null) {
+			Trunk::http400('Unknown API version ' . $requestedVersion);
+		}
+
+		return [
+			'request_version' => $requestedVersion,
+			'version' => $fallbackVersion,
+			'state' => HatiAPI::VERSION_ACTIVE,
+			'message' => null,
+			'suggested_version' => null
+		];
+	}
+
+	/** @return array<string, string> */
+	private function normalizeVersionMap(array $map, string $apiClass): array
+	{
+		if ($map === []) {
+			Trunk::http500('API-Versioning: versionMap() cannot return an empty array: ' . $apiClass);
+		}
+
+		$normalized = [];
+		
+		$allowedStatuses = [
+			HatiAPI::VERSION_ACTIVE,
+			HatiAPI::VERSION_DEPRECATED,
+			HatiAPI::VERSION_RETIRED
+		];
+
+		foreach ($map as $version => $status) {
+			if (!is_string($version) && !is_int($version)) {
+				Trunk::http500('API-Versioning: versionMap() contains an invalid version key: ' . $apiClass);
+			}
+
+			$version = $this->normalizeVersion((string) $version, $apiClass . '::versionMap');
+
+			if ($this->maxApiVersion !== null && version_compare($version, $this->maxApiVersion, '>')) {
+				Trunk::http500(sprintf(
+					'API-Versioning: Version %s in %s::versionMap() exceeds the handler maximum %s',
+					$version,
+					$apiClass,
+					$this->maxApiVersion
+				));
+			}
+
+			foreach (array_keys($normalized) as $existingVersion) {
+				if (version_compare($existingVersion, $version, '==')) {
+					Trunk::http500(sprintf(
+						'API-Versioning: Duplicate equivalent versions %s and %s in %s::versionMap()',
+						$existingVersion,
+						$version,
+						$apiClass
+					));
+				}
+			}
+
+			if (!is_string($status)) {
+				Trunk::http500('API-Versioning: Version statuses must be strings in ' . $apiClass . '::versionMap()');
+			}
+
+			$status = strtolower(trim($status));
+
+			if (!in_array($status, $allowedStatuses, true)) {
+				Trunk::http500(sprintf(
+					'API-Versioning: Invalid status "%s" for version %s in %s::versionMap()',
+					$status,
+					$version,
+					$apiClass
+				));
+			}
+
+			$normalized[$version] = $status;
+		}
+
+		return $normalized;
+	}
+
+	/** @param string[] $versions
+	 *  @return string[]
+	 */
+	private function sortVersions(array $versions): array
+	{
+		usort($versions, static fn(string $a, string $b): int => version_compare($a, $b));
+		return $versions;
+	}
+
+	/** @param string[] $versions */
+	private function findEquivalentVersion(array $versions, string $requestedVersion): ?string
+	{
+		return array_find($versions, fn($version) => version_compare($version, $requestedVersion, '=='));
+	}
+
+	/** @param array<string, string> $map */
+	private function findGreatestActiveVersionAtOrBelow(array $map, string $requestedVersion): ?string
+	{
+		$activeVersions = [];
+
+		foreach ($map as $version => $status) {
+			if (
+				$status === HatiAPI::VERSION_ACTIVE &&
+				version_compare($version, $requestedVersion, '<=')
+			) {
+				$activeVersions[] = $version;
+			}
+		}
+
+		if ($activeVersions === []) {
+			return null;
+		}
+
+		$activeVersions = $this->sortVersions($activeVersions);
+		return $activeVersions[array_key_last($activeVersions)];
+	}
+
+	/** @param array<string, string> $map */
+	private function findSuggestedActiveVersion(array $map, string $requestedVersion): ?string
+	{
+		$activeVersions = [];
+
+		foreach ($map as $version => $status) {
+			if ($status === HatiAPI::VERSION_ACTIVE) {
+				$activeVersions[] = $version;
+			}
+		}
+
+		if ($activeVersions === []) {
+			return null;
+		}
+
+		$activeVersions = $this->sortVersions($activeVersions);
+
+		foreach ($activeVersions as $version) {
+			if (version_compare($version, $requestedVersion, '>')) {
+				return $version;
+			}
+		}
+
+		return $activeVersions[array_key_last($activeVersions)];
+	}
+
+	private function deprecatedVersionMessage(string $version, ?string $suggestedVersion): string
+	{
+		if ($suggestedVersion !== null) {
+			return sprintf(
+				'API version %s will be removed soon. Please upgrade to API version %s.',
+				$version,
+				$suggestedVersion
+			);
+		}
+
+		return sprintf(
+			'API version %s will be removed soon. Please upgrade to a supported API version.',
+			$version
+		);
+	}
+
+	private function retiredVersionMessage(string $version, ?string $suggestedVersion): string
+	{
+		if ($suggestedVersion !== null) {
+			return sprintf(
+				'API version %s has been retired and is no longer supported. Please use API version %s.',
+				$version,
+				$suggestedVersion
+			);
+		}
+
+		return sprintf(
+			'API version %s has been retired and is no longer supported.',
+			$version
+		);
+	}
+
+	private function normalizeVersion(string $version, string $setting): string
+	{
+		$version = trim($version);
+
+		if (!preg_match(self::VERSION_PATTERN, $version)) {
+			throw new InvalidArgumentException(
+				$setting . ' contains an invalid version: ' . $version . '. Use strings such as 1, 2.0, or 3.0.1.'
+			);
+		}
+
+		return $version;
+	}
+
+	/**
+	 * Adds version metadata before the response is serialized.
+	 *
+	 * @param array{
+	 *     request_version: ?string,
+	 *     version: ?string,
+	 *     state: string,
+	 *     message: ?string,
+	 *     suggested_version: ?string
+	 * } $versionContext
+	 */
+	private function appendVersionContextInfo(Response $response, array $versionContext): void
+	{
+		if ($versionContext['state'] === 'disabled') {
+			return;
+		}
+
+		$response
+			->addToMap('api', 'version', $versionContext['version'])
+			->addToMap('api', 'request_version', $versionContext['request_version']);
+			
+		if ($versionContext['state'] !== HatiAPI::VERSION_DEPRECATED) {
+			return;
+		}
+
+		if ($versionContext['suggested_version'] !== null) {
+			$response->addToMap('api', 'suggested_version', $versionContext['suggested_version']);
+		}
+
+		$response->addToMap('api', 'message', $versionContext['message']);
 	}
 	
 	private function normalizeMethods(mixed $methods): array

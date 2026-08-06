@@ -19,6 +19,10 @@ use Hati\Util\Text;
 abstract class HatiAPI
 {
 
+	public const VERSION_ACTIVE 	= 'active';
+	public const VERSION_DEPRECATED = 'deprecated';
+	public const VERSION_RETIRED 	= 'retired';
+
 	/** Catches the request body for JSON & raw */
 	private array $reqBody = [];
 
@@ -39,6 +43,12 @@ abstract class HatiAPI
 	
 	/** Tell which HTTP verb the API is handling */
 	private string $requestMethod = '';
+
+	/** API version requested in the URL. Null when handler versioning is disabled. */
+	public readonly ?string $requestedApiVersion;
+
+	/** API version selected to serve the request. Null when handler versioning is disabled. */
+	public readonly ?string $apiVersion;
 
 	/**
 	 * Initialize the API with necessary stuff. Any API that needs to be public,
@@ -188,6 +198,20 @@ abstract class HatiAPI
 	}
 
 	/**
+	 * Defines the version lifecycle for this API.
+	 *
+	 * Return null when the API is version-agnostic. Otherwise, return a map whose
+	 * keys are API versions and values are VERSION_ACTIVE, VERSION_DEPRECATED,
+	 * or VERSION_RETIRED.
+	 *
+	 * @return array<string, string>|null
+	 */
+	public function versionMap(): ?array
+	{
+		return null;
+	}
+	
+	/**
 	 * Returns the header value specified by the key.
 	 *
 	 * @param string $key the header key
@@ -297,6 +321,19 @@ abstract class HatiAPI
 	public function setRequestMethod(string $method): void
 	{
 		$this->requestMethod = strtoupper(trim($method));
+	}
+	
+	/**
+	 * Assigns the requested and resolved API versions once before the API lifecycle starts.
+	 *
+	 * This is an internal handler hook. API implementations should read
+	 * {@link $requestedApiVersion}, {@link $apiVersion}, or their getter methods
+	 * instead of invoking it.
+	 */
+	public final function setAPIVersions(?string $requestedVersion, ?string $resolvedVersion): void
+	{
+		$this->requestedApiVersion = $requestedVersion;
+		$this->apiVersion = $resolvedVersion;
 	}
 	
 	public function setBody(mixed $body): void

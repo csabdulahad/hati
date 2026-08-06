@@ -10,7 +10,7 @@ abstract class Hati
 {
 
 	// version
-	private static string $version = '7.0.51-beta';
+	public const string VERSION = '7.0.52-beta';
 	
 	public static function getGlobalFuncPath(): string
 	{
@@ -29,16 +29,6 @@ abstract class Hati
 	{
 		if (DIRECTORY_SEPARATOR == '\\') return str_replace('/', '\\', $path);
 		return str_replace('\\', '/', $path);
-	}
-
-	/**
-	 * Tells about which version of the Hati is running.
-	 *
-	 * @return string version of the Hati in use
-	 * */
-	public static function version(): string
-	{
-		return self::$version;
 	}
 	
 }

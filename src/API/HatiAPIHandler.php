@@ -718,8 +718,8 @@ final class HatiAPIHandler
 		}
 
 		$response
-			->addToMap('api', 'version', $versionContext['version'])
-			->addToMap('api', 'request_version', $versionContext['request_version']);
+			->addToMap('api', 'version_served', $versionContext['version'])
+			->addToMap('api', 'version_requested', $versionContext['request_version']);
 			
 		if ($versionContext['state'] !== HatiAPI::VERSION_DEPRECATED) {
 			return;

@@ -41,6 +41,16 @@ class Response
 	// buffer for JSON output
 	private array $output = [];
 	
+	/**
+	 * Extra metadata to include inside the response object.
+	 */
+	private array $meta = [];
+	
+	/**
+	 * Hati-owned API metadata.
+	 */
+	private readonly ?array $apiInfo;
+	
 	private Trunk $trunk;
 	
 	private string $castBehavior = self::CAST_DEFAULT;
@@ -49,10 +59,13 @@ class Response
 	 * Creates a response with HTTP 200, SUCCESS status, and the given casting policy.
 	 *
 	 * @param string $castBehavior CAST_DEFAULT or CAST_AUTO.
+	 * @param ?array $apiInfo Hati-owned API metadata.
 	 */
-	public function __construct(string $castBehavior = self::CAST_DEFAULT)
+	public function __construct(string $castBehavior = self::CAST_DEFAULT, ?array $apiInfo = null)
 	{
-		$this->trunk = new Trunk(msg: '', httpStatusCode: 200, status: self::SUCCESS);
+		$this->trunk 	= new Trunk(msg: '', httpStatusCode: 200, status: self::SUCCESS);
+		$this->apiInfo  = $apiInfo;
+		
 		$this->setAutoCasting($castBehavior);
 	}
 	
@@ -157,6 +170,26 @@ class Response
 	}
 	
 	/**
+	 * Adds or replaces metadata in the response object.
+	 *
+	 * The keys `status`, `msg`, and `api` are reserved by Hati.
+	 *
+	 * @param string $key Metadata key.
+	 * @param mixed $value Metadata value.
+	 * @return Response
+	 */
+	public function addMeta(string $key, mixed $value): Response
+	{
+		if (in_array($key, ['status', 'msg', 'api'], true)) {
+			throw new InvalidArgumentException("Response key '$key' is reserved by Hati.");
+		}
+		
+		$this->meta[$key] = $value;
+		
+		return $this;
+	}
+	
+	/**
 	 * Sets the HTTP status code.
 	 *
 	 * @throws InvalidArgumentException If the code is outside 100-599.
@@ -245,7 +278,17 @@ class Response
 		$this->trunk->msg = $msg;
 		$this->trunk->status = $status;
 		
-		$this->output['response'] = $this->trunk->responseObject();
+		$response = $this->trunk->responseObject();
+		
+		foreach ($this->meta as $key => $value) {
+			$response[$key] = $value;
+		}
+		
+		if ($this->apiInfo !== null) {
+			$response['api'] = $this->apiInfo;
+		}
+		
+		$this->output['response'] = $response;
 		
 		if (!empty($headers)) {
 			$this->addHeaders($headers);

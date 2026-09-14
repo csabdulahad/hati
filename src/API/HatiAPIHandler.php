@@ -150,8 +150,8 @@ final class HatiAPIHandler
 				$api->authenticate($target['auth_name']);
 			}
 			
-			$response = $this->createResponse();
-			$this->appendVersionContextInfo($response, $versionContext);
+			$apiInfo  = $this->buildAPIInfo($versionContext);
+			$response = $this->createResponse($apiInfo);
 			
 			$method = $target['target'];
 			$api->$method($response);
@@ -701,7 +701,7 @@ final class HatiAPIHandler
 	}
 
 	/**
-	 * Adds version metadata before the response is serialized.
+	 * Builds API version metadata for the response.
 	 *
 	 * @param array{
 	 *     request_version: ?string,
@@ -710,26 +710,29 @@ final class HatiAPIHandler
 	 *     message: ?string,
 	 *     suggested_version: ?string
 	 * } $versionContext
+	 *
+	 * @return ?array API metadata, or null when versioning is disabled.
 	 */
-	private function appendVersionContextInfo(Response $response, array $versionContext): void
+	private function buildAPIInfo(array $versionContext): ?array
 	{
 		if ($versionContext['state'] === 'disabled') {
-			return;
+			return null;
 		}
-
-		$response
-			->addToMap('api', 'version_served', $versionContext['version'])
-			->addToMap('api', 'version_requested', $versionContext['request_version']);
+		
+		$apiInfo = [
+			'version_served'     => $versionContext['version'],
+			'version_requested'  => $versionContext['request_version']
+		];
+		
+		if ($versionContext['state'] === HatiAPI::VERSION_DEPRECATED) {
+			if ($versionContext['suggested_version'] !== null) {
+				$apiInfo['suggested_version'] = $versionContext['suggested_version'];
+			}
 			
-		if ($versionContext['state'] !== HatiAPI::VERSION_DEPRECATED) {
-			return;
+			$apiInfo['message'] = $versionContext['message'];
 		}
 
-		if ($versionContext['suggested_version'] !== null) {
-			$response->addToMap('api', 'suggested_version', $versionContext['suggested_version']);
-		}
-
-		$response->addToMap('api', 'message', $versionContext['message']);
+		return $apiInfo;
 	}
 	
 	private function normalizeMethods(mixed $methods): array
@@ -1029,9 +1032,9 @@ final class HatiAPIHandler
 		];
 	}
 	
-	private function createResponse(): Response
+	private function createResponse(?array $apiInfo = null): Response
 	{
-		return new Response($this->responseCastBehavior);
+		return new Response($this->responseCastBehavior, $apiInfo);
 	}
 	
 }

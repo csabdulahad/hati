@@ -256,6 +256,38 @@ abstract class Text
 	{
 		return strtolower(preg_replace('/([a-z])([A-Z])/', '$1' . $separator . '$2', $string));
 	}
+	
+	/**
+	 * Converts a slash-separated string to snake_case.
+	 *
+	 * Each path segment is converted independently, preserving the slash separators.
+	 * CamelCase and acronym boundaries are converted to underscores before the
+	 * result is lowercased. Leading and trailing slashes are removed.
+	 *
+	 * Examples:
+	 * - StudyVideo -> study_video
+	 * - XMLParser -> xml_parser
+	 * - User/XMLParser -> user/xml_parser
+	 *
+	 * @param string $value The value to convert.
+	 * @return string The converted snake_case value.
+	 */
+	public static function toSnakeCase(string $value): string
+	{
+		$segments = explode('/', trim($value, '/'));
+		
+		$segments = array_map(function (string $segment): string {
+			// XMLParser -> XML_Parser
+			$segment = preg_replace('/([A-Z]+)([A-Z][a-z])/', '$1_$2', $segment);
+			
+			// StudyVideo -> Study_Video
+			$segment = preg_replace('/([a-z0-9])([A-Z])/', '$1_$2', $segment);
+			
+			return strtolower($segment);
+		}, $segments);
+		
+		return implode('/', $segments);
+	}
 
 	/**
 	 * Limits a string to X number of words.

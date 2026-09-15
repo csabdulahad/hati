@@ -23,10 +23,10 @@ use Throwable;
 final class HatiAPIHandler
 {
 
-	private const SUPPORTED_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+	private const array SUPPORTED_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 	
-	private const VERSION_PATTERN = '/^[0-9]+(?:\.[0-9]+)*$/';
-	private const URL_VERSION_PATTERN = '/^v([0-9]+(?:\.[0-9]+)*)$/i';
+	private const string VERSION_PATTERN = '/^[0-9]+(?:\.[0-9]+)*$/';
+	private const string URL_VERSION_PATTERN = '/^v([0-9]+(?:\.[0-9]+)*)$/i';
 
 	private bool $debug;
 	
@@ -105,6 +105,8 @@ final class HatiAPIHandler
 	 */
 	public function handle(?array $request = null): array
 	{
+		$apiInfo = null;
+		
 		try {
 			$request = $this->normalizeRequest($request);
 			
@@ -117,11 +119,14 @@ final class HatiAPIHandler
 				Trunk::http400('Unknown API');
 			}
 			
-			$segments = $this->extraSegments($request['api'], $route['path']);
-			$target = $this->resolveTarget($route, $segments, $request['method']);
+			$segments 	= $this->extraSegments($request['api'], $route['path']);
+			$target 	= $this->resolveTarget($route, $segments, $request['method']);
 			
-			$api = $this->createAPI($route['handler']);
+			$api 			= $this->createAPI($route['handler']);
 			$versionContext = $this->resolveVersionContext($api, $versionRequest['requested_version']);
+			$apiInfo 		= $this->buildAPIInfo($versionContext);
+			$response 		= $this->createResponse($apiInfo);
+			
 			
 			$api->setAPIVersions(
 				$versionContext['request_version'],
@@ -147,11 +152,8 @@ final class HatiAPIHandler
 			$api->publicMethod();
 			
 			if ($api->isPrivateMethod($target['auth_name'])) {
-				$api->authenticate($target['auth_name']);
+				$api->authenticate($target['auth_name'], $response);
 			}
-			
-			$apiInfo  = $this->buildAPIInfo($versionContext);
-			$response = $this->createResponse($apiInfo);
 			
 			$method = $target['target'];
 			$api->$method($response);
@@ -160,9 +162,9 @@ final class HatiAPIHandler
 				->httpStatus(501)
 				->reply('API did not produce a response', Response::ERROR);
 		} catch (Trunk $e) {
-			return $e->toArray();
+			return $this->handleTrunk($e, $apiInfo);
 		} catch (Throwable $e) {
-			return $this->internalError($e);
+			return $this->internalError($e, $apiInfo);
 		}
 	}
 	
@@ -351,8 +353,7 @@ final class HatiAPIHandler
 			Trunk::http501('API did not produce a response');
 			
 		} catch (Trunk $e) {
-			return $e->toArray();
-			
+			return $this->handleTrunk($e);
 		} catch (Throwable $e) {
 			return $this->internalError($e);
 		}
@@ -984,19 +985,51 @@ final class HatiAPIHandler
 		];
 	}
 	
-	private function internalError(Throwable $e): array
+	/**
+	 * Converts a Trunk into the final API response.
+	 *
+	 * Trunks already finalized by Response::reply() are returned as-is.
+	 * Raw Trunks are rebuilt through Response so Hati response metadata,
+	 * including API version information, is preserved.
+	 */
+	private function handleTrunk(Trunk $e, ?array $apiInfo = null): array
+	{
+		if ($e->body !== null) {
+			return $e->toArray();
+		}
+		
+		try {
+			$response = $this->createResponse($apiInfo);
+			
+			$response
+				->httpStatus($e->httpStatusCode)
+				->reply(
+					$e->msg,
+					$e->status,
+					$e->headers,
+					$e->cookies
+				);
+		} catch (Trunk $response) {
+			return $response->toArray();
+		}
+	}
+	
+	private function internalError(Throwable $e, ?array $apiInfo = null): array
 	{
 		$msg =
 			$this->debug
 			? self::getFullErrorMsg($e)
 			: 'Error in API implementation';
 		
-		return (new Trunk(
-			msg: $msg,
-			httpStatusCode: 500,
-			status: Response::ERROR,
-			previous: $e
-		))->toArray();
+		try {
+			$response = $this->createResponse($apiInfo);
+			
+			$response
+				->httpStatus(500)
+				->reply($msg, Response::ERROR);
+		} catch (Trunk $trunk) {
+			return $trunk->toArray();
+		}
 	}
 	
 	private function createAPI(string $handlerClass): HatiAPI

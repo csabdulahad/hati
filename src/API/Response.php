@@ -23,20 +23,20 @@ class Response
 {
 
 	// constants that represent response status of the API execution
-	const ERROR = -1;
-	const WARNING = 0;
-	const SUCCESS = 1;
-	const INFO = 2;
+	const int ERROR = -1;
+	const int WARNING = 0;
+	const int SUCCESS = 1;
+	const int INFO = 2;
 	
 	// response value casting policies
-	public const CAST_DEFAULT = 'default'; // no casting
-	public const CAST_AUTO = 'auto';       // smart casting
+	public const string CAST_DEFAULT = 'default'; // no casting
+	public const string CAST_AUTO = 'auto';       // smart casting
 
 	// explicit per-field casting types
-	public const CAST_INT = 'int';
-	public const CAST_FLOAT = 'float';
-	public const CAST_BOOL = 'bool';
-	public const CAST_STRING = 'string';
+	public const string CAST_INT = 'int';
+	public const string CAST_FLOAT = 'float';
+	public const string CAST_BOOL = 'bool';
+	public const string CAST_STRING = 'string';
 
 	// buffer for JSON output
 	private array $output = [];
@@ -273,7 +273,7 @@ class Response
 	 * @param ?array $cookies cookies to be set before sending JSON response. Each cookie has name, value and other
 	 * cookie parameters.
 	 * */
-	public function reply(mixed $msg = '', int $status = Response::SUCCESS, ?array $headers = null, ?array $cookies = null): void
+	public function reply(mixed $msg = '', int $status = Response::SUCCESS, ?array $headers = null, ?array $cookies = null): never
 	{
 		$this->trunk->msg = $msg;
 		$this->trunk->status = $status;

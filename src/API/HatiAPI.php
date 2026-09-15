@@ -19,9 +19,9 @@ use Hati\Util\Text;
 abstract class HatiAPI
 {
 
-	public const VERSION_ACTIVE 	= 'active';
-	public const VERSION_DEPRECATED = 'deprecated';
-	public const VERSION_RETIRED 	= 'retired';
+	public const string VERSION_ACTIVE 	= 'active';
+	public const string VERSION_DEPRECATED = 'deprecated';
+	public const string VERSION_RETIRED 	= 'retired';
 
 	/** Catches the request body for JSON & raw */
 	private array $reqBody = [];
@@ -70,8 +70,9 @@ abstract class HatiAPI
 	 * {@link openAccess()} method in {@link publicMethod()} method.
 	 *
 	 * @param string $method Which method it is invoked for
+	 * @param Response $res Response object for building the API response.
 	 * */
-	public function authenticate(string $method): void
+	public function authenticate(string $method, Response $res): void
 	{
 
 	}
@@ -159,6 +160,7 @@ abstract class HatiAPI
 
 	/**
 	 * Default handler method for GET request for the API.
+	 * @param Response $res Response object for building the API response.
 	 * */
 	public function get(Response $res): void
 	{
@@ -167,6 +169,7 @@ abstract class HatiAPI
 
 	/**
 	 * Default handler method for POST request for the API.
+	 * @param Response $res Response object for building the API response.
 	 * */
 	public function post(Response $res): void
 	{
@@ -175,6 +178,7 @@ abstract class HatiAPI
 
 	/**
 	 * Default handler method for PUT request for the API.
+	 * @param Response $res Response object for building the API response.
 	 * */
 	public function put(Response $res): void
 	{
@@ -183,6 +187,7 @@ abstract class HatiAPI
 
 	/**
 	 * Default handler method for PATCH request for the API.
+	 * @param Response $res Response object for building the API response.
 	 * */
 	public function patch(Response $res): void
 	{
@@ -191,6 +196,7 @@ abstract class HatiAPI
 
 	/**
 	 * Default handler method for DELETE request for the API.
+	 * @param Response $res Response object for building the API response.
 	 * */
 	public function delete(Response $res): void
 	{
@@ -355,7 +361,13 @@ abstract class HatiAPI
 		return $this->requestMethod;
 	}
 	
-	public function isMethod(string|array $methods): bool
+	/**
+	 * Checks whether the current request uses one of the given HTTP methods.
+	 *
+	 * @param string|array $methods HTTP method or methods to check.
+	 * @return bool True when the current request method matches.
+	 */
+	protected function isMethod(string|array $methods): bool
 	{
 		if (is_string($methods)) {
 			$methods = [$methods];
@@ -369,7 +381,15 @@ abstract class HatiAPI
 		return in_array($this->requestMethod, $methods, true);
 	}
 	
-	public function requireMethod(string|array $methods, string $msg = 'Unacceptable request method'): void
+	/**
+	 * Requires the current request to use one of the given HTTP methods.
+	 *
+	 * Throws an HTTP 405 response when the current request method does not match.
+	 *
+	 * @param string|array $methods Allowed HTTP method or methods.
+	 * @param string $msg Error message returned for an unsupported method.
+	 */
+	protected function requireMethod(string|array $methods, string $msg = 'Unacceptable request method'): void
 	{
 		if (!$this->isMethod($methods)) {
 			Trunk::http405($msg);

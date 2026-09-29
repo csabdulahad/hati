@@ -158,9 +158,11 @@ final class HatiAPIHandler
 			$method = $target['target'];
 			$api->$method($response);
 			
-			$response
-				->httpStatus(501)
-				->reply('API did not produce a response', Response::ERROR);
+			$response->error(
+				501,
+				'API did not produce a response',
+				'API_NO_RESPONSE'
+			);
 		} catch (Trunk $e) {
 			return $this->handleTrunk($e, $apiInfo);
 		} catch (Throwable $e) {
@@ -1006,6 +1008,7 @@ final class HatiAPIHandler
 				->reply(
 					$e->msg,
 					$e->status,
+					$e->responseCode,
 					$e->headers,
 					$e->cookies
 				);
@@ -1024,9 +1027,11 @@ final class HatiAPIHandler
 		try {
 			$response = $this->createResponse($apiInfo);
 			
-			$response
-				->httpStatus(500)
-				->reply($msg, Response::ERROR);
+			$response->error(
+				500,
+				$msg,
+				'INTERNAL_ERROR'
+			);
 		} catch (Trunk $trunk) {
 			return $trunk->toArray();
 		}

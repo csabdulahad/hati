@@ -23,10 +23,12 @@ class Response
 {
 
 	// constants that represent response status of the API execution
-	const int ERROR = -1;
-	const int WARNING = 0;
-	const int SUCCESS = 1;
-	const int INFO = 2;
+	public const string ERROR 	= 'ERROR';
+	public const string WARNING = 'WARNING';
+	public const string SUCCESS = 'SUCCESS';
+	public const string INFO 	= 'INFO';
+	
+	public const array STATUSES = [self::ERROR, self::WARNING, self::SUCCESS, self::INFO];
 	
 	// response value casting policies
 	public const string CAST_DEFAULT = 'default'; // no casting
@@ -67,6 +69,20 @@ class Response
 		$this->apiInfo  = $apiInfo;
 		
 		$this->setAutoCasting($castBehavior);
+	}
+	
+	/**
+	 * Resets the response to its initial mutable state.
+	 *
+	 * Output data, metadata, headers, cookies, message, code, status, and HTTP
+	 * status are reset. Constructor configuration is preserved.
+	 */
+	public function reset(): Response
+	{
+		$this->output 	= [];
+		$this->meta 	= [];
+		$this->trunk 	= new Trunk(msg: '', httpStatusCode: 200, status: self::SUCCESS);
+		return $this;
 	}
 	
 	/**
@@ -172,7 +188,7 @@ class Response
 	/**
 	 * Adds or replaces metadata in the response object.
 	 *
-	 * The keys `status`, `msg`, and `api` are reserved by Hati.
+	 * The keys `status`, `code`, `msg`, and `api` are reserved by Hati.
 	 *
 	 * @param string $key Metadata key.
 	 * @param mixed $value Metadata value.
@@ -180,7 +196,7 @@ class Response
 	 */
 	public function addMeta(string $key, mixed $value): Response
 	{
-		if (in_array($key, ['status', 'msg', 'api'], true)) {
+		if (in_array($key, ['status', 'code', 'msg', 'api'], true)) {
 			throw new InvalidArgumentException("Response key '$key' is reserved by Hati.");
 		}
 		
@@ -263,20 +279,94 @@ class Response
 		$this->trunk->body = $this->getJSON();
 		return $this->trunk->toArray();
 	}
-
+	
 	/**
-	 * Write out the response in JSON format.
-	 *
-	 * @param mixed $msg The response message
-	 * @param int $status The response status
-	 * @param ?array $headers HTTP headers as key-value pairs.
-	 * @param ?array $cookies cookies to be set before sending JSON response. Each cookie has name, value and other
-	 * cookie parameters.
-	 * */
-	public function reply(mixed $msg = '', int $status = Response::SUCCESS, ?array $headers = null, ?array $cookies = null): never
+	 * Sends an error response.
+	 */
+	public function error(
+		int $httpStatus,
+		string $msg,
+		?string $code,
+		bool $reset = false
+	): never
 	{
+		if ($reset) {
+			$this->reset();
+		}
+		
+		$this
+			->httpStatus($httpStatus)
+			->reply($msg, self::ERROR, $code);
+	}
+	
+	/**
+	 * Sends a warning response.
+	 */
+	public function warning(int $httpStatus, string $msg, ?string $code, bool $reset = false): never
+	{
+		if ($reset) {
+			$this->reset();
+		}
+		
+		$this
+			->httpStatus($httpStatus)
+			->reply($msg, self::WARNING, $code);
+	}
+	
+	/**
+	 * Sends a success response.
+	 */
+	public function success(int $httpStatus, string $msg, ?string $code, bool $reset = false): never
+	{
+		if ($reset) {
+			$this->reset();
+		}
+		
+		$this
+			->httpStatus($httpStatus)
+			->reply($msg, self::SUCCESS, $code);
+	}
+	
+	/**
+	 * Sends an informational response.
+	 */
+	public function info(int $httpStatus, string $msg, ?string $code, bool $reset = false): never
+	{
+		if ($reset) {
+			$this->reset();
+		}
+		
+		$this
+			->httpStatus($httpStatus)
+			->reply($msg, self::INFO, $code);
+	}
+	
+	/**
+	 * Finalizes and sends the response.
+	 *
+	 * @param mixed $msg Human-readable response message.
+	 * @param string $status Response status.
+	 * @param ?string $code Optional machine-readable response code.
+	 * @param ?array $headers HTTP headers to add.
+	 * @param ?array $cookies Cookies to add.
+	 */
+	public function reply(
+		mixed $msg = '',
+		string $status = self::SUCCESS,
+		?string $code = null,
+		?array $headers = null,
+		?array $cookies = null
+	): never
+	{
+		if (!in_array($status, self::STATUSES, true)) {
+			throw new InvalidArgumentException(
+				'Invalid response status. Expected one of: ' . implode(', ', self::STATUSES)
+			);
+		}
+		
 		$this->trunk->msg = $msg;
 		$this->trunk->status = $status;
+		$this->trunk->responseCode = $code;
 		
 		$response = $this->trunk->responseObject();
 		

@@ -21,7 +21,8 @@ class Trunk extends RuntimeException
 	private const DEFAULT_MSG = 'An error occurred.';
 
 	public mixed $msg;
-	public int $status;
+	public string $status;
+	public ?string $responseCode = null;
 	public int $httpStatusCode;
 	public array $headers = [];
 	public array $cookies = [];
@@ -30,7 +31,8 @@ class Trunk extends RuntimeException
 	public function __construct(
 		mixed $msg = self::DEFAULT_MSG,
 		int $httpStatusCode = 500,
-		int $status = Response::ERROR,
+		string $status = Response::ERROR,
+		?string $responseCode = null,
 		array $headers = [],
 		array $cookies = [],
 		?string $body = null,
@@ -39,8 +41,15 @@ class Trunk extends RuntimeException
 	) {
 		parent::__construct(self::toExceptionMessage($msg), $exceptionCode, $previous);
 		
+		if (!in_array($status, Response::STATUSES, true)) {
+			throw new RuntimeException(
+				'Invalid response status. Expected one of: ' . implode(', ', Response::STATUSES)
+			);
+		}
+		
 		$this->msg = $msg;
 		$this->status = $status;
+		$this->responseCode = $responseCode;
 		$this->httpStatusCode = $httpStatusCode;
 		$this->body = $body;
 		
@@ -48,12 +57,21 @@ class Trunk extends RuntimeException
 		$this->addCookies($cookies);
 	}
 	
+	/**
+	 * Returns the standard response object.
+	 */
 	public function responseObject(): array
 	{
-		return [
+		$response = [
 			'status' => $this->status,
 			'msg' => $this->msg
 		];
+		
+		if ($this->responseCode !== null) {
+			$response['code'] = $this->responseCode;
+		}
+		
+		return $response;
 	}
 	
 	public function toArray(): array
@@ -152,8 +170,20 @@ class Trunk extends RuntimeException
 		return $this->msg;
 	}
 	
-	public function getStatus(): int {
+	/**
+	 * Returns the response status.
+	 */
+	public function getStatus(): string
+	{
 		return $this->status;
+	}
+	
+	/**
+	 * Returns the machine-readable response code.
+	 */
+	public function getResponseCode(): ?string
+	{
+		return $this->responseCode;
 	}
 	
 	public function getHttpStatusCode(): int {
@@ -179,102 +209,109 @@ class Trunk extends RuntimeException
 	/**
 	 * 200 Success
 	 * */
-	public static function http200(string $msg = 'Success', ?array $headers = null, ?array $cookies = null): never
+	public static function http200(string $msg = 'Success', ?string $code = null, ?array $headers = null, ?array $cookies = null): never
 	{
-		throw self::buildTrunk($msg, 200, Response::SUCCESS, $headers, $cookies);
+		throw self::buildTrunk($msg, 200, Response::SUCCESS, $code, $headers, $cookies);
 	}
 	
 	/**
 	 * 400 Client Error
 	 * */
-	public static function http400(string $msg = 'Client Error', ?array $headers = null, ?array $cookies = null): never
+	public static function http400(string $msg = 'Client Error', ?string $code = null, ?array $headers = null, ?array $cookies = null): never
 	{
-		throw self::buildTrunk($msg, 400, Response::ERROR, $headers, $cookies);
+		throw self::buildTrunk($msg, 400, Response::ERROR, $code, $headers, $cookies);
 	}
 
 	/**
 	 * 401 Unauthorized
 	 * */
-	public static function http401(string $msg = 'Unauthorized', ?array $headers = null, ?array $cookies = null): never
+	public static function http401(string $msg = 'Unauthorized', ?string $code = null, ?array $headers = null, ?array $cookies = null): never
 	{
-		throw self::buildTrunk($msg, 401, Response::ERROR, $headers, $cookies);
+		throw self::buildTrunk($msg, 401, Response::ERROR, $code, $headers, $cookies);
 	}
 
 	/**
 	 * 403 Forbidden Access
 	 * */
-	public static function http403(string $msg = 'Forbidden Access', ?array $headers = null, ?array $cookies = null): never
+	public static function http403(string $msg = 'Forbidden Access', ?string $code = null, ?array $headers = null, ?array $cookies = null): never
 	{
-		throw self::buildTrunk($msg, 403, Response::ERROR, $headers, $cookies);
+		throw self::buildTrunk($msg, 403, Response::ERROR, $code, $headers, $cookies);
 	}
 
 	/**
 	 * 404 Not Found
 	 * */
-	public static function http404(string $msg = 'Not Found', ?array $headers = null, ?array $cookies = null): never
+	public static function http404(string $msg = 'Not Found', ?string $code = null, ?array $headers = null, ?array $cookies = null): never
 	{
-		throw self::buildTrunk($msg, 404, Response::ERROR, $headers, $cookies);
+		throw self::buildTrunk($msg, 404, Response::ERROR, $code, $headers, $cookies);
 	}
 
 	/**
 	 * 405 Method Not Allowed
 	 * */
-	public static function http405(string $msg = 'Method Not Allowed', ?array $headers = null, ?array $cookies = null): never
+	public static function http405(string $msg = 'Method Not Allowed', ?string $code = null, ?array $headers = null, ?array $cookies = null): never
 	{
-		throw self::buildTrunk($msg, 405, Response::ERROR, $headers, $cookies);
+		throw self::buildTrunk($msg, 405, Response::ERROR, $code, $headers, $cookies);
 	}
 
 	/**
 	 * 408 Request Timeout
 	 * */
-	public static function http408(string $msg = 'Request Timeout', ?array $headers = null, ?array $cookies = null): never
+	public static function http408(string $msg = 'Request Timeout', ?string $code = null, ?array $headers = null, ?array $cookies = null): never
 	{
-		throw self::buildTrunk($msg, 408, Response::ERROR, $headers, $cookies);
+		throw self::buildTrunk($msg, 408, Response::ERROR, $code, $headers, $cookies);
 	}
 
 	/**
 	 * 429 Too Many Requests
 	 * */
-	public static function http429(string $msg = 'Too Many Requests', ?array $headers = null, ?array $cookies = null): never
+	public static function http429(string $msg = 'Too Many Requests', ?string $code = null, ?array $headers = null, ?array $cookies = null): never
 	{
-		throw self::buildTrunk($msg, 429, Response::ERROR, $headers, $cookies);
+		throw self::buildTrunk($msg, 429, Response::ERROR, $code, $headers, $cookies);
 	}
 
 	/**
 	 * 500 Internal Server Error
 	 * */
-	public static function http500(string $msg = 'Internal Server Error', ?array $headers = null, ?array $cookies = null): never
+	public static function http500(string $msg = 'Internal Server Error', ?string $code = null, ?array $headers = null, ?array $cookies = null): never
 	{
-		throw self::buildTrunk($msg, 500, Response::ERROR, $headers, $cookies);
+		throw self::buildTrunk($msg, 500, Response::ERROR, $code, $headers, $cookies);
 	}
 
 	/**
 	 * 501 Not Implemented
 	 * */
-	public static function http501(string $msg = 'Not Implemented', ?array $headers = null, ?array $cookies = null): never
+	public static function http501(string $msg = 'Not Implemented', ?string $code = null, ?array $headers = null, ?array $cookies = null): never
 	{
-		throw self::buildTrunk($msg, 501, Response::ERROR, $headers, $cookies);
+		throw self::buildTrunk($msg, 501, Response::ERROR, $code, $headers, $cookies);
 	}
 
 	/**
 	 * 503 Service Unavailable
 	 * */
-	public static function http503(string $msg = 'Service Unavailable', ?array $headers = null, ?array $cookies = null): never
+	public static function http503(string $msg = 'Service Unavailable', ?string $code = null, ?array $headers = null, ?array $cookies = null): never
 	{
-		throw self::buildTrunk($msg, 503, Response::ERROR, $headers, $cookies);
+		throw self::buildTrunk($msg, 503, Response::ERROR, $code, $headers, $cookies);
 	}
 
 	/**
 	 * 504 Gateway Timeout
 	 * */
-	public static function http504(string $msg = 'Gateway Timeout', ?array $headers = null, ?array $cookies = null): never
+	public static function http504(string $msg = 'Gateway Timeout', ?string $code = null, ?array $headers = null, ?array $cookies = null): never
 	{
-		throw self::buildTrunk($msg, 504, Response::ERROR, $headers, $cookies);
+		throw self::buildTrunk($msg, 504, Response::ERROR, $code, $headers, $cookies);
 	}
 
-	private static function buildTrunk(string $msg, int $httpStatusCode, int $status = Response::ERROR, ?array $headers = null, ?array $cookies = null): Trunk
+	private static function buildTrunk(
+		string $msg,
+		int $httpStatusCode,
+		string $status = Response::ERROR,
+		?string $code = null,
+		?array $headers = null,
+		?array $cookies = null
+	): Trunk
 	{
-		$trunk = new Trunk(msg: $msg, httpStatusCode: $httpStatusCode, status: $status);
+		$trunk = new Trunk(msg: $msg, httpStatusCode: $httpStatusCode, status: $status, responseCode: $code);
 		
 		if (!empty($headers)) {
 			$trunk->addHeaders($headers);

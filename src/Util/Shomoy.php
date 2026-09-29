@@ -411,7 +411,7 @@ class Shomoy
 
 	public function iso8601(): string
 	{
-		return $this -> dateTime -> format('Y-m-d\TH:i:sO');
+		return $this->dateTime->format('Y-m-d\TH:i:sP');
 	}
 
 	public function isoDate(): string

@@ -49,6 +49,13 @@ class Response
 	private array $meta = [];
 	
 	/**
+	 * Hooks executed immediately before the response is finalized.
+	 *
+	 * @var callable[]
+	 */
+	private array $responseHooks = [];
+	
+	/**
 	 * Hati-owned API metadata.
 	 */
 	private readonly ?array $apiInfo;
@@ -75,7 +82,8 @@ class Response
 	 * Resets the response to its initial mutable state.
 	 *
 	 * Output data, metadata, headers, cookies, message, code, status, and HTTP
-	 * status are reset. Constructor configuration is preserved.
+	 * status are reset. Constructor configuration and registered response hooks
+	 * are preserved.
 	 */
 	public function reset(): Response
 	{
@@ -206,6 +214,22 @@ class Response
 	}
 	
 	/**
+	 * Registers a hook that runs immediately before the response is finalized.
+	 *
+	 * The hook receives this Response instance and may inspect or modify
+	 * response data, metadata, headers, cookies, or HTTP status.
+	 *
+	 * Hooks survive reset().
+	 *
+	 * @param callable(Response): void $hook
+	 */
+	public function addResponseHook(callable $hook): Response
+	{
+		$this->responseHooks[] = $hook;
+		return $this;
+	}
+	
+	/**
 	 * Sets the HTTP status code.
 	 *
 	 * @throws InvalidArgumentException If the code is outside 100-599.
@@ -246,6 +270,31 @@ class Response
 	public function getCookies(): array
 	{
 		return $this->trunk->getCookies();
+	}
+	
+	public function getOutput(): array
+	{
+		return $this->output;
+	}
+	
+	public function getMeta(): array
+	{
+		return $this->meta;
+	}
+	
+	public function getStatus(): string
+	{
+		return $this->trunk->status;
+	}
+	
+	public function getResponseCode(): ?string
+	{
+		return $this->trunk->responseCode;
+	}
+	
+	public function getMsg(): mixed
+	{
+		return $this->trunk->msg;
 	}
 	
 	public function addCookie(string $name, mixed $value, int $expire = 0, bool $secure = true, bool $httpOnly = true, string $path = '/', string $domain = '', string $sameSite = 'Strict'): Response
@@ -364,10 +413,26 @@ class Response
 			);
 		}
 		
+		/*
+		 * Establish the final response state first so hooks can inspect it.
+		 */
 		$this->trunk->msg = $msg;
 		$this->trunk->status = $status;
 		$this->trunk->responseCode = $code;
 		
+		if (!empty($headers)) {
+			$this->addHeaders($headers);
+		}
+		
+		if (!empty($cookies)) {
+			$this->addCookies($cookies);
+		}
+		
+		/*
+		 * Final application interception point.
+		 */
+		$this->runResponseHooks();
+	
 		$response = $this->trunk->responseObject();
 		
 		foreach ($this->meta as $key => $value) {
@@ -379,15 +444,6 @@ class Response
 		}
 		
 		$this->output['response'] = $response;
-		
-		if (!empty($headers)) {
-			$this->addHeaders($headers);
-		}
-		
-		if (!empty($cookies)) {
-			$this->addCookies($cookies);
-		}
-		
 		$this->trunk->body = $this->getJSON();
 		
 		throw $this->trunk;
@@ -539,6 +595,13 @@ class Response
 	private function getMapCastType(array $castMap, string|int $key): ?string
 	{
 		return array_key_exists($key, $castMap) ? $castMap[$key] : null;
+	}
+	
+	private function runResponseHooks(): void
+	{
+		foreach ($this->responseHooks as $hook) {
+			$hook($this);
+		}
 	}
 	
 }

@@ -164,7 +164,10 @@ abstract class HatiAPI
 	 * */
 	public function get(Response $res): void
 	{
-		Trunk::http501('API is not implemented yet');
+		Trunk::http501(
+			'API is not implemented yet',
+			'API_NOT_IMPLEMENTED'
+		);
 	}
 
 	/**
@@ -173,7 +176,10 @@ abstract class HatiAPI
 	 * */
 	public function post(Response $res): void
 	{
-		Trunk::http501('API is not implemented yet');
+		Trunk::http501(
+			'API is not implemented yet',
+			'API_NOT_IMPLEMENTED'
+		);
 	}
 
 	/**
@@ -182,7 +188,10 @@ abstract class HatiAPI
 	 * */
 	public function put(Response $res): void
 	{
-		Trunk::http501('API is not implemented yet');
+		Trunk::http501(
+			'API is not implemented yet',
+			'API_NOT_IMPLEMENTED'
+		);
 	}
 
 	/**
@@ -191,7 +200,10 @@ abstract class HatiAPI
 	 * */
 	public function patch(Response $res): void
 	{
-		Trunk::http501('API is not implemented yet');
+		Trunk::http501(
+			'API is not implemented yet',
+			'API_NOT_IMPLEMENTED'
+		);
 	}
 
 	/**
@@ -200,7 +212,10 @@ abstract class HatiAPI
 	 * */
 	public function delete(Response $res): void
 	{
-		Trunk::http501('API is not implemented yet');
+		Trunk::http501(
+			'API is not implemented yet',
+			'API_NOT_IMPLEMENTED'
+		);
 	}
 
 	/**
@@ -392,7 +407,10 @@ abstract class HatiAPI
 	protected function requireMethod(string|array $methods, string $msg = 'Unacceptable request method'): void
 	{
 		if (!$this->isMethod($methods)) {
-			Trunk::http405($msg);
+			Trunk::http405(
+				$msg,
+				'METHOD_NOT_ALLOWED'
+			);
 		}
 	}
 	

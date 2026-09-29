@@ -38,6 +38,13 @@ final class HatiAPIHandler
 	
 	// default casting policy for Response objects created by the handler
 	private string $responseCastBehavior = Response::CAST_DEFAULT;
+	
+	/**
+	 * Hooks attached to every Response created by this handler.
+	 *
+	 * @var callable[]
+	 */
+	private array $responseHooks = [];
 
 	/**
 	 * Path-keyed route registry.
@@ -116,7 +123,10 @@ final class HatiAPIHandler
 			$route = $this->matchRoute($request['api']);
 			
 			if ($route === null) {
-				Trunk::http400('Unknown API');
+				Trunk::http404(
+					'API not found',
+					'API_NOT_FOUND'
+				);
 			}
 			
 			$segments 	= $this->extraSegments($request['api'], $route['path']);
@@ -352,7 +362,10 @@ final class HatiAPIHandler
 			
 			$fun($response);
 			
-			Trunk::http501('API did not produce a response');
+			Trunk::http501(
+				'API did not produce a response',
+				'API_NO_RESPONSE'
+			);
 			
 		} catch (Trunk $e) {
 			return $this->handleTrunk($e);
@@ -380,6 +393,20 @@ final class HatiAPIHandler
 		}
 		
 		$this->responseCastBehavior = $responseCastBehavior;
+		return $this;
+	}
+	
+	/**
+	 * Registers a hook that runs immediately before any response created by
+	 * this handler is finalized.
+	 *
+	 * Multiple hooks may be registered and are executed in registration order.
+	 *
+	 * @param callable(Response): void $hook
+	 */
+	public function addResponseHook(callable $hook): HatiAPIHandler
+	{
+		$this->responseHooks[] = $hook;
 		return $this;
 	}
 	
@@ -419,7 +446,10 @@ final class HatiAPIHandler
 		$versionSegment = $segments[0] ?? '';
 
 		if (!preg_match(self::URL_VERSION_PATTERN, $versionSegment, $matches)) {
-			Trunk::http400('Missing API version');
+			Trunk::http400(
+				'Missing API version',
+				'API_VERSION_REQUIRED'
+			);
 		}
 		
 		$requestedVersion = $matches[1];
@@ -428,7 +458,10 @@ final class HatiAPIHandler
 			$this->maxApiVersion === null ||
 			version_compare($requestedVersion, $this->maxApiVersion, '>')
 		) {
-			Trunk::http400('Unknown API version ' . $requestedVersion);
+			Trunk::http400(
+				'Unknown API version ' . $requestedVersion,
+				'API_VERSION_UNSUPPORTED'
+			);
 		}
 
 		array_shift($segments);
@@ -463,7 +496,10 @@ final class HatiAPIHandler
 		}
 
 		if ($requestedVersion === null) {
-			Trunk::http400('Missing API version');
+			Trunk::http400(
+				'Missing API version',
+				'API_VERSION_REQUIRED'
+			);
 		}
 
 		$map = $api->versionMap();
@@ -483,7 +519,10 @@ final class HatiAPIHandler
 		$smallestVersion = $versions[0];
 
 		if (version_compare($requestedVersion, $smallestVersion, '<')) {
-			Trunk::http400('Unknown API version ' . $requestedVersion);
+			Trunk::http400(
+				'Unknown API version ' . $requestedVersion,
+				'API_VERSION_UNSUPPORTED'
+			);
 		}
 
 		$matchedVersion = $this->findEquivalentVersion($versions, $requestedVersion);
@@ -493,7 +532,10 @@ final class HatiAPIHandler
 
 			if ($status === HatiAPI::VERSION_RETIRED) {
 				$suggestedVersion = $this->findSuggestedActiveVersion($map, $requestedVersion);
-				Trunk::http400($this->retiredVersionMessage($matchedVersion, $suggestedVersion));
+				Trunk::http400(
+					$this->retiredVersionMessage($matchedVersion, $suggestedVersion),
+					'API_VERSION_RETIRED'
+				);
 			}
 		
 			if ($status === HatiAPI::VERSION_DEPRECATED) {
@@ -520,7 +562,10 @@ final class HatiAPIHandler
 		$fallbackVersion = $this->findGreatestActiveVersionAtOrBelow($map, $requestedVersion);
 
 		if ($fallbackVersion === null) {
-			Trunk::http400('Unknown API version ' . $requestedVersion);
+			Trunk::http400(
+				'Unknown API version ' . $requestedVersion,
+				'API_VERSION_UNSUPPORTED'
+			);
 		}
 
 		return [
@@ -833,13 +878,19 @@ final class HatiAPIHandler
 		[$api, $apiQueryParams] = $this->splitApiAndQuery($request['api'] ?? '');
 		
 		if ($api === '') {
-			Trunk::http400('Bad request');
+			Trunk::http400(
+				'Bad request',
+				'INVALID_REQUEST'
+			);
 		}
 		
 		$method = strtoupper(trim((string) ($request['method'] ?? '')));
 		
 		if (!in_array($method, self::SUPPORTED_METHODS, true)) {
-			Trunk::http405('Unacceptable request method');
+			Trunk::http405(
+				'Unacceptable request method',
+				'METHOD_NOT_ALLOWED'
+			);
 		}
 		
 		$params = $request['params'] ?? [];
@@ -847,15 +898,24 @@ final class HatiAPIHandler
 		$cookies = $request['cookies'] ?? [];
 		
 		if (!is_array($params)) {
-			Trunk::http400('Invalid request params');
+			Trunk::http400(
+				'Invalid request params',
+				'INVALID_REQUEST_PARAMS'
+			);
 		}
 		
 		if (!is_array($headers)) {
-			Trunk::http400('Invalid request headers');
+			Trunk::http400(
+				'Invalid request headers',
+				'INVALID_REQUEST_HEADERS'
+			);
 		}
 		
 		if (!is_array($cookies)) {
-			Trunk::http400('Invalid request cookies');
+			Trunk::http400(
+				'Invalid request cookies',
+				'INVALID_REQUEST_COOKIES'
+			);
 		}
 		
 		// Query params embedded in API path are supported for internal calls/tests.
@@ -976,7 +1036,10 @@ final class HatiAPIHandler
 		}
 		
 		if (!in_array($httpMethod, $route['methods'], true)) {
-			Trunk::http405('Unacceptable request method');
+			Trunk::http405(
+				'Unacceptable request method',
+				'METHOD_NOT_ALLOWED'
+			);
 		}
 		
 		return [
@@ -1072,7 +1135,13 @@ final class HatiAPIHandler
 	
 	private function createResponse(?array $apiInfo = null): Response
 	{
-		return new Response($this->responseCastBehavior, $apiInfo);
+		$response = new Response($this->responseCastBehavior, $apiInfo);
+		
+		foreach ($this->responseHooks as $hook) {
+			$response->addResponseHook($hook);
+		}
+		
+		return $response;
 	}
 	
 }

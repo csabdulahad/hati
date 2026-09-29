@@ -369,7 +369,7 @@ class Trunk extends RuntimeException
 			$data =['response' => $this->responseObject()];
 			return json_encode($data,JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
 		} catch (JsonException) {
-			return '{"response":{"status":-1,"msg":"Unable to encode error response."}}';
+			return '{"response":{"status":"ERROR","msg":"Unable to encode error response."}}';
 		}
 	}
 	

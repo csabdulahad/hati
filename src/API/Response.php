@@ -219,7 +219,10 @@ class Response
 	 * The hook receives this Response instance and may inspect or modify
 	 * response data, metadata, headers, cookies, or HTTP status.
 	 *
-	 * Hooks survive reset().
+	 * Hooks survive reset() and execute in registration order.
+	 *
+	 * A response hook must not finalize the response by calling reply(),
+	 * error(), warning(), success(), or info().
 	 *
 	 * @param callable(Response): void $hook
 	 */

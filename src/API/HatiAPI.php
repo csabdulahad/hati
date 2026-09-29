@@ -6,6 +6,7 @@ use Hati\Trunk;
 use Hati\Util\Arr;
 use Hati\Util\Request;
 use Hati\Util\Text;
+use InvalidArgumentException;
 
 /**
  * An abstract implementation for APIs. Hati APIs must implement this class so that
@@ -145,7 +146,7 @@ abstract class HatiAPI
 	protected final function requestBody(string $as = 'json'): mixed
 	{
 		if (!in_array($as, ['json', 'raw'], true)) {
-			Trunk::http400('Request body can only be fetched either as json or as raw value');
+			throw new InvalidArgumentException("requestBody() format must be either json or raw");
 		}
 
 		if (array_key_exists($as, $this->reqBody)) {

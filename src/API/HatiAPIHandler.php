@@ -397,10 +397,11 @@ final class HatiAPIHandler
 	}
 	
 	/**
-	 * Registers a hook that runs immediately before any response created by
+	 * Registers a hook that runs immediately before any Response created by
 	 * this handler is finalized.
 	 *
-	 * Multiple hooks may be registered and are executed in registration order.
+	 * Multiple hooks may be registered and execute in registration order.
+	 * Hooks may inspect or modify the Response, but must not finalize it.
 	 *
 	 * @param callable(Response): void $hook
 	 */

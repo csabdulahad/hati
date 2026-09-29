@@ -261,6 +261,14 @@ class Trunk extends RuntimeException
 	{
 		throw self::buildTrunk($msg, 408, Response::ERROR, $code, $headers, $cookies);
 	}
+	
+	/**
+	 * 409 Conflict
+	 * */
+	public static function http409(string $msg = 'Conflict', ?string $code = null, ?array $headers = null, ?array $cookies = null): never
+	{
+		throw self::buildTrunk($msg, 409, Response::ERROR, $code, $headers, $cookies);
+	}
 
 	/**
 	 * 429 Too Many Requests

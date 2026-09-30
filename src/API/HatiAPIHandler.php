@@ -7,6 +7,7 @@ namespace Hati\API;
 use Hati\Trunk;
 use Hati\Util\Request;
 use Hati\Util\Text;
+use Hati\Util\Util;
 use InvalidArgumentException;
 use ReflectionClass;
 use ReflectionException;
@@ -80,9 +81,17 @@ final class HatiAPIHandler
 	/**
 	 * Handles an API request and returns a response array.
 	 *
-	 * If no request array is provided, the handler builds one from the native PHP
-	 * request environment. If a request array is provided, it should contain the API
-	 * path, request method, query params, headers, cookies, and optional body data.
+	 * The request starts with values from the native PHP request environment.
+	 * Any values explicitly provided in $request override their corresponding
+	 * native values. Missing fields therefore continue to use native request data.
+	 *
+	 * This allows callers to override only selected values, such as the API path
+	 * or request method, while preserving native query params, headers, cookies,
+	 * and the raw request body.
+	 *
+	 * In CLI environments there is no native HTTP request, so the native request
+	 * provides an empty baseline. Internal callers should provide at least the
+	 * API path and request method, along with any other request data they need.
 	 *
 	 * Request array shape:
 	 * [
@@ -95,9 +104,13 @@ final class HatiAPIHandler
 	 *     'raw_body' => null
 	 * ]
 	 *
-	 * The handler resolves the registered API route, checks extension functions before
-	 * HTTP verb methods, injects request data into the API class, runs the API lifecycle,
-	 * and catches Trunk responses.
+	 * Explicitly supplied values replace the corresponding native values.
+	 * For example, passing 'headers' => [] intentionally removes inherited
+	 * native headers for that request.
+	 *
+	 * The handler resolves the registered API route, checks extension functions
+	 * before HTTP verb methods, injects the normalized request data into the API
+	 * class, runs the API lifecycle, and catches Trunk responses.
 	 *
 	 * Returned response array shape:
 	 * [
@@ -107,8 +120,10 @@ final class HatiAPIHandler
 	 *     'body' => ''
 	 * ]
 	 *
-	 * @param ?array $request Optional request array. If omitted, native PHP request data is used.
-	 * @return array Response array containing HTTP status code, headers, cookies, and body.
+	 * @param ?array $request Optional partial request override. Missing values are
+	 *                        taken from the native request when available.
+	 * @return array Response array containing HTTP status code, headers, cookies,
+	 *               and body.
 	 */
 	public function handle(?array $request = null): array
 	{
@@ -874,7 +889,10 @@ final class HatiAPIHandler
 	
 	private function normalizeRequest(?array $request): array
 	{
-		$request ??= $this->nativeRequest();
+		$request = array_replace(
+			$this->nativeRequest(),
+			$request ?? []
+		);
 		
 		[$api, $apiQueryParams] = $this->splitApiAndQuery($request['api'] ?? '');
 		
@@ -950,6 +968,18 @@ final class HatiAPIHandler
 	
 	private function nativeRequest(): array
 	{
+		if (Util::isCLI()) {
+			return [
+				'method' 	=> null,
+				'api' 		=> null,
+				'params' 	=> [],
+				'headers' 	=> [],
+				'cookies' 	=> [],
+				'body' 		=> null,
+				'raw_body' 	=> null,
+			];
+		}
+		
 		$params = $_GET ?? [];
 		$api = $params['api'] ?? null;
 		unset($params['api']);

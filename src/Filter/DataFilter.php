@@ -132,6 +132,7 @@ class DataFilter
 	 *
 	 * - key: required string. Source array key.
 	 * - name: optional friendly name used in messages.
+	 * - names: optional localized names, e.g. ['en' => 'Name', 'bn' => 'নাম'].
 	 * - type: required validation type.
 	 * - required: bool. Default true.
 	 * - nullable: bool. Default false.
@@ -212,6 +213,68 @@ class DataFilter
 	public function getErrors(): array
 	{
 		return $this->errList;
+	}
+	
+	/**
+	 * Returns the complete normalized rule for a field.
+	 * Includes configured values and inferred defaults.
+	 */
+	public function getRule(string $key): ?array
+	{
+		return array_find($this->rules, fn($rule) => $rule['key'] === $key);
+	}
+	
+	/**
+	 * Returns field names keyed by language, always including an English
+	 * fallback. A plain 'name' is treated as the English name.
+	 *
+	 * @return array<string, string>|null
+	 */
+	public function getNames(string $key): ?array
+	{
+		$rule = $this->getRule($key);
+		if ($rule === null) return null;
+		
+		return array_replace(
+			['en' => $rule['name']],
+			$rule['names'] ?? []
+		);
+	}
+	
+	/**
+	 * Returns only the constraints relevant to a validation error.
+	 *
+	 * $errCode uses Hati's FilterOut names, such as VAL_LEN_ERROR.
+	 */
+	public function getAppliedRule(string $key, string $errCode): ?array
+	{
+		$rule = $this->getRule($key);
+		if ($rule === null) return null;
+		
+		$fields = match ($errCode) {
+			'NULL' 					=> ['required', 'nullable'],
+			'EMPTY' 				=> ['required'],
+			
+			'VAL_LEN_ERROR' 		=> ['minLen', 'maxLen'],
+			'VAL_LEN_UNDER_ERROR' 	=> ['minLen'],
+			'VAL_LEN_OVER_ERROR' 	=> ['maxLen'],
+			
+			'RANGE_ERROR' 			=> ['minValue', 'maxValue'],
+			'RANGE_UNDER_ERROR' 	=> ['minValue'],
+			'RANGE_OVER_ERROR' 		=> ['maxValue'],
+			'RANGE_FRACTION_ERROR' 	=> ['place'],
+			
+			'NOT_IN_OPTION' 		=> [ $rule['type'] === self::TYPE_MIXED ? 'oneOf' : 'options'],
+			
+			'ILLEGAL', 'INVALID' 	=> ['type'],
+			
+			default 				=> [],
+		};
+		
+		return $fields
+				|> array_flip(...)
+				|> (fn($x) => array_intersect_key($rule, $x))
+				|> (fn($x) => array_filter($x, static fn(mixed $value): bool => $value !== null));
 	}
 	
 	/**
@@ -685,8 +748,16 @@ class DataFilter
 		
 		$normalized = [
 			'key' => $key,
-			'name' => $this->normalizeName($rule['name'] ?? null, $key),
 			'type' => $type,
+			
+			'name' => $this->normalizeName(
+				$rule['name'] ?? (
+					is_array($rule['names'] ?? null) ? ($rule['names']['en'] ?? null) : null
+				),
+				$key
+			),
+			
+			'names' => $rule['names'] ?? null,
 			
 			'required' => $rule['required'] ?? true,
 			'nullable' => $rule['nullable'] ?? false,
@@ -722,6 +793,26 @@ class DataFilter
 	private function validateRuleConfig(array $rule): void
 	{
 		$key = $rule['key'];
+		
+		// Keep names safe and predictable for consumers such as mobile apps.
+		if ($rule['names'] !== null) {
+			if (!is_array($rule['names']) || $rule['names'] === []) {
+				throw new InvalidArgumentException(
+					"Rule '$key' names must be a non-empty array"
+				);
+			}
+			
+			foreach ($rule['names'] as $lang => $name) {
+				if (
+					!is_string($lang) || trim($lang) === '' ||
+					!is_string($name) || trim($name) === ''
+				) {
+					throw new InvalidArgumentException(
+						"Rule '$key' contains an invalid translated name"
+					);
+				}
+			}
+		}
 		
 		if (!is_bool($rule['required'])) {
 			throw new InvalidArgumentException("Rule '$key' requires 'required' to be boolean");

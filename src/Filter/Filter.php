@@ -362,34 +362,90 @@ abstract class Filter
 		return $bool;
 	}
 	
+	/**
+	 * Validates human-perceived character length.
+	 */
 	public static function checkStrLen(string $input, ?int $min = null, ?int $max = null): string|FilterOut
 	{
-		$length =
-			function_exists('mb_strlen')
-			? mb_strlen($input, 'UTF-8')
-			: strlen($input);
+		$length = grapheme_strlen($input);
 		
-		$minPass = true;
-		$maxPass = true;
-		
-		if ($min !== null) {
-			$minPass = $length >= $min;
+		if (!is_int($length)) {
+			return FilterOut::INVALID;
 		}
 		
-		if ($max !== null) {
-			$maxPass = $length <= $max;
+		return self::checkLengthBounds(
+			$input,
+			$length,
+			$min,
+			$max,
+			FilterOut::VAL_LEN_ERROR,
+			FilterOut::VAL_LEN_UNDER_ERROR,
+			FilterOut::VAL_LEN_OVER_ERROR
+		);
+	}
+	
+	/**
+	 * Validates byte length.
+	 */
+	public static function checkByteLen(string $input, ?int $min = null, ?int $max = null): string|FilterOut
+	{
+		return self::checkLengthBounds(
+			$input,
+			strlen($input),
+			$min,
+			$max,
+			FilterOut::BYTE_LEN_ERROR,
+			FilterOut::BYTE_LEN_UNDER_ERROR,
+			FilterOut::BYTE_LEN_OVER_ERROR
+		);
+	}
+	
+	/**
+	 * Validates Unicode code-point length.
+	 */
+	public static function checkCodePointLen(string $input, ?int $min = null, ?int $max = null): string|FilterOut
+	{
+		if (!mb_check_encoding($input, 'UTF-8')) {
+			return FilterOut::INVALID;
 		}
 		
-		if ($min !== null && $max !== null && (!$minPass || !$maxPass)) {
-			return FilterOut::VAL_LEN_ERROR;
+		return self::checkLengthBounds(
+			$input,
+			mb_strlen($input, 'UTF-8'),
+			$min,
+			$max,
+			FilterOut::CODEPOINT_LEN_ERROR,
+			FilterOut::CODEPOINT_LEN_UNDER_ERROR,
+			FilterOut::CODEPOINT_LEN_OVER_ERROR
+		);
+	}
+	
+	/**
+	 * Shared minimum/maximum comparison.
+	 */
+	private static function checkLengthBounds(
+		string $input,
+		int $length,
+		?int $min,
+		?int $max,
+		FilterOut $rangeError,
+		FilterOut $underError,FilterOut $overError
+	): string|FilterOut
+	{
+		if (
+			$min !== null &&
+			$max !== null &&
+			($length < $min || $length > $max)
+		) {
+			return $rangeError;
 		}
 		
-		if ($min !== null && !$minPass) {
-			return FilterOut::VAL_LEN_UNDER_ERROR;
+		if ($min !== null && $length < $min) {
+			return $underError;
 		}
 		
-		if ($max !== null && !$maxPass) {
-			return FilterOut::VAL_LEN_OVER_ERROR;
+		if ($max !== null && $length > $max) {
+			return $overError;
 		}
 		
 		return $input;

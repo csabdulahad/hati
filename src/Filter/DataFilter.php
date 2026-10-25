@@ -136,10 +136,12 @@ class DataFilter
 	 * - type: required validation type.
 	 * - required: bool. Default true.
 	 * - nullable: bool. Default false.
-	 * - minLen: int|null.
-	 * - maxLen: int|null.
-	 * - minValue: int|float|null.
-	 * - maxValue: int|float|null.
+	 * - minLen/maxLen: perceived character limits.
+	 * - minByte/maxByte: byte-length limits.
+	 * - minCodePoint/maxCodePoint: Unicode code-point limits.
+	 * - minValue/maxValue: int|float|null.
+	 * - regex: optional PCRE pattern for string validation.
+	 * - regexHint: optional localization identifier for regex failure.
 	 * - place: int|null. Decimal places for float.
 	 * - options: array|null. Allowed values.
 	 * - oneOf: array. Must be provided if mixed type validation is used.
@@ -252,23 +254,33 @@ class DataFilter
 		if ($rule === null) return null;
 		
 		$fields = match ($errCode) {
-			'NULL' 					=> ['required', 'nullable'],
-			'EMPTY' 				=> ['required'],
+			'NULL' 						=> ['required', 'nullable'],
+			'EMPTY' 					=> ['required'],
 			
-			'VAL_LEN_ERROR' 		=> ['minLen', 'maxLen'],
-			'VAL_LEN_UNDER_ERROR' 	=> ['minLen'],
-			'VAL_LEN_OVER_ERROR' 	=> ['maxLen'],
+			'VAL_LEN_ERROR' 			=> ['minLen', 'maxLen'],
+			'VAL_LEN_UNDER_ERROR' 		=> ['minLen'],
+			'VAL_LEN_OVER_ERROR' 		=> ['maxLen'],
 			
-			'RANGE_ERROR' 			=> ['minValue', 'maxValue'],
-			'RANGE_UNDER_ERROR' 	=> ['minValue'],
-			'RANGE_OVER_ERROR' 		=> ['maxValue'],
-			'RANGE_FRACTION_ERROR' 	=> ['place'],
+			'BYTE_LEN_ERROR' 			=> ['minByte', 'maxByte'],
+			'BYTE_LEN_UNDER_ERROR' 		=> ['minByte'],
+			'BYTE_LEN_OVER_ERROR' 		=> ['maxByte'],
 			
-			'NOT_IN_OPTION' 		=> [ $rule['type'] === self::TYPE_MIXED ? 'oneOf' : 'options'],
+			'CODEPOINT_LEN_ERROR' 		=> ['minCodePoint', 'maxCodePoint'],
+			'CODEPOINT_LEN_UNDER_ERROR' => ['minCodePoint'],
+			'CODEPOINT_LEN_OVER_ERROR' 	=> ['maxCodePoint'],
 			
-			'ILLEGAL', 'INVALID' 	=> ['type'],
+			'REGEX_MISMATCH' 			=> ['regexHint'],
 			
-			default 				=> [],
+			'RANGE_ERROR' 				=> ['minValue', 'maxValue'],
+			'RANGE_UNDER_ERROR' 		=> ['minValue'],
+			'RANGE_OVER_ERROR' 			=> ['maxValue'],
+			'RANGE_FRACTION_ERROR' 		=> ['place'],
+			
+			'NOT_IN_OPTION' 			=> [ $rule['type'] === self::TYPE_MIXED ? 'oneOf' : 'options'],
+			
+			'ILLEGAL', 'INVALID' 		=> ['type'],
+			
+			default 					=> [],
 		};
 		
 		return $fields
@@ -373,6 +385,16 @@ class DataFilter
 		if (!Filter::isOK($result)) {
 			$this->addError($result, $rule);
 			return;
+		}
+
+		// Regex is supported only for string filters.
+		if ($rule['regex'] !== null) {
+			$result = $this->checkRegex($data, $rule);
+			
+			if (!Filter::isOK($result)) {
+				$this->addError($result, $rule);
+				return;
+			}
 		}
 		
 		$result = $this->inOptions($data, $rule);
@@ -578,13 +600,63 @@ class DataFilter
 	
 	private function checkLen(mixed $data, array $rule): FilterOut
 	{
-		if ($rule['minLen'] === null && $rule['maxLen'] === null) {
+		$value = (string) $data;
+		
+		// Human-perceived characters.
+		if ($rule['minLen'] !== null || $rule['maxLen'] !== null) {
+			$result = Filter::checkStrLen($value, $rule['minLen'], $rule['maxLen']);
+			
+			if (!is_string($result)) {
+				return $result;
+			}
+		}
+		
+		// Unicode code points.
+		if ($rule['minCodePoint'] !== null || $rule['maxCodePoint'] !== null) {
+			$result = Filter::checkCodePointLen($value, $rule['minCodePoint'], $rule['maxCodePoint']);
+			
+			if (!is_string($result)) {
+				return $result;
+			}
+		}
+		
+		// Actual bytes.
+		if ($rule['minByte'] !== null || $rule['maxByte'] !== null) {
+			$result = Filter::checkByteLen($value, $rule['minByte'], $rule['maxByte']);
+			
+			if (!is_string($result)) {
+				return $result;
+			}
+		}
+		
+		return FilterOut::OK;
+	}
+	
+	/**
+	 * Validates a processed string against a configured regex.
+	 */
+	private function checkRegex(string $value, array $rule): FilterOut
+	{
+		if ($rule['regex'] === null) {
 			return FilterOut::OK;
 		}
 		
-		$v = Filter::checkStrLen((string) $data, $rule['minLen'], $rule['maxLen']);
+		if (!mb_check_encoding($value, 'UTF-8')) {
+			return FilterOut::INVALID;
+		}
 		
-		return is_string($v) ? FilterOut::OK : $v;
+		$result = @preg_match($rule['regex'], $value);
+		
+		if ($result === false) {
+			throw new RuntimeException(
+				"Regex execution failed for rule '{$rule['key']}': " .
+				preg_last_error_msg()
+			);
+		}
+		
+		return $result === 1
+			? FilterOut::OK
+			: FilterOut::REGEX_MISMATCH;
 	}
 	
 	private function inRange(int|float $data, array $rule): FilterOut
@@ -695,6 +767,40 @@ class DataFilter
 				$rule['minLen']
 			),
 			
+			FilterOut::BYTE_LEN_ERROR => $locale->inputByteLengthErr(
+				$name,
+				$rule['minByte'],
+				$rule['maxByte']
+			),
+			
+			FilterOut::BYTE_LEN_UNDER_ERROR => $locale->inputByteLengthUnderErr(
+				$name,
+				$rule['minByte']
+			),
+			
+			FilterOut::BYTE_LEN_OVER_ERROR => $locale->inputByteLengthOverErr(
+				$name,
+				$rule['maxByte']
+			),
+			
+			FilterOut::CODEPOINT_LEN_ERROR => $locale->inputCodePointLengthErr(
+				$name,
+				$rule['minCodePoint'],
+				$rule['maxCodePoint']
+			),
+			
+			FilterOut::CODEPOINT_LEN_UNDER_ERROR => $locale->inputCodePointLengthUnderErr(
+				$name,
+				$rule['minCodePoint']
+			),
+			
+			FilterOut::CODEPOINT_LEN_OVER_ERROR => $locale->inputCodePointLengthOverErr(
+				$name,
+				$rule['maxCodePoint']
+			),
+			
+			FilterOut::REGEX_MISMATCH => $locale->regexMismatchErr($name),
+			
 			FilterOut::RANGE_ERROR => $locale->inputRangeErr(
 				$name,
 				$rule['minValue'],
@@ -768,6 +874,15 @@ class DataFilter
 			'minLen' => $rule['minLen'] ?? null,
 			'maxLen' => $rule['maxLen'] ?? null,
 			
+			'minByte' => $rule['minByte'] ?? null,
+			'maxByte' => $rule['maxByte'] ?? null,
+			
+			'minCodePoint' => $rule['minCodePoint'] ?? null,
+			'maxCodePoint' => $rule['maxCodePoint'] ?? null,
+			
+			'regex' => $rule['regex'] ?? null,
+			'regexHint' => $rule['regexHint'] ?? null,
+			
 			'minValue' => $rule['minValue'] ?? null,
 			'maxValue' => $rule['maxValue'] ?? null,
 			
@@ -822,8 +937,42 @@ class DataFilter
 			throw new InvalidArgumentException("Rule '$key' requires 'nullable' to be boolean");
 		}
 		
-		$this->assertNullableInt($rule, 'minLen');
-		$this->assertNullableInt($rule, 'maxLen');
+		$this->validateLengthBounds($rule, 'minLen', 'maxLen');
+		$this->validateLengthBounds($rule, 'minByte', 'maxByte');
+		$this->validateLengthBounds($rule, 'minCodePoint', 'maxCodePoint');
+		
+		if ($rule['regex'] !== null) {
+			if (
+				!in_array(
+					$rule['type'],
+					[self::TYPE_STRING, self::TYPE_STRING_RAW],
+					true
+				)
+			) {
+				throw new InvalidArgumentException("Rule '$key' regex is only supported for string types");
+			}
+			
+			if (
+				!is_string($rule['regex']) ||
+				trim($rule['regex']) === '' ||
+				@preg_match($rule['regex'], '') === false
+			) {
+				throw new InvalidArgumentException("Rule '$key' contains an invalid regex pattern");
+			}
+		}
+		
+		if ($rule['regexHint'] !== null) {
+			if (
+				!is_string($rule['regexHint']) ||
+				trim($rule['regexHint']) === ''
+			) {
+				throw new InvalidArgumentException("Rule '$key' regexHint must be a non-empty string");
+			}
+			
+			if ($rule['regex'] === null) {
+				throw new InvalidArgumentException("Rule '$key' regexHint requires regex");
+			}
+		}
 		
 		if ($rule['minLen'] !== null && $rule['minLen'] < 0) {
 			throw new InvalidArgumentException("Rule '$key' minLen cannot be negative");
@@ -872,6 +1021,34 @@ class DataFilter
 		
 		if ($rule['oneOf'] !== null) {
 			throw new InvalidArgumentException("Rule '$key' cannot use oneOf unless type is mixed");
+		}
+	}
+	
+	/**
+	 * Validates configured minimum and maximum length bounds.
+	 */
+	private function validateLengthBounds(array $rule, string $minKey, string $maxKey): void
+	{
+		$key = $rule['key'];
+		
+		$this->assertNullableInt($rule, $minKey);
+		$this->assertNullableInt($rule, $maxKey);
+		
+		foreach ([$minKey, $maxKey] as $property) {
+			if (
+				$rule[$property] !== null &&
+				$rule[$property] < 0
+			) {
+				throw new InvalidArgumentException("Rule '$key' $property cannot be negative");
+			}
+		}
+		
+		if (
+			$rule[$minKey] !== null &&
+			$rule[$maxKey] !== null &&
+			$rule[$minKey] > $rule[$maxKey]
+		) {
+			throw new InvalidArgumentException("Rule '$key' $minKey cannot be greater than $maxKey");
 		}
 	}
 	

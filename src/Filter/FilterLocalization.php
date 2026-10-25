@@ -61,6 +61,60 @@ class FilterLocalization
 		return "$name can't be less than " . $this->pluralMsg($minLen, 'character') . " in length";
 	}
 	
+	/**
+	 * Byte-length validation messages.
+	 */
+	public function inputByteLengthErr(
+		string $name,
+		int $minByte,
+		int $maxByte
+	): string
+	{
+		return "$name must be between $minByte and $maxByte bytes";
+	}
+	
+	public function inputByteLengthUnderErr(
+		string $name,
+		int $minByte
+	): string
+	{
+		return "$name must contain at least $minByte bytes";
+	}
+	
+	public function inputByteLengthOverErr(
+		string $name,
+		int $maxByte
+	): string
+	{
+		return "$name must not exceed $maxByte bytes";
+	}
+	
+	/**
+	 * Unicode code-point validation messages.
+	 */
+	public function inputCodePointLengthErr(string $name, int $minCodePoint, int $maxCodePoint): string
+	{
+		return "$name must contain between $minCodePoint and $maxCodePoint Unicode code points";
+	}
+	
+	public function inputCodePointLengthUnderErr(string $name, int $minCodePoint): string
+	{
+		return "$name must contain at least $minCodePoint Unicode code points";
+	}
+	
+	public function inputCodePointLengthOverErr(string $name, int $maxCodePoint): string
+	{
+		return "$name must not exceed $maxCodePoint Unicode code points";
+	}
+	
+	/**
+	 * Regular-expression validation message.
+	 */
+	public function regexMismatchErr(string $name): string
+	{
+		return "$name has an invalid format";
+	}
+	
 	public function inputRangeErr(string $name, int|float $minValue, int|float $maxValue): string
 	{
 		return "$name must be between $minValue and $maxValue";

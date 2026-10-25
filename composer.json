@@ -20,6 +20,7 @@
         "ext-pdo": "*",
         "ext-zip": "*",
 		"ext-mbstring": "*",
+		"ext-intl": "*",
 	    "ext-ctype": "*"
 	},
 

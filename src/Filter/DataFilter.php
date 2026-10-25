@@ -459,8 +459,8 @@ class DataFilter
 			self::TYPE_INTEGER => $this->checkInteger($data, $rule),
 			self::TYPE_FLOAT => $this->checkFloat($data, $rule),
 			self::TYPE_BOOL => $this->checkBool($data),
-			self::TYPE_EMAIL => $this->checkEmail($data),
-			self::TYPE_URL => $this->checkURL($data),
+			self::TYPE_EMAIL => $this->checkEmail($data, $rule),
+			self::TYPE_URL => $this->checkURL($data, $rule),
 			self::TYPE_ISO_TIME => $this->checkISOTime($data),
 			self::TYPE_ISO_DATE => $this->checkISODate($data),
 			self::TYPE_ISO_DATETIME => $this->checkISODatetime($data),
@@ -548,21 +548,27 @@ class DataFilter
 		return FilterOut::OK;
 	}
 	
-	private function checkEmail(mixed &$data): FilterOut
+	private function checkEmail(mixed &$data, array $rule): FilterOut
 	{
 		$v = Filter::checkEmail($data);
 		
 		if (!Filter::isOK($v)) return $v;
 		
+		$x = $this->checkLen($v, $rule);
+		if (!Filter::isOK($x)) return $x;
+		
 		$data = $v;
 		return FilterOut::OK;
 	}
 	
-	private function checkURL(mixed &$data): FilterOut
+	private function checkURL(mixed &$data, array $rule): FilterOut
 	{
 		$v = Filter::checkURL($data);
 		
 		if (!Filter::isOK($v)) return $v;
+		
+		$x = $this->checkLen($v, $rule);
+		if (!Filter::isOK($x)) return $x;
 		
 		$data = $v;
 		return FilterOut::OK;
@@ -972,18 +978,6 @@ class DataFilter
 			if ($rule['regex'] === null) {
 				throw new InvalidArgumentException("Rule '$key' regexHint requires regex");
 			}
-		}
-		
-		if ($rule['minLen'] !== null && $rule['minLen'] < 0) {
-			throw new InvalidArgumentException("Rule '$key' minLen cannot be negative");
-		}
-		
-		if ($rule['maxLen'] !== null && $rule['maxLen'] < 0) {
-			throw new InvalidArgumentException("Rule '$key' maxLen cannot be negative");
-		}
-		
-		if ($rule['minLen'] !== null && $rule['maxLen'] !== null && $rule['minLen'] > $rule['maxLen']) {
-			throw new InvalidArgumentException("Rule '$key' minLen cannot be greater than maxLen");
 		}
 		
 		$this->assertNullableNumber($rule, 'minValue');

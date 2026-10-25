@@ -10,7 +10,7 @@ abstract class Hati
 {
 
 	// version
-	public const string VERSION = '7.0.63-beta';
+	public const string VERSION = '7.0.64-beta';
 	
 	public static function getGlobalFuncPath(): string
 	{

@@ -398,6 +398,56 @@ abstract class HatiAPI
 	}
 	
 	/**
+	 * Checks whether the current HTTP request uses GET.
+	 *
+	 * @return bool True when the request method is GET.
+	 */
+	protected function isGetRequest(): bool
+	{
+		return $this->isMethod('GET');
+	}
+	
+	/**
+	 * Checks whether the current HTTP request uses POST.
+	 *
+	 * @return bool True when the request method is POST.
+	 */
+	protected function isPostRequest(): bool
+	{
+		return $this->isMethod('POST');
+	}
+	
+	/**
+	 * Checks whether the current HTTP request uses PUT.
+	 *
+	 * @return bool True when the request method is PUT.
+	 */
+	protected function isPutRequest(): bool
+	{
+		return $this->isMethod('PUT');
+	}
+	
+	/**
+	 * Checks whether the current HTTP request uses PATCH.
+	 *
+	 * @return bool True when the request method is PATCH.
+	 */
+	protected function isPatchRequest(): bool
+	{
+		return $this->isMethod('PATCH');
+	}
+	
+	/**
+	 * Checks whether the current HTTP request uses DELETE.
+	 *
+	 * @return bool True when the request method is DELETE.
+	 */
+	protected function isDeleteRequest(): bool
+	{
+		return $this->isMethod('DELETE');
+	}
+	
+	/**
 	 * Requires the current request to use one of the given HTTP methods.
 	 *
 	 * Throws an HTTP 405 response when the current request method does not match.

@@ -105,7 +105,7 @@ abstract class Request
 		}
 
 		if ($ip == '') {
-			$ip = $_SERVER['REMOTE_ADDR'];
+			$ip = $_SERVER['REMOTE_ADDR'] ?? '';
 		}
 
 		// Ensure IP is an IP and that it is NOT private or reserved

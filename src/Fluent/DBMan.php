@@ -44,12 +44,12 @@ use Throwable;
  * $dbMan = new DBMan();
  *
  * $dbMan->register(
- *     (new DBProfile(
+ *     DBProfile::mysql(
  *         id: 'mama',
- *         dbName: 'mama_prod',
+ *         database: 'mama_prod',
  *         user: $_ENV['DB_USER'],
- *         password: $_ENV['DB_PASS'],
- *     ))->enablePool()
+ *         password: $_ENV['DB_PASS']
+ *     )->enablePool()
  * );
  *
  * $student = $dbMan
@@ -288,46 +288,73 @@ final class DBMan
 	}
 	
 	/**
-	 * Creates a PDO connection from a database profile.
+	 * Creates a driver-specific PDO connection from a registered profile.
 	 *
-	 * The connection uses the profile's host, database name, port, charset,
-	 * username, and password. PDO is configured to throw exceptions, disable
-	 * emulated prepares, and return associative arrays by default.
-	 *
-	 * If the profile defines a timezone, DBMan applies it to the MySQL session
-	 * after connection creation.
-	 *
-	 * @param DBProfile $profile The profile to connect with.
-	 * @return PDO The created PDO connection.
-	 *
-	 * @throws Trunk If PDO connection creation fails.
+	 * DBMan owns connection creation; Fluent and DBPool operate on the
+	 * resulting PDO instance without needing to know the database engine.
 	 */
 	private function createConnection(DBProfile $profile): PDO
 	{
-		$dsn = sprintf(
-			'mysql:host=%s;dbname=%s;port=%d;charset=%s',
-			$profile->host(),
-			$profile->dbName(),
-			$profile->port(),
-			$profile->charset()
-		);
-		
 		try {
-			$pdo = new PDO($dsn, $profile->user(), $profile->password(), [
-				PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-				PDO::ATTR_EMULATE_PREPARES => false,
-				PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-			]);
+			$config = $profile->config();
 			
-			if ($profile->timezone() !== null) {
-				$stmt = $pdo->prepare('SET time_zone = ?');
-				$stmt->execute([$profile->timezone()]);
-			}
-			
-			return $pdo;
+			return match (true) {
+				$config instanceof MySQLConfig => $this->connectMySQL($config),
+				$config instanceof SQLiteConfig => $this->connectSQLite($config)
+			};
 		} catch (Throwable $t) {
 			throw new Trunk('Failed to connect to database profile ' . $profile->id() . ': ' . $t->getMessage());
 		}
+	}
+	
+	/**
+	 * Preserves the existing MySQL PDO attributes and session timezone setup.
+	 */
+	private function connectMySQL(MySQLConfig $config): PDO
+	{
+		$dsn = sprintf(
+			'mysql:host=%s;dbname=%s;port=%d;charset=%s',
+			$config->host,
+			$config->database,
+			$config->port,
+			$config->charset
+		);
+		
+		$pdo = new PDO($dsn, $config->user, $config->password, [
+			PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+			PDO::ATTR_EMULATE_PREPARES => false,
+			PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+		]);
+		
+		if ($config->timezone !== null) {
+			$stmt = $pdo->prepare('SET time_zone = ?');
+			$stmt->execute([$config->timezone]);
+		}
+		
+		return $pdo;
+	}
+	
+	/**
+	 * SQLite runs inside the PHP process, so no network or authentication
+	 * session is required. These PRAGMAs are applied to each new connection.
+	 *
+	 * WAL and schema creation are intentionally owned by the application.
+	 */
+	private function connectSQLite(SQLiteConfig $config): PDO
+	{
+		if (!extension_loaded('pdo_sqlite')) {
+			throw new Trunk('The pdo_sqlite extension is required for SQLite profiles.');
+		}
+		
+		$pdo = new PDO('sqlite:' . $config->path, null, null, [
+			PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+			PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+		]);
+		
+		$pdo->exec('PRAGMA foreign_keys = ON');
+		$pdo->exec('PRAGMA busy_timeout = ' . $config->busyTimeoutMs);
+		
+		return $pdo;
 	}
 	
 	/**

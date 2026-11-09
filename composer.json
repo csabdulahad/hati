@@ -1,5 +1,4 @@
 {
-
     "name": "rootdata21/hati",
     "description": "Hati - A powerful PHP library written in PHP 8 with various library functions and classes to make API or App development effortless.",
     "type": "hati-installer",
@@ -19,14 +18,19 @@
         "phpmailer/phpmailer": "^6.5",
         "ext-pdo": "*",
         "ext-zip": "*",
-		"ext-mbstring": "*",
-		"ext-intl": "*",
-	    "ext-ctype": "*"
-	},
+        "ext-mbstring": "*",
+        "ext-intl": "*",
+        "ext-ctype": "*"
+    },
 
     "autoload": {
         "psr-4": {
             "Hati\\": "src"
         }
+    },
+	
+    "suggest": {
+        "ext-pdo_mysql": "Required when using MySQL database profiles.",
+        "ext-pdo_sqlite": "Required when using SQLite database profiles."
     }
 }

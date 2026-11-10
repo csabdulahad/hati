@@ -1116,7 +1116,7 @@ final class HatiAPIHandler
 		$msg =
 			$this->debug
 			? self::getFullErrorMsg($e)
-			: 'Error in API implementation';
+			: 'Internal server error';
 		
 		try {
 			$response = $this->createResponse($apiInfo);
